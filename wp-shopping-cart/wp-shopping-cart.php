@@ -3,15 +3,15 @@
 Plugin Name:WP Shopping Cart
 Plugin URI: http://www.instinct.co.nz
 Description: A plugin that provides a WordPress Shopping Cart. Contact <a href='http://www.instinct.co.nz/?p=16#support'>Instinct Entertainment</a> for support. <br />Click here to to <a href='?wpsc_uninstall=ask'>Uninstall</a>.
-Version: 3.6.9
+Version: 3.6.10
 Author: Instinct Entertainment
 Author URI: http://www.instinct.co.nz/e-commerce/
 /* Major version for "major" releases */
 define('WPSC_VERSION', '3.6');
-define('WPSC_MINOR_VERSION', '98');
+define('WPSC_MINOR_VERSION', '99');
 
 
-define('WPSC_PRESENTABLE_VERSION', '3.6.9');
+define('WPSC_PRESENTABLE_VERSION', '3.6.10');
 
 define('WPSC_DEBUG', false);
 /*
@@ -865,7 +865,10 @@ if(($_POST['ajax'] == "true") || ($_GET['ajax'] == "true")) {
 		//changes for usps ends
 
 	if(($_GET['user'] == "true") && is_numeric($_POST['prodid'])) {
-		$memberstatus = get_product_meta($_POST['prodid'],'is_membership',true);
+		if(function_exists('wpsc_members_init')) {
+			$memberstatus = get_product_meta($_POST['prodid'],'is_membership',true);
+		}
+
 		if(($memberstatus[0]=='1') && ($_SESSION['nzshopcrt_cart']!=NULL)){
 		} else{
 			$sql = "SELECT * FROM `".$wpdb->prefix."product_list` WHERE `id`='".$_POST['prodid']."' LIMIT 1";
@@ -962,9 +965,10 @@ if(($_POST['ajax'] == "true") || ($_GET['ajax'] == "true")) {
 				}
 				if(!(($memberstatus[0]=='1')&&(count($_SESSION['nzshpcrt_cart'])>0))){
 					$status = get_product_meta($cartt1, 'is_membership', true);
-					if ($status[0]=='1'){
-					exit();
+					if (function_exists('wpsc_members_init') && ( $status[0]=='1')){
+						exit();
 					}	
+
 					if($updated_quantity === false) {
 						
 						if($_POST['quantity'] != '') {
@@ -990,9 +994,10 @@ if(($_POST['ajax'] == "true") || ($_GET['ajax'] == "true")) {
 			if (($memberstatus[0]=='1')&&(count($cart)>1)) {
 			} else {
 				$status = get_product_meta($cartt1, 'is_membership', true);
-				if ($status[0]=='1'){
+				if (function_exists('wpsc_members_init') && ( $status[0]=='1')){
 					exit('st');
 				}
+
 			  echo  "if(document.getElementById('shoppingcartcontents') != null)
 					  {
 					  document.getElementById('shoppingcartcontents').innerHTML = \"".str_replace(Array("\n","\r") , "",addslashes(nzshpcrt_shopping_basket_internals($cart,$quantity_limit))). "\";
@@ -2731,12 +2736,12 @@ function wpsc_fav_action($actions) {
 }
 
 function save_hidden_box() {
-	if ($_POST['action'] == 'closed-postboxes'){
-	    $hidden_box = $_POST['hidden'];
-	    $hidden_box = explode(',', $hidden_box);
-	    update_option('wpsc_hidden_box', $hidden_box);
-	    exit(print_r($hidden_box,1));
-	}
+// 	if ($_POST['action'] == 'closed-postboxes'){
+// 	    $hidden_box = $_POST['hidden'];
+// 	    $hidden_box = explode(',', $hidden_box);
+// 	    update_option('wpsc_hidden_box', $hidden_box);
+// 	    exit(print_r($hidden_box,1));
+// 	}
 }
 
 //duplicating a product

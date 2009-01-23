@@ -1566,6 +1566,7 @@ table.product_variation_grid tr.settings_row td div.variation_settings {
   border-top: 1px dotted #cccccc;
   width: 100%;
   min-height: 30px;
+  padding: 4px 10px;
  
 }
 table.product_variation_grid tr th {
@@ -1950,3 +1951,8 @@ label.variation_checkbox {
   display: block;
 }
 
+div.variation_box{
+}
+div.variation_values_box{
+  padding-left: 10px;
+}

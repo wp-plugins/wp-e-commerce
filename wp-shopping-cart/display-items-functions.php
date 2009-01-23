@@ -324,7 +324,11 @@ function advanced_box($product_data='') {
 	$can_have_uploaded_image = $can_have_uploaded_image[0];
 	$external_link = get_product_meta($product_data['id'], 'external_link');
 	$external_link = $external_link[0];
-	$output ='';
+	$output ='';\
+	
+	$custom_fields =  $wpdb->get_results("SELECT * FROM `{$wpdb->prefix}wpsc_productmeta` WHERE `product_id` IN('{$product_data['id']}') AND `custom` IN('1') ",ARRAY_A);
+
+
 	if ($product_data == 'empty') {
 		$display = "style='display:none;'";
 	}
@@ -412,7 +416,6 @@ function advanced_box($product_data='') {
   	do_action('wpsc_add_advanced_options', $product_data['id']);
   	$output .= ob_get_contents();
   	ob_end_clean();
-	$custom_fields =  $wpdb->get_results("SELECT * FROM `{$wpdb->prefix}wpsc_productmeta` WHERE `product_id` IN('{$product['id']}') AND `custom` IN('1') ",ARRAY_A);
 	
 	$output .= "
 	<tr>

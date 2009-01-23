@@ -2,6 +2,9 @@
 /*
 This is a language file for the WP Shopping Cart plugin version 3.6.8
 */
+define('TXT_WPSC_MORE', 'More');
+
+define('TXT_WPSC_WEIGHT_SETTINGS', 'Weight Settings');
 
 define('TXT_WPSC_PROMOTE_YOUR_SHOP', '
 <h2>Online Promotion</h2>

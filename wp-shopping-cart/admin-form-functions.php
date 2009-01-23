@@ -181,13 +181,15 @@ function nzshpcrt_getproductform($prodid)
 		$output .= "<tr><td  colspan='2'>";
 	}
 	$order = get_option('wpsc_product_page_order');
-	if (($order == '') || (count($order < 7 ))){
+	if (($order == '') || (count($order ) < 6)){
 		$order=array("category_and_tag", "price_and_stock", "shipping", "variation", "advanced", "product_image", "product_download");
 	}
 	update_option('wpsc_product_page_order', $order);
 	foreach((array)$order as $key => $box) {
 		$box_function_name = $box."_box";
-		$output .= call_user_func($box_function_name,$product);
+		if(function_exists($box_function_name)) {
+			$output .= call_user_func($box_function_name,$product);
+		}
 		//echo $output;
 		if(!IS_WP27 && ($key!=count($order)-1)) {
 			$output .= "</td></tr>";
@@ -205,6 +207,13 @@ function nzshpcrt_getproductform($prodid)
   		}
 	}
 	
+	
+		ob_start();
+		do_action('wpsc_product_form', $product['id']);
+		$output .= ob_get_contents();
+		ob_end_clean();
+		
+		
 	if (!IS_WP27) {
 		$output .= "</td></tr>";
 		$output .= "          <tr>\n\r";
@@ -222,8 +231,8 @@ function nzshpcrt_getproductform($prodid)
 	} else {
 		$output .= "<input type='hidden' name='prodid' id='prodid' value='".$product['id']."' />";
 		$output .= "<input type='hidden' name='submit_action' value='edit' />";
-		$output .= "<input  class='button' style='float:left;'  type='submit' name='submit' value='".TXT_WPSC_EDIT_PRODUCT."' />";
-		$output .= "<a class='button delete_button' ' href='admin.php?page=".WPSC_DIR_NAME."/display-items.php&amp;deleteid=".$product['id']."' onclick=\"return conf();\" >".TXT_WPSC_DELETE_PRODUCT."</a>";
+		$output .= "<input class='button-primary' style='float:left;'  type='submit' name='submit' value='".TXT_WPSC_EDIT_PRODUCT."' />&nbsp;";
+		$output .= "<a class='delete_button' ' href='admin.php?page=".WPSC_DIR_NAME."/display-items.php&amp;deleteid=".$product['id']."' onclick=\"return conf();\" >".TXT_WPSC_DELETE_PRODUCT."</a>";
 	}
 		
 		$output .= "</div>";

@@ -5,35 +5,35 @@ Do not save this in Quanta+, if you do, all the special characters will break.
 */
 
 define('TXT_WPSC_IMAGESIZEINFO', utf8_encode('Nota: si está en blanco, la imagen no será dimensionada'));
-define('TXT_WPSC_RECEIVED', utf8_encode('Pedido recivido'));
+define('TXT_WPSC_RECEIVED', utf8_encode('Pedido recibido'));
 define('TXT_WPSC_ORDER_STATUS', utf8_encode('Estado del pedido'));
-define('TXT_WPSC_ORDER_SUMMARY', utf8_encode('Sumario del pedido'));
+define('TXT_WPSC_ORDER_SUMMARY', utf8_encode('Resumen del pedido'));
 define('TXT_WPSC_LANGUAGE', utf8_encode('Lenguaje'));
 define('TXT_WPSC_ACCEPTED_PAYMENT', utf8_encode('Pago aceptado'));
 define('TXT_WPSC_JOB_DISPATCHED', utf8_encode('Pedido enviado'));
 define('TXT_WPSC_PROCESSED', utf8_encode('Pedido terminado'));
 define('TXT_WPSC_ECOMMERCE', utf8_encode('e-Commerce'));
-define('TXT_WPSC_OPTIONS', utf8_encode('Opciones de tienda'));
+define('TXT_WPSC_OPTIONS', utf8_encode('Opciones de la tienda'));
 define('TXT_WPSC_ADDPRODUCTS', utf8_encode('Añadir productos'));
 define('TXT_WPSC_SENDSMS', utf8_encode('Enviar SMS'));
 define('TXT_WPSC_PRODUCTS', utf8_encode('Productos'));
 define('TXT_WPSC_ADDCATEGORY', utf8_encode('Añadir Categoría'));
 define('TXT_WPSC_CATEGORIES', utf8_encode('Categorías'));
-define('TXT_WPSC_BRANDS', utf8_encode('Tipos'));
-define('TXT_WPSC_VARIATIONS', utf8_encode('Opciones de producto'));
+define('TXT_WPSC_BRANDS', utf8_encode('Marcas'));
+define('TXT_WPSC_VARIATIONS', utf8_encode('Opciones del producto'));
 define('TXT_WPSC_PURCHASELOG', utf8_encode('Log de compra'));
 define('TXT_WPSC_ORDER_LOG', utf8_encode('Pedidos'));
 define('TXT_WPSC_OLDER_ORDERS', utf8_encode('Pedidos antiguos'));
 define('TXT_WPSC_ORDER', utf8_encode('Pedido'));
-define('TXT_WPSC_TOTAL_THIS_MONTH', utf8_encode('Cantidad total ganada este mes'));
+define('TXT_WPSC_TOTAL_THIS_MONTH', utf8_encode('Ingresos de este mes'));
 define('TXT_WPSC_MONTHLY_REPORT', utf8_encode('Informe de 6 meses'));
 define('TXT_WPSC_TOTAL_INCOME', utf8_encode('Importe total'));
-define('TXT_WPSC_ACCEPTED_PAYMENTS', utf8_encode('(pagos aceptados)')); //texr has changed slightly
-define('TXT_WPSC_PAYMENTGATEWAYOPTIONS', utf8_encode('Opciones de pasarela'));
+define('TXT_WPSC_ACCEPTED_PAYMENTS', utf8_encode('(Metodos de Pago Aceptados)')); //text has changed slightly
+define('TXT_WPSC_PAYMENTGATEWAYOPTIONS', utf8_encode('Opciones de pago'));
 define('TXT_WPSC_HELPINSTALLATION', utf8_encode('Ayuda/Actualizar'));
 define('TXT_WPSC_EXAMPLECATEGORY', utf8_encode('Categoría ejemplo'));
 define('TXT_WPSC_EXAMPLEDETAILS', utf8_encode('Detalles ejemplo'));
-define('TXT_WPSC_EXAMPLEBRAND', utf8_encode('Clase ejemplo'));
+define('TXT_WPSC_EXAMPLEBRAND', utf8_encode('Marca ejemplo'));
 define('TXT_WPSC_PRODUCTIMAGEWIDTH', utf8_encode('Ancho imagen producto'));
 define('TXT_WPSC_PRODUCTIMAGEHEIGHT', utf8_encode('Alto imagen producto'));
 define('TXT_WPSC_CATEGORYIMAGEWIDTH', utf8_encode('Ancho imagen categoría'));
@@ -63,14 +63,14 @@ define('TXT_WPSC_SHOWPRODUCTRATINGS', utf8_encode('Mostrar tarifas de producto')
 define('TXT_WPSC_PRODUCTSPAGE', utf8_encode('Página de productos'));
 define('TXT_WPSC_CHECKOUT', utf8_encode('Validar'));
 define('TXT_WPSC_ENTERDETAILS', utf8_encode('Introduzca sus datos'));
-define('TXT_WPSC_TRANSACTIONRESULTS', utf8_encode('Resultados de transacción'));
+define('TXT_WPSC_TRANSACTIONRESULTS', utf8_encode('Resultados de la transacción'));
 define('TXT_WPSC_SELECTACATEGORY', utf8_encode('Seleccione una categoría'));
 define('TXT_WPSC_SELECTABRAND', utf8_encode('Seleccione un tipo'));
-define('TXT_WPSC_PRODUCTNAME', utf8_encode('Nombre de producto'));
+define('TXT_WPSC_PRODUCTNAME', utf8_encode('Nombre del producto'));
 define('TXT_WPSC_PRODUCTDESCRIPTION', utf8_encode('Descripción de producto'));
 define('TXT_WPSC_ADDITIONALDESCRIPTION', utf8_encode('Descripción adicional'));
 define('TXT_WPSC_PRICE', utf8_encode('Precio'));
-define('TXT_WPSC_TAXALREADYINCLUDED', utf8_encode('No incluye tasas (las tasas son introducidas en la configuración de la tienda)')); // this text has changed and needs updating
+define('TXT_WPSC_TAXALREADYINCLUDED', utf8_encode('Impuestos incluidos')); 
 define('TXT_WPSC_SPECIAL', utf8_encode('Oferta')); // this text has changed and needs updating
 define('TXT_WPSC_PRODUCT_DISPLAY', utf8_encode('Mostrar producto'));
 
@@ -155,11 +155,11 @@ define('TXT_WPSC_ADDNEWPRODUCT', utf8_encode('Añadir producto'));
 define('TXT_WPSC_PRODUCTQUANTITY', utf8_encode('Cantidad del producto'));
 define('TXT_WPSC_PRODUCTIMAGE', utf8_encode('Imagen del producto'));
 define('TXT_WPSC_PRODUCTPRICE', utf8_encode('Precio del producto'));
-define('TXT_WPSC_NOTAX', utf8_encode('Sin tasas'));
+define('TXT_WPSC_NOTAX', utf8_encode('Sin Tasas'));
 define('TXT_WPSC_ABOUT', utf8_encode('Sobre nosotros'));
 define('TXT_WPSC_ABOUTCONTENT', utf8_encode('Bienvenido al panel e-commerce. <br /><br /><strong>Nota:</strong> en algunas configuraciones, el carrito de compra puede estar vacío en cada carga de página, si esto sucede, tendrá que añadir esta línea:<br /><br />session_start();<br /><br />a index.php en el directorio base de wordpress.<br />'));
 define('TXT_WPSC_CONTACTDETAILS', utf8_encode('Por favor introduzca sus datos de contacto:'));
-define('TXT_WPSC_CREDITCARDHANDY', utf8_encode('Nota, una vez que presione enviar, necesitará tener a mano su tarjeta de crédito.'));
+define('TXT_WPSC_CREDITCARDHANDY', utf8_encode('Tenga a mano su tarjeta de credito una vez que selecione Enviar.'));
 define('TXT_WPSC_ASTERISK', utf8_encode('Los campos marcados con un asterisco son obligatorios.'));
 define('TXT_WPSC_FIRSTNAME', utf8_encode('Nombre'));
 define('TXT_WPSC_LASTNAME', utf8_encode('Apellidos'));
@@ -178,13 +178,13 @@ define('TXT_WPSC_TEXT', utf8_encode('Texto'));
 define('TXT_WPSC_TEXTAREA', utf8_encode('Área de texto'));
 define('TXT_WPSC_HEADING', utf8_encode('Título'));
 
-define('TXT_WPSC_MAKEPURCHASE', utf8_encode('Hacer compra'));
+define('TXT_WPSC_MAKEPURCHASE', utf8_encode('Comprar'));
 define('TXT_WPSC_BUYPRODUCTS', utf8_encode('Por favor compre algún producto antes de utilizar esta página'));
-define('TXT_WPSC_BRANDHASBEENEDITED', utf8_encode('El tipo ha sido modificado.'));
-define('TXT_WPSC_SURETODELETEPRODUCT', utf8_encode('¿Está seguro de eliminar este producto?'));
-define('TXT_WPSC_ADDBRAND', utf8_encode('Añadir tipo'));
-define('TXT_WPSC_DISPLAYBRANDS', utf8_encode('Mostrar tipos'));
-define('TXT_WPSC_EDITBRAND', utf8_encode('Editar tipo'));
+define('TXT_WPSC_BRANDHASBEENEDITED', utf8_encode('La marca ha sido modificada.'));
+define('TXT_WPSC_SURETODELETEPRODUCT', utf8_encode('¿Está seguro que quiere eliminar este producto?'));
+define('TXT_WPSC_ADDBRAND', utf8_encode('Añadir mraca'));
+define('TXT_WPSC_DISPLAYBRANDS', utf8_encode('Mostrar marcas'));
+define('TXT_WPSC_EDITBRAND', utf8_encode('Editar marca'));
 define('TXT_WPSC_ADD', utf8_encode('Añadir'));
 define('TXT_WPSC_ADD_NEW_FORM', utf8_encode('Añadir nuevo campo en el formulario'));
 define('TXT_WPSC_SAVE_CHANGES', utf8_encode('Guardar cambios'));
@@ -199,8 +199,8 @@ define('TXT_WPSC_DISPLAYVARIATIONS', utf8_encode('Mostrar opciones'));
 define('TXT_WPSC_ADDVARIATION', utf8_encode('Añadir opción'));
 define('TXT_WPSC_EDITVARIATION', utf8_encode('Editar opción'));
 define('TXT_WPSC_VARIATIONHASBEENEDITED', utf8_encode('La opción ha sido modificada'));
-define('TXT_WPSC_VARIATION_VALUES', utf8_encode('Valores de opción'));
-define('TXT_WPSC_REMOVE_SET', utf8_encode('Eliminar')); //this needs to be translated
+define('TXT_WPSC_VARIATION_VALUES', utf8_encode('Valores de la opción'));
+define('TXT_WPSC_REMOVE_SET', utf8_encode('Eliminar el juego')); //this needs to be translated
 
 define('TXT_WPSC_SELECT_PARENT', utf8_encode('Seleccionar padre'));
 define('TXT_WPSC_PRODUCTHASBEENEDITED', utf8_encode('El producto ha sido modificado.'));
@@ -208,8 +208,8 @@ define('TXT_WPSC_ADDPRODUCT', utf8_encode('Añadir producto'));
 define('TXT_WPSC_DISPLAYPRODUCTS', utf8_encode('Mostrar productos'));
 define('TXT_WPSC_PLEASESELECTACATEGORY', utf8_encode('Por favor seleccione una categoría'));
 define('TXT_WPSC_STOCK', utf8_encode('Stock'));
-define('TXT_WPSC_PNP', utf8_encode('PnP'));
-define('TXT_WPSC_EDITITEM', utf8_encode('Editar artículo'));
+define('TXT_WPSC_PNP', utf8_encode('Gastos de Envio'));
+define('TXT_WPSC_EDITITEM', utf8_encode('Editar el articulo'));
 define('TXT_WPSC_PRODUCTDETAILS', utf8_encode('Detalles del producto'));
 define('TXT_WPSC_SELECT_PRODUCT', utf8_encode('Seleccione un producto existente'));
 define('TXT_WPSC_ENTERPRODUCTDETAILSHERE', utf8_encode('(Introduzca su detalle del producto aquí)'));
@@ -222,9 +222,9 @@ define('TXT_WPSC_DISPLAYPURCHASES', utf8_encode('Log de compra'));
 define('TXT_WPSC_ID', utf8_encode('ID'));
 define('TXT_WPSC_TRANSACTIONSTATUS', utf8_encode('Estado de la transacción'));
 define('TXT_WPSC_DATE', utf8_encode('Fecha'));
-define('TXT_WPSC_VIEWDETAILS', utf8_encode('Detalles')); //Text has changed - translation is needed 
+define('TXT_WPSC_VIEWDETAILS', utf8_encode('Ver Detalles')); 
 define('TXT_WPSC_STATUS', utf8_encode('Estado'));
-define('TXT_WPSC_SUCCESSFUL', utf8_encode('Satisfactorio'));
+define('TXT_WPSC_SUCCESSFUL', utf8_encode('Exito'));
 define('TXT_WPSC_FAILED', utf8_encode('Erróneo'));
 define('TXT_WPSC_GST', utf8_encode('GST'));
 define('TXT_WPSC_PP', utf8_encode('P&amp;P'));
@@ -236,7 +236,7 @@ define('TXT_WPSC_GOBACK', utf8_encode('Volver'));
 define('TXT_WPSC_THANKSAPPLIED', utf8_encode('Gracias, sus cambios han sido guardados.'));
 define('TXT_WPSC_FORM_FIELDS', utf8_encode('Opciones de validar compra'));
 define('TXT_WPSC_PAYMENTGATEWAY2', utf8_encode('Pasarela de pago'));
-define('TXT_WPSC_PLEASESELECTAPAYMENTGATEWAY', utf8_encode('Por favor seleccione una pasarela de pago'));
+define('TXT_WPSC_PLEASESELECTAPAYMENTGATEWAY', utf8_encode('Por favor seleccione un metodo de pago'));
 define('TXT_WPSC_PAYMENTGATEWAYNOTE', utf8_encode('<strong>Nota:</strong> Esta versión del plugin e-Commerce sólo te permite conectar con PayPal.<br /><br />Si está buscando una pasarela profesional que no sea PayPal entonces tenemos la<a href="http://www.instinct.co.nz/blogshop">versión e-Commerce oro </a> disponible con pasarelas como authorize.net,  DPS (www.dps.co.nz), y paystation (www.paystation.co.nz).'));
 define('TXT_WPSC_URLSETTINGS', utf8_encode('URL de opciones'));
 define('TXT_WPSC_PRODUCTLISTURL', utf8_encode('URL de lista de productos'));
@@ -250,7 +250,7 @@ define('TXT_WPSC_PAGE', utf8_encode('Página'));
 define('TXT_WPSC_WIDGET', utf8_encode('Widget'));
 define('TXT_WPSC_NEEDTOENABLEWIDGET', utf8_encode('Necesita activar el plugin de widgets para usar esto'));
 define('TXT_WPSC_MANUAL', utf8_encode('Manual'));
-define('TXT_WPSC_SHOWCATEGORIESBRANDS', utf8_encode('Mostrar categorías/Tipos'));
+define('TXT_WPSC_SHOWCATEGORIESBRANDS', utf8_encode('Mostrar categorías/marcas));
 define('TXT_WPSC_BOTH', utf8_encode('Ambos'));
 define('TXT_WPSC_PRODUCTTHUMBNAILSIZE', utf8_encode('Tamaño por defecto del thumbnail producto'));
 define('TXT_WPSC_CATEGORYTHUMBNAILSIZE', utf8_encode('Tamaño por defecto del thumbnail categoría'));
@@ -268,18 +268,18 @@ define('TXT_WPSC_ADMINISTRATIONSETTINGS', utf8_encode('Opciones de administració
 define('TXT_WPSC_MAXDOWNLOADSPERFILE', utf8_encode('Descargas máximas por fichero'));
 define('TXT_WPSC_PURCHASELOGEMAIL', utf8_encode('Email de Log de compra'));
 define('TXT_WPSC_REPLYEMAIL', utf8_encode('Repetir Email'));
-define('TXT_WPSC_BRANDNOCAP', utf8_encode('tipo'));
+define('TXT_WPSC_BRANDNOCAP', utf8_encode('marca'));
 define('TXT_WPSC_CATEGORYNOCAP', utf8_encode('categoría'));
 define('TXT_WPSC_UDPATING', utf8_encode('Actualizando'));
 define('TXT_WPSC_MOREDETAILS', utf8_encode('Más detalles'));
 define('TXT_WPSC_ADDTOCART', utf8_encode('Añadir al carrito'));
-define('TXT_WPSC_AVGCUSTREVIEW', utf8_encode('Media de tarifas de clientes'));
-define('TXT_WPSC_YOURRATING', utf8_encode('Tu tarifa'));
+define('TXT_WPSC_AVGCUSTREVIEW', utf8_encode('Media de calificacion de clientes'));
+define('TXT_WPSC_YOURRATING', utf8_encode('Tu calificacion));
 define('TXT_WPSC_RATING_SAVED', utf8_encode('Guardado'));
-define('TXT_WPSC_RATETHISITEM', utf8_encode('Tarifica este artículo'));
-define('TXT_WPSC_PRODUCTSOLDOUT', utf8_encode('Este producto es el más vendido.'));
+define('TXT_WPSC_RATETHISITEM', utf8_encode('Califica este artículo'));
+define('TXT_WPSC_PRODUCTSOLDOUT', utf8_encode('Este producto esta agotado.'));
 define('TXT_WPSC_NOITEMSINTHIS', utf8_encode('No hay ningún artículo en esta'));
-define('TXT_WPSC_CATEGORYORBRAND', utf8_encode('Categoría o tipo'));
+define('TXT_WPSC_CATEGORYORBRAND', utf8_encode('Categoría o Marca'));
 define('TXT_WPSC_PLEASECHOOSEA', utf8_encode('Por favor seleccione un'));
 define('TXT_WPSC_PRODUCT', utf8_encode('Producto'));
 define('TXT_WPSC_QUANTITY', utf8_encode('Cantidad'));
@@ -360,7 +360,7 @@ define('TXT_WPSC_COUNTRY_FORM_FIELD', utf8_encode('Campo de formulario para el p
 define('TXT_WPSC_COUNTRY_FORM_FIELD_EXPLANATION', utf8_encode('(seleccionar cual es el campo del formulario para especificar el país)'));
 
 define('TXT_WPSC_SHIPPING', utf8_encode('Envío'));
-define('TXT_WPSC_EMAIL_FORM_FIELD', utf8_encode('Campo de formulario para el email'));
+define('TXT_WPSC_EMAIL_FORM_FIELD', utf8_encode('Campo del formulario para el email'));
 define('TXT_WPSC_EMAIL_FORM_FIELD_EXPLANATION', utf8_encode('(seleccionar cual es el campo del formulario para especificar la dirección de correo)'));
 
 
@@ -412,7 +412,7 @@ define('TXT_WPSC_POWERED_BY', utf8_encode('This shop is powered by '));
 define('TXT_WPSC_NO_PURCHASES', utf8_encode('No hay ninguna compra.'));
 
 
-define('TXT_WPSC_DELIVERY_ADDRESS', utf8_encode('Dirección de entrega'));
+define('TXT_WPSC_DELIVERY_ADDRESS', utf8_encode('Dirección de envio'));
 define('TXT_WPSC_DELIVERY_CITY', utf8_encode('Ciudad'));
 define('TXT_WPSC_DELIVERY_COUNTRY', utf8_encode('País'));
 define('TXT_WPSC_MP3_SETTINGS', utf8_encode('Configuración MP3'));
@@ -427,7 +427,7 @@ define('TXT_WPSC_DISPLAY_FRONT_PAGE', utf8_encode('Mostrar en página principal')
 define('TXT_WPSC_SEARCH_FOR', utf8_encode('Buscar por'));
 define('TXT_WPSC_YOUR_SEARCH_FOR', utf8_encode('Tu búsqueda para'));
 define('TXT_WPSC_RETURNED_NO_RESULTS', utf8_encode('Sin resultados.'));
-define('TXT_WPSC_POSTAGE', utf8_encode('Franqueo'));
+define('TXT_WPSC_POSTAGE', utf8_encode('Gastos de Envio'));
 define('TXT_WPSC_SUBTOTAL', utf8_encode('Subtotal'));
 
 ?>

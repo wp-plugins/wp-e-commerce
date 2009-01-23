@@ -106,7 +106,7 @@ function transaction_results($sessionid, $echo_to_screen = true, $transaction_id
 
 				//echo "<pre>".print_r($product_data,true)."</pre>";
 				
-				$variation_count = count($variation_data);
+				$variation_count = count($variation_values);
 				if(($purchase_log['processed'] >= 2) && ($sessionid != '') && ($purchase_log['stock_adjusted'] != 1)) {
 					if($product_data['quantity_limited'] == 1) {
 						if(count($variation_values) > 0) {
@@ -127,18 +127,19 @@ function transaction_results($sessionid, $echo_to_screen = true, $transaction_id
 				}
 				
 				
+		
+				if($purchase['gateway'] != 'testmode') {
+					if($gateway['internalname'] == $purch_data[0]['gateway'] ) {
+						$gateway_name = $gateway['name'];
+					}
+				} else {
+					$gateway_name = "Manual Payment";
+				}
+				//echo "<pre>".print_r($variation_values,true)."</pre>";
 				if($variation_count > 1) {
 					$variation_list = " (";
-		
-					if($purchase['gateway'] != 'testmode') {
-						if($gateway['internalname'] == $purch_data[0]['gateway'] ) {
-							$gateway_name = $gateway['name'];
-						}
-					} else {
-						$gateway_name = "Manual Payment";
-							}
 							$i = 0;
-							foreach($variation_data as $variation) {
+							foreach($variation_values as $variation) {
 								if($i > 0) {
 									$variation_list.= ", ";
 								}
@@ -160,19 +161,19 @@ function transaction_results($sessionid, $echo_to_screen = true, $transaction_id
 						}
 			
 						if($link != '') {
-							$product_list.= " - ". $product_data['name'] . $variation_list ."  ".$message_price ."  ".TXT_WPSC_CLICKTODOWNLOAD.": $link\n";
-							$product_list_html.= " - ". $product_data['name'] . $variation_list ."  ".$message_price ."&nbsp;&nbsp;<a href='$link'>".TXT_WPSC_DOWNLOAD."</a>\n";
+							$product_list.= " - ". $product_data['name'] . stripslashes($variation_list) ."  ".$message_price ."  ".TXT_WPSC_CLICKTODOWNLOAD.": $link\n";
+							$product_list_html.= " - ". $product_data['name'] . stripslashes($variation_list) ."  ".$message_price ."&nbsp;&nbsp;<a href='$link'>".TXT_WPSC_DOWNLOAD."</a>\n";
 						} else {
 							$plural = '';
 							
 							if($row['quantity'] > 1) {
 								$plural = "s";
 							  }
-							$product_list.= " - ".$row['quantity']." ". $product_data['name'].$variation_list ."  ". $message_price ."\n - ". TXT_WPSC_SHIPPING.":".$shipping_price ."\n\r";
-							$product_list_html.= " - ".$row['quantity']." ". $product_data['name'].$variation_list ."  ". $message_price ."\n &nbsp; ". TXT_WPSC_SHIPPING.":".$shipping_price ."\n\r";
+							$product_list.= " - ".$row['quantity']." ". $product_data['name'].stripslashes($variation_list )."  ". $message_price ."\n - ". TXT_WPSC_SHIPPING.":".$shipping_price ."\n\r";
+							$product_list_html.= " - ".$row['quantity']." ". $product_data['name'].stripslashes($variation_list )."  ". $message_price ."\n &nbsp; ". TXT_WPSC_SHIPPING.":".$shipping_price ."\n\r";
 						}
 						$report = get_option('wpsc_email_admin');
-						$report_product_list.= " - ". $product_data['name'] .$variation_list."  ".$message_price ."\n";
+						$report_product_list.= " - ". $product_data['name'] .stripslashes($variation_list)."  ".$message_price ."\n";
 				}
 				
 				if($purchase_log['discount_data'] != '') {

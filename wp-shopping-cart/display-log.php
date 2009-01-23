@@ -423,7 +423,7 @@ if($_GET['filter'] !== 'true') {
       </div>
 <?php
 	echo "</div>";
-	echo "<div id='post-body' class='has-sidebar'>
+	echo "<div id='post-body' class='has-sidebar' style='width: 92%;'>
 			<div id='dashboard-widgets-main-content-wpsc' class='has-sidebar-content'>";
 				
 	}
@@ -491,23 +491,21 @@ if($_GET['filter'] !== 'true') {
             echo TXT_WPSC_DATE;
             echo " </td>";
 
-            foreach($form_data as $form_field)
-              {
+            foreach((array)$form_data as $form_field) {
               echo " <td>";
               echo $form_field['name'];
               echo " </td>";
-              }
+						}
 
             echo " <td>";
             echo TXT_WPSC_PRICE;
             echo " </td>";  
 
-            if(get_option('payment_method') == 2)
-              {
+            if(get_option('payment_method') == 2) {
               echo " <td>";
               echo TXT_WPSC_PAYMENT_METHOD;
               echo " </td>";  
-              }
+						}
 	    
             echo " <td>";
             echo TXT_WPSC_VIEWDETAILS;
@@ -576,7 +574,7 @@ if($_GET['filter'] !== 'true') {
               echo date("jS M Y",$purchase['date']);
               echo " </td>\n\r";
             
-              foreach($form_data as $form_field) {
+              foreach((array)$form_data as $form_field) {
                 $collected_data_sql = "SELECT * FROM `".$wpdb->prefix."submited_form_data` WHERE `log_id` = '".$purchase['id']."' AND `form_id` = '".$form_field['id']."' LIMIT 1";
                 $collected_data = $wpdb->get_results($collected_data_sql,ARRAY_A);
                 $collected_data = $collected_data[0];
@@ -837,7 +835,7 @@ if($_GET['filter'] !== 'true') {
 		
 				echo " <td>";
 				echo $product_data[0]['name'];
-				echo $variation_list;
+				echo stripslashes($variation_list);
 				echo " </td>";
 		
 				echo " <td>";

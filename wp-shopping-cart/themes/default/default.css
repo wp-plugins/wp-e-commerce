@@ -440,9 +440,10 @@ div.select_country form{
  text-align: left;
  }
 
+ 
 tr.product_shipping td h2{
  margin-bottom: 15px;
-/*  margin-top: 5px; */
+ margin-top: 5px;
  }
  
 div#homepage_products{
@@ -526,8 +527,12 @@ table.productcart tr.firstrow td.firstcol{
 
 table.productcart tr.product_shipping td{
  vertical-align: middle;
- border-top: 1px solid #999999 !important;
+/*  border-top: 1px solid #E1DAB7 !important; */
  padding-top: 4px;
+ }
+
+#coupon_num{
+  width: 134px !important;
  }
 
 table.productcart tr.total_price td{
@@ -793,6 +798,7 @@ div.wpsc_page_numbers{
 table.wpsc_checkout_table tr td{
  text-align: left;
  }
+  
   
   
 div#checkout_login_box{

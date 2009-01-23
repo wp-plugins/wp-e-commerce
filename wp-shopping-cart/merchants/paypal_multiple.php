@@ -125,7 +125,7 @@ $discount = nzshpcrt_apply_coupon($total,$_SESSION['coupon_num']);
 				$paypal_currency_shipping = $local_currency_shipping;
 			}
 			//exit("---->".$paypal_currency_shipping);
-			$data['item_name_'.$i] = urlencode(stripslashes($product_data['name']).$variation_list);
+			$data['item_name_'.$i] = urlencode(stripslashes($product_data['name']).stripslashes($variation_list));
 			$data['amount_'.$i] = number_format(sprintf("%01.2f", $paypal_currency_productprice),$decimal_places,'.','');
 			$data['quantity_'.$i] = $item['quantity'];
 			$data['item_number_'.$i] = $product_data['id'];
@@ -227,7 +227,7 @@ $discount = nzshpcrt_apply_coupon($total,$_SESSION['coupon_num']);
 		$output = 'cmd=_xclick-subscriptions&business='.urlencode($data['business']).'&no_note=1&item_name='.urlencode($data['item_name_1']).'&return='.urlencode($data['return']).'&cancel_return='.urlencode($data['cancel_return']).$permsub.'&a3='.urlencode($data['amount_1']).'&p3='.urlencode($membership_length['length']).'&t3='.urlencode(strtoupper($membership_length['unit']));
 	}
 
-	//   echo "<a href='".get_option('paypal_multiple_url')."?".$output."'>Test the URL here</a>";
+	//echo "<a href='".get_option('paypal_multiple_url')."?".$output."'>Test the URL here</a>";
  	//exit("<pre>".print_r($data,true)."</pre>");
   header("Location: ".get_option('paypal_multiple_url')."?".$output);
   exit();

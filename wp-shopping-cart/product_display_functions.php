@@ -111,7 +111,7 @@ function wpsc_get_product_listing($product_list, $group_type, $group_sql = '', $
     $search_sql = gold_shpcrt_search_sql();
     if($search_sql != '') {
       // this cannot currently list products that are associated with no categories
-      $rowcount = $wpdb->get_var("SELECT DISTINCT COUNT(`".$wpdb->prefix."product_list`.`id`) AS `count` FROM `".$wpdb->prefix."product_list`,`".$wpdb->prefix."item_category_associations` WHERE `".$wpdb->prefix."product_list`.`active`='1' AND `".$wpdb->prefix."product_list`.`id` = `".$wpdb->prefix."item_category_associations`.`product_id` $no_donations_sql $search_sql");
+      $rowcount = $wpdb->get_var("SELECT COUNT(DISTINCT `".$wpdb->prefix."product_list`.`id`) AS `count` FROM `".$wpdb->prefix."product_list`,`".$wpdb->prefix."item_category_associations` WHERE `".$wpdb->prefix."product_list`.`active`='1' AND `".$wpdb->prefix."product_list`.`id` = `".$wpdb->prefix."item_category_associations`.`product_id` $no_donations_sql $search_sql");
       if (isset($_SESSION['item_per_page']))
 	  	$products_per_page = $_SESSION['item_per_page'];
       //exit($products_per_page);
@@ -163,7 +163,9 @@ function wpsc_get_product_listing($product_list, $group_type, $group_sql = '', $
 				*/
 				
 				
-			$rowcount = $wpdb->get_var("SELECT DISTINCT COUNT(`".$wpdb->prefix."product_list`.`id`) AS `count` FROM `".$wpdb->prefix."product_list` LEFT JOIN `".$wpdb->prefix."item_category_associations` ON `".$wpdb->prefix."product_list`.`id` = `".$wpdb->prefix."item_category_associations`.`product_id` WHERE `".$wpdb->prefix."product_list`.`active` = '1' AND `".$wpdb->prefix."item_category_associations`.`category_id` IN ('".$catid."') $no_donations_sql");
+			$rowcount = $wpdb->get_var("SELECT COUNT(DISTINCT `".$wpdb->prefix."product_list`.`id`) AS `count` FROM `".$wpdb->prefix."product_list` LEFT JOIN `".$wpdb->prefix."item_category_associations` ON `".$wpdb->prefix."product_list`.`id` = `".$wpdb->prefix."item_category_associations`.`product_id` WHERE `".$wpdb->prefix."product_list`.`active` = '1' AND `".$wpdb->prefix."item_category_associations`.`category_id` IN ('".$catid."') $no_donations_sql");
+			
+
 			
 			if(!is_numeric($products_per_page) || ($products_per_page < 1)) { $products_per_page = $rowcount; }
 			if(($startnum >= $rowcount) && (($rowcount - $products_per_page) >= 0)) {
@@ -183,7 +185,7 @@ function wpsc_get_product_listing($product_list, $group_type, $group_sql = '', $
 			}
 // 				exit($sql);
 		} else {
-			$rowcount = $wpdb->get_var("SELECT DISTINCT COUNT(`".$wpdb->prefix."product_list`.`id`) AS `count` FROM `".$wpdb->prefix."product_list`,`".$wpdb->prefix."item_category_associations` WHERE `".$wpdb->prefix."product_list`.`active`='1' AND `".$wpdb->prefix."product_list`.`id` = `".$wpdb->prefix."item_category_associations`.`product_id` $no_donations_sql $group_sql");
+			$rowcount = $wpdb->get_var("SELECT COUNT(DISTINCT `".$wpdb->prefix."product_list`.`id`) AS `count` FROM `".$wpdb->prefix."product_list`,`".$wpdb->prefix."item_category_associations` WHERE `".$wpdb->prefix."product_list`.`active`='1' AND `".$wpdb->prefix."product_list`.`id` = `".$wpdb->prefix."item_category_associations`.`product_id` $no_donations_sql $group_sql");
 			
 			if(!is_numeric($products_per_page) || ($products_per_page < 1)) { $products_per_page = $rowcount; }
 			if(($startnum >= $rowcount) && (($rowcount - $products_per_page) >= 0)) {
@@ -200,7 +202,7 @@ function wpsc_get_product_listing($product_list, $group_type, $group_sql = '', $
 // exit($sql);
   $return_array['product_list'] = $wpdb->get_results($sql,ARRAY_A);
   $return_array['page_listing'] = "";
-  
+
   if($rowcount > $products_per_page) 
     {
     if($products_per_page > 0) {
@@ -508,13 +510,29 @@ function product_display_default($product_list, $group_type, $group_sql = '', $s
 						if (in_array('google',(array)get_option('custom_gateway_options'))) {
 							$output .= google_buynow($product['id']);
 						} else if (in_array('paypal_multiple',(array)get_option('custom_gateway_options'))) {
+					
+							$product_sql = "SELECT * FROM ".$wpdb->prefix."product_list WHERE id = ".$product_id." LIMIT 1";
+							$product = $wpdb->get_row($product_sql, ARRAY_A);
+							$tax_percentage = 0;
+							$country_data = $wpdb->get_row("SELECT * FROM `".$wpdb->prefix."currency_list` WHERE `isocode` IN('".get_option('base_country')."') LIMIT 1",ARRAY_A);
+							if(($country_data['has_regions'] == 1)) {
+								$region_data = $wpdb->get_row("SELECT `".$wpdb->prefix."region_tax`.* FROM `".$wpdb->prefix."region_tax` WHERE `".$wpdb->prefix."region_tax`.`country_id` IN('".$country_data['id']."') AND `".$wpdb->prefix."region_tax`.`id` IN('".get_option('base_region')."') ",ARRAY_A) ;
+								$tax_percentage =  $region_data['tax'];
+							}
+						
+							if($product['special']==1) {
+								$price = $product['price'] - $product['special_price'];
+							}
+							
+							$price += $tax_percentage;
+						
 							$output .= "<form onsubmit='log_paypal_buynow(this)' target='paypal' action='".get_option('paypal_multiple_url')."' method='post'>
 								<input type='hidden' name='business' value='".get_option('paypal_multiple_business')."'>
 								<input type='hidden' name='cmd' value='_xclick'>
 								<input type='hidden' name='item_name' value='".$product['name']."'>
 								<input type='hidden' id='item_number' name='item_number' value='".$product['id']."'>
-								<input type='hidden' id='amount' name='amount' value='".$product['price']."'>
-								<input type='hidden' id='unit' name='unit' value='".$product['price']."'>
+								<input type='hidden' id='amount' name='amount' value='".$price."'>
+								<input type='hidden' id='unit' name='unit' value='".$price."'>
 								<input type='hidden' id='shipping' name='ship11' value='".$shipping."'>
 								<input type='hidden' name='handling' value='".get_option('base_local_shipping')."'>
 								<input type='hidden' name='currency_code' value='".get_option('paypal_curcode')."'>
@@ -821,24 +839,39 @@ $output .= "<a class='add_meta_box'>Add Label</a>";
 			} else {
 				if (get_option('addtocart_or_buynow')=='1') {
 					$selected_gateways = get_option('custom_gateway_options');
-					if (in_array('google',$selected_gateways)) {
+					if (in_array('google', (array)$selected_gateways)) {
 						$output .= google_buynow($product['id']);
-					} else if (get_option('payment_gateway') == 'paypal_multiple') {
+					} else if (in_array('paypal_multiple', (array)$selected_gateways)) {
+					
+						$product_sql = "SELECT * FROM ".$wpdb->prefix."product_list WHERE id = ".$product_id." LIMIT 1";
+						$product = $wpdb->get_row($product_sql, ARRAY_A);
+						$tax_percentage = 0;
+						$country_data = $wpdb->get_row("SELECT * FROM `".$wpdb->prefix."currency_list` WHERE `isocode` IN('".get_option('base_country')."') LIMIT 1",ARRAY_A);
+						if(($country_data['has_regions'] == 1)) {
+							$region_data = $wpdb->get_row("SELECT `".$wpdb->prefix."region_tax`.* FROM `".$wpdb->prefix."region_tax` WHERE `".$wpdb->prefix."region_tax`.`country_id` IN('".$country_data['id']."') AND `".$wpdb->prefix."region_tax`.`id` IN('".get_option('base_region')."') ",ARRAY_A) ;
+							$tax_percentage =  $region_data['tax'];
+						}
+					
+						if($product['special']==1) {
+							$price = $product['price'] - $product['special_price'];
+						}
+						
+						$price += $tax_percentage;
+					
 					  $output .= "<form onsubmit='log_paypal_buynow(this)' target='paypal' action='".get_option('paypal_multiple_url')."' method='post'>
 							<input type='hidden' name='business' value='".get_option('paypal_multiple_business')."'>
 							<input type='hidden' name='cmd' value='_xclick'>
 							<input type='hidden' name='item_name' value='".$product['name']."'>
 							<input type='hidden' id='item_number' name='item_number' value='".$product['id']."'>
-							<input type='hidden' id='amount' name='amount' value='".$product['price']."'>
-							<input type='hidden' id='unit' name='unit' value='".$product['price']."'>
+							<input type='hidden' id='amount' name='amount' value='".$price."'>
+							<input type='hidden' id='unit' name='unit' value='".$price."'>
 							<input type='hidden' id='shipping' name='ship11' value='".$shipping."'>
 							<input type='hidden' name='handling' value='".get_option('base_local_shipping')."'>
 							<input type='hidden' name='currency_code' value='".get_option('paypal_curcode')."'>
 							<input type='hidden' name='undefined_quantity' value='0'>
 							<input type='image' name='submit' border='0' src='https://www.paypal.com/en_US/i/btn/btn_buynow_LG.gif' alt='PayPal - The safer, easier way to pay online'>
 							<img alt='' border='0' width='1' height='1' src='https://www.paypal.com/en_US/i/scr/pixel.gif' >
-						</form>
-					";
+						</form>\n\r";
 					}
 				}
 			}
@@ -1139,21 +1172,33 @@ function wpsc_buy_now_button($product_id, $replaced_shortcode = false) {
 		if ($product_id > 0){
 			$product_sql = "SELECT * FROM ".$wpdb->prefix."product_list WHERE id = ".$product_id." LIMIT 1";
 			$product = $wpdb->get_row($product_sql, ARRAY_A);
+			$tax_percentage = 0;
+			$country_data = $wpdb->get_row("SELECT * FROM `".$wpdb->prefix."currency_list` WHERE `isocode` IN('".get_option('base_country')."') LIMIT 1",ARRAY_A);
+			if(($country_data['has_regions'] == 1)) {
+				$region_data = $wpdb->get_row("SELECT `".$wpdb->prefix."region_tax`.* FROM `".$wpdb->prefix."region_tax` WHERE `".$wpdb->prefix."region_tax`.`country_id` IN('".$country_data['id']."') AND `".$wpdb->prefix."region_tax`.`id` IN('".get_option('base_region')."') ",ARRAY_A) ;
+				$tax_percentage =  $region_data['tax'];
+			}
+		
+			if($product['special']==1) {
+				$price = $product['price'] - $product['special_price'];
+			}
+			
+			$price += $tax_percentage;
+		
 			$output .= "<form onsubmit='log_paypal_buynow(this)' target='paypal' action='".get_option('paypal_multiple_url')."' method='post'>
 				<input type='hidden' name='business' value='".get_option('paypal_multiple_business')."'>
 				<input type='hidden' name='cmd' value='_xclick'>
 				<input type='hidden' name='item_name' value='".$product['name']."'>
 				<input type='hidden' id='item_number' name='item_number' value='".$product['id']."'>
-				<input type='hidden' id='amount' name='amount' value='".$product['price']."'>
-				<input type='hidden' id='unit' name='unit' value='".$product['price']."'>
+				<input type='hidden' id='amount' name='amount' value='".$price."'>
+				<input type='hidden' id='unit' name='unit' value='".$price."'>
 				<input type='hidden' id='shipping' name='ship11' value='".$shipping."'>
 				<input type='hidden' name='handling' value='".get_option('base_local_shipping')."'>
 				<input type='hidden' name='currency_code' value='".get_option('paypal_curcode')."'>
 				<input type='hidden' name='undefined_quantity' value='0'>
 				<input type='image' name='submit' border='0' src='https://www.paypal.com/en_US/i/btn/btn_buynow_LG.gif' alt='PayPal - The safer, easier way to pay online'>
 				<img alt='' border='0' width='1' height='1' src='https://www.paypal.com/en_US/i/scr/pixel.gif' >
-			</form>
-		";
+			</form>\n\r";
 		}
 	}
 	if($replaced_shortcode == true) {

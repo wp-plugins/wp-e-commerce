@@ -16,9 +16,9 @@ var changetaxntotal=function(results) {
 	var total = roundNumber(total,2)
 	var tax = roundNumber(prices[0],2)
 	tax = tax.toFixed(2);
-	total = total.toFixed(2);
-	document.getElementById('checkout_tax').innerHTML="<span class='pricedisplay'>$"+tax+"</span>";
-	document.getElementById('checkout_total').innerHTML="<span class='pricedisplay'>$"+total+"</span>";
+	total = total.toFixed(2);	
+	jQuery('#checkout_tax').html("<span class='pricedisplay'>$"+tax+"</span>");
+	jQuery('#checkout_total').html("<span class='pricedisplay'>$"+total+"</span>");
 	//alert(t);
 	return true;
 }

@@ -3,15 +3,22 @@ global $wpdb;
 ?>
 <div class="wrap">
 <?php
+//$wpsc_swfupload_log = get_option('wpsc_product_page_order');
+$closed_postboxes = (array)get_usermeta( $current_user->ID, 'closedpostboxes_products');
+echo "<pre>";
+echo print_r($closed_postboxes,true);
+echo print_r( $current_user->ID,true);
+echo "</pre>";
 
-$regions = $wpdb->get_results("SELECT * FROM `{$wpdb->prefix}region_tax`", ARRAY_A);
 
-foreach((array)$regions as $region) {
-  //echo "<pre>".print_r($region,true)."</pre>";
-  
-  
-  echo "\$wpdb->query(\"INSERT INTO `{\$wpdb->prefix}region_tax` ( `country_id` , `name` ,`code`, `tax` ) VALUES ( '{$region['country_id']}', '{$region['name']}', '{$region['code']}', '{$region['tax']}')\");<br />";
-}
+// $regions = $wpdb->get_results("SELECT * FROM `{$wpdb->prefix}region_tax`", ARRAY_A);
+// 
+// foreach((array)$regions as $region) {
+//   //echo "<pre>".print_r($region,true)."</pre>";
+//   
+//   
+//   //echo "\$wpdb->query(\"INSERT INTO `{\$wpdb->prefix}region_tax` ( `country_id` , `name` ,`code`, `tax` ) VALUES ( '{$region['country_id']}', '{$region['name']}', '{$region['code']}', '{$region['tax']}')\");<br />";
+// }
 
 
 /*

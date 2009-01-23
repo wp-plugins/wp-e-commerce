@@ -393,7 +393,7 @@ if($wpdb->get_var("SELECT COUNT( * ) FROM `{$wpdb->prefix}wpsc_variation_combina
   }
 }
 
-if($wpdb->get_var("SELECT COUNT(*) FROM `{$wpdb->prefix}currency_list` WHERE `continent` NOT IN ('')") < 242) {
+if($wpdb->get_var("SELECT COUNT(*) FROM `{$wpdb->prefix}currency_list` WHERE `continent` NOT IN ('')") <230) {
 	$wpdb->query("UPDATE `{$wpdb->prefix}currency_list` SET continent='africa' WHERE id='1'");
 	$wpdb->query("UPDATE `{$wpdb->prefix}currency_list` SET continent='southamerica' WHERE id='2'");
 	$wpdb->query("UPDATE `{$wpdb->prefix}currency_list` SET continent='europe' WHERE id='3'");

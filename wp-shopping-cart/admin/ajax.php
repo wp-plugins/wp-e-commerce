@@ -90,7 +90,7 @@ function wpsc_purchase_log_csv() {
 function wpsc_admin_ajax() {
   global $wpdb,$user_level,$wp_rewrite;
   get_currentuserinfo();  
-	if(is_numeric($_POST['prodid'])) {
+	if(is_numeric($_POST['prodid']) && !isset($_POST['imageorder'])) {
 		/* fill product form */    
 		echo nzshpcrt_getproductform($_POST['prodid']);
 		exit();
@@ -272,7 +272,11 @@ function wpsc_admin_ajax() {
 
     	if(is_numeric($_POST['product_id'])) {
       		$product_id = (int)$_POST['product_id'];
+      		
+       		// variation values housekeeping
+      		$variation_processor->edit_product_values($product_id,$_POST['edit_variation_values']);
       
+
       		// get all the currently associated variations from the database
       		$associated_variations = $wpdb->get_results("SELECT * FROM `{$wpdb->prefix}variation_associations` WHERE `type` IN ('product') AND `associated_id` IN ('{$product_id}')", ARRAY_A);
       
@@ -288,7 +292,7 @@ function wpsc_admin_ajax() {
         		}
       		}
        
-			foreach((array)$variations_selected as $variation_id) {
+					foreach((array)$variations_selected as $variation_id) {
 			  	// add variations not already in the database that have been checked.
         		$variation_values = $variation_processor->falsepost_variation_values($variation_id);
         		if(array_search($variation_id, $variations_still_associated) === false) {
@@ -296,14 +300,16 @@ function wpsc_admin_ajax() {
         		}
       		}
       		//echo "/* ".print_r($associated_variations,true)." */\n\r";
-      		echo "edit_variation_combinations_html = \"".str_replace(array("\n","\r"), array('\n','\r'), addslashes($variation_processor->variations_grid_view($product_id)))."\";\n";
+					echo "edit_variation_combinations_html = \"".str_replace(array("\n","\r"), array('\n','\r'), addslashes($variation_processor->variations_grid_view($product_id,  (array)$_POST['edit_variation_values'])))."\";\n";
+
     	} else {
       		if(count($variations_selected) > 0) {
         		// takes an array of variations, returns a form for adding data to those variations.
         		if((float)$_POST['selected_price'] > 0) {
           			$selected_price = (float)$_POST['selected_price'];
         		}
-        		echo "add_variation_combinations_html = \"".TXT_WPSC_EDIT_VAR."<br />".str_replace(array("\n","\r"), array('\n','\r'), addslashes($variation_processor->variations_add_grid_view((array)$variations_selected, $selected_price)))."\";\n";
+						echo "add_variation_combinations_html = \"".TXT_WPSC_EDIT_VAR."<br />".str_replace(array("\n","\r"), array('\n','\r'), addslashes($variation_processor->variations_add_grid_view((array)$variations_selected, (array)$_POST['edit_variation_values'], $selected_price)))."\";\n";
+
       		} else {
         		echo "add_variation_combinations_html = \"\";\n";
       		}
@@ -319,6 +325,9 @@ function wpsc_admin_ajax() {
 		$prodid = (int)$_POST['prodid'];
     $timestamp = time();
 		$new_main_image = (int)$images[0];
+		
+
+		
 		if ($new_main_image!=0) {
 		  
 		  if($_POST['delete_primary'] == 'true' ) {
@@ -338,7 +347,7 @@ function wpsc_admin_ajax() {
 		} else {
       if($_POST['delete_primary'] == 'true' ) {
         $new_image_name = $wpdb->get_var("SELECT `image` FROM `{$wpdb->prefix}product_images` WHERE `id`='{$new_main_image}' LIMIT 1");
-		    $wpdb->query("DELETE FROM `{$wpdb->prefix}product_images` WHERE `id` = '{$new_main_image}' LIMIT 1");
+		    $wpdb->query("DELETE FROM `{$wpdb->prefix}product_images` WHERE `id` = '{$new_main_image}' LIMIT 1");		
         $wpdb->query("UPDATE `{$wpdb->prefix}product_list` SET `image`='$new_image_name' WHERE `id`='{$prodid}' LIMIT 1");		    
       }
 			for($i=1;$i<count($images);$i++ ) {
@@ -575,6 +584,10 @@ function wpsc_swfupload_images() {
         $output = "file uploading error";
       }
 		}
+		
+// 		$wpsc_swfupload_log = get_option('wpsc_swfupload_log');
+// 		$wpsc_swfupload_log .= $output;
+// 		update_option('wpsc_swfupload_log', $wpsc_swfupload_log);
 		exit($output);
 	}
 }

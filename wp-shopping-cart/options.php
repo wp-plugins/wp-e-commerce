@@ -415,7 +415,8 @@ if($_POST['do_not_use_shipping'] == 1) {
 		update_option('shipwirepassword', $_POST['shipwirepassword']);
 	}
 
-	
+	do_action('wpsc_options_update');
+
 	
 	echo "<div class='updated'><p align='center'>".TXT_WPSC_THANKSAPPLIED."</p></div>";
 }

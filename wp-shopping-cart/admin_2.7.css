@@ -414,20 +414,23 @@ input.edit_button {
  float: left;
  }
 
-a.delete_button {
- display: block;
- float: left;
- width: auto;
- color: #333333;
- font-size: 13px;
- margin-top: 1px;
- vertical-align: middle;
- padding:0.25em 0.25em 0.25em 0.25em !important;
- height: 19px;
- margin-left: 12px;
+
+ 
+ a.delete_button {
+	border: none;
+	border-bottom-style:solid;
+	border-bottom-width:1px;
+	border-bottom-color:#FF0000;
+	color:#FF0000;
+	padding:1px 2px;
+	text-decoration:none;
+  font-size: 11px;
  }
-a.delete_button:hover{
- color: #333333;
+  
+ a.delete_button:hover {
+	background-color:#FF0000;
+	border-bottom-color:#FF0000;
+	color:#FFFFFF;
  }
  
 div.flag_email{
@@ -561,7 +564,10 @@ table.product_variation_grid tr.settings_row td div.variation_settings {
   border-top: 1px dotted #cccccc;
   width: 100%;
   min-height: 30px;
- 
+  padding: 4px 0px;
+}
+div.variation_settings div.variation_weight, div.variation_settings div.variation_settings_contents {
+  padding: 0px 10px; 
 }
 table.product_variation_grid tr th {
    border-bottom: 1px solid #969696;
@@ -587,6 +593,8 @@ table.product_variation_grid tr td.variations, table.product_variation_grid tr t
  
 table.product_variation_grid tr td input{
    padding: 0px 3px 0px 3px;
+   margin: 3px auto;
+   display: block;
 }
 
 table.product_variation_grid tr td input.checkbox{
@@ -605,6 +613,17 @@ div#add_product_variation_details {
 div#add_product_variation_details table.product_variation_grid {
   margin: 4px 0px 0px 0px;
 }
+ 
+ a.variation_edit_button {
+  width: 100%;
+  display: block;
+ }
+ 
+ a.variation_edit_button img{
+   margin: 4px auto;
+   display:block;
+ }
+ 
  
 div.wpsc_listen_button{
   clear: both;
@@ -879,6 +898,10 @@ ul.settings_button{
 	list-style-type:none;
 	padding:0px 3px 0 10px;
 	margin:5px 0 0 0;
+}
+
+td.skuandprice {
+ padding: 0px 0px 0px 4px;
 }
 
 td.skuandprice, td.secondcol strong {
@@ -1284,6 +1307,12 @@ tr.update_gateway td div {
 div.admin_product_name {
   width: 100%;
   padding: 0px;
+  height: 36px;
+  margin-bottom: 10px;
+}
+
+div#editorcontainer {
+  margin: 6px 0px 15px 0px;
 }
 
 div.admin_product_name input.text{
@@ -1928,10 +1957,10 @@ input.wpsc_product_name {
 }
 
 form.additem input, form.edititem input {
-	-moz-border-radius: 6px;
-	-khtml-border-radius: 6px;
-	-webkit-border-radius: 6px;
-	border-radius: 6px;
+/* 	-moz-border-radius: 6px; */
+/* 	-khtml-border-radius: 6px; */
+/* 	-webkit-border-radius: 6px; */
+/* 	border-radius: 6px; */
 }
 
 body.mceContentBody{
@@ -1943,6 +1972,11 @@ div.variation_checkboxes label, label.variation_checkbox {
 
 td.select_gateway h3.hndle {
   margin-bottom: 5px;
+}
+div.variation_box{
+}
+div.variation_values_box{
+  padding-left: 10px;
 }
 
 

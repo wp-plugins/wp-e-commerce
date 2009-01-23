@@ -279,7 +279,8 @@ if($_POST['submit_action'] == 'add') {
 			/* Add tidy url name */
 			$tidied_name = trim($_POST['name']);
 			$tidied_name = strtolower($tidied_name);
-			$url_name = preg_replace(array("/(\s)+/","/[^\w-]+/i"), array("-", ''), $tidied_name);
+			
+			$url_name = preg_replace(array("/(\s-\s)+/","/(\s)+/","/[^\w-]+/i"), array("-","-", ''), $tidied_name);
 			$similar_names = $wpdb->get_row("SELECT COUNT(*) AS `count`, MAX(REPLACE(`meta_value`, '$url_name', '')) AS `max_number` FROM `".$wpdb->prefix."wpsc_productmeta` WHERE `meta_key` IN ('url_name') AND `meta_value` REGEXP '^($url_name){1}(\d)*$' ",ARRAY_A);
 			$extension_number = '';
 			if($similar_names['count'] > 0) {
@@ -621,7 +622,8 @@ if($_POST['submit_action'] == "edit") {
     /* Add or edit tidy url name */
     $tidied_name = trim($_POST['title']);
     $tidied_name = strtolower($tidied_name);
-    $url_name = preg_replace(array("/(\s)+/","/[^\w-]+/i"), array("-", ''), $tidied_name);
+    
+    $url_name = preg_replace(array("/(\s-\s)+/","/(\s)+/","/[^\w-]+/i"), array("-","-", ''), $tidied_name);
     $similar_names = $wpdb->get_row("SELECT COUNT(*) AS `count`, MAX(REPLACE(`meta_value`, '$url_name', '')) AS `max_number` FROM `".$wpdb->prefix."wpsc_productmeta` WHERE `meta_key` IN ('url_name') AND `meta_value` REGEXP '^($url_name){1}(\d)*$' ",ARRAY_A);
     $extension_number = '';
     if($similar_names['count'] > 0) {
@@ -1214,11 +1216,11 @@ if (function_exists('add_object_page')){
       </td>
     </tr>
     <tr>
-      <td>
+      <td  class='skuandprice'>
         <strong><?php echo TXT_WPSC_SKU_FULL;?>:</strong> <br />
         <input size='30' type='text' name='productmeta_values[sku]' value='' class='text' />
       </td>
-      <td >
+      <td  class='skuandprice' >
       	<strong><?php echo TXT_WPSC_PRICE;?> :</strong> <br />
         <input size='30' type='text' name='price' value='' class='text' />
       </td>
@@ -1253,7 +1255,7 @@ if (function_exists('add_object_page')){
 		echo "<div id='normal-sortables' class='meta-box-sortables'>";
 	}
 	$order = get_option('wpsc_product_page_order');
-	if (($order == '') || ($order[0]=='') || (count($order) < 7)){
+	if (($order == '') || ($order[0]=='') || (count($order) < 6)){
 		$order=array("category_and_tag", "price_and_stock", "shipping", "variation", "advanced", "product_image", "product_download");
 	}
 	foreach((array)$order as $key => $box) {
@@ -1265,6 +1267,13 @@ if (function_exists('add_object_page')){
   			echo "<tr><td colspan='2'>";
   		}
 	}
+	
+	ob_start();
+	do_action('wpsc_product_form', $product['id']);
+	$output .= ob_get_contents();
+	ob_end_clean();
+	
+	
 	if (function_exists('add_object_page')){
 		echo "</div>";
 	}
@@ -1284,7 +1293,7 @@ if (function_exists('add_object_page')){
       	}
       ?>
         <input type='hidden' name='submit_action' value='add' />
-        <input class='button' type='submit' name='submit' value='<?php echo TXT_WPSC_ADD_PRODUCT;?>' />
+        <input class='button-primary' type='submit' name='submit' value='<?php echo TXT_WPSC_ADD_PRODUCT;?>' />
       </td>
     </tr>
   </table>
