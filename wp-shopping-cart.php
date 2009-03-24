@@ -3,15 +3,15 @@
 Plugin Name:WP Shopping Cart
 Plugin URI: http://www.instinct.co.nz
 Description: A plugin that provides a WordPress Shopping Cart. Contact <a href='http://www.instinct.co.nz/?p=16#support'>Instinct Entertainment</a> for support. <br />Click here to to <a href='?wpsc_uninstall=ask'>Uninstall</a>.
-Version: 3.6.10
+Version: 3.6.11
 Author: Instinct Entertainment
 Author URI: http://www.instinct.co.nz/e-commerce/
 /* Major version for "major" releases */
 define('WPSC_VERSION', '3.6');
-define('WPSC_MINOR_VERSION', '120');
+define('WPSC_MINOR_VERSION', '130');
 
 
-define('WPSC_PRESENTABLE_VERSION', '3.6.10');
+define('WPSC_PRESENTABLE_VERSION', '3.6.11');
 
 define('WPSC_DEBUG', false);
 /*
@@ -1078,9 +1078,10 @@ if(($_POST['ajax'] == "true") || ($_GET['ajax'] == "true")) {
       echo $currency_sign;
       exit();
 		}
+	
 	if($_POST['buynow'] == "true") {
-		$id = $_REQUEST['product_id'];
-		$price = $_REQUEST['price'];
+		$id = $wpdb->escape((int)$_REQUEST['product_id']);
+		$price = $wpdb->escape((float)$_REQUEST['price']);
 		$downloads = get_option('max_downloads');
 		$product_sql = "SELECT * FROM ".$wpdb->prefix."product_list WHERE id = ".$id." LIMIT 1";
 		$product_info = $wpdb->get_results($product_sql, ARRAY_A);
