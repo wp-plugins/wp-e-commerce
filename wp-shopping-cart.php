@@ -259,13 +259,22 @@ class wp_shopping_cart {
 				$boxes[$box] = ucwords(str_replace("_"," ",$box));
 			}			//exit('-->'.$help);
 			add_submenu_page($base_page,TXT_WPSC_CATEGORISATION, TXT_WPSC_CATEGORISATION, 7, WPSC_DIR_NAME.'/display-category.php');
+			
+			
 			if (function_exists('add_contextual_help')) {
-				add_contextual_help(WPSC_DIR_NAME.'/display-category',"<a target='_blank' href='http://www.instinct.co.nz/e-commerce/products-groups/'>About this page</a>");
+				add_contextual_help(WPSC_DIR_NAME.'/display-log',"<a target='_blank' href='http://www.instinct.co.nz/e-commerce/sales/'>About this page</a>");
+
+				add_contextual_help(WPSC_DIR_NAME.'/display-category',"<a target='_blank' href='http://www.instinct.co.nz/e-commerce/product-groups/'>About this page</a>");
 				add_contextual_help(WPSC_DIR_NAME.'/display_variations',"<a target='_blank' href='http://www.instinct.co.nz/e-commerce/variations/'>About this page</a>");
 				add_contextual_help(WPSC_DIR_NAME.'/display-coupons',"<a target='_blank' href='http://www.instinct.co.nz/e-commerce/marketing/'>About this page</a>");
-				add_contextual_help(WPSC_DIR_NAME.'/options',"<a target='_blank' href='http://www.instinct.co.nz/e-commerce/integrated/'>About this page</a><br><a target='_blank' href='http://www.instinct.co.nz/e-commerce/payment-option/'>Payment options</a>");
+				add_contextual_help(WPSC_DIR_NAME.'/options',"<a target='_blank' href='http://www.instinct.co.nz/e-commerce/shop-settings-general/'>General Settings</a><br />
+																<a target='_blank' href='http://www.instinct.co.nz/e-commerce/presentation/'>Presentation Options</a> <br />
+																<a target='_blank' href='http://www.instinct.co.nz/e-commerce/admin-settings/'>Admin Options</a> <br />
+																<a target='_blank' href='http://www.instinct.co.nz/e-commerce/shipping/'>Shipping Options</a> <br />
+																<a target='_blank' href='http://www.instinct.co.nz/e-commerce/payment-option/'>Payment Options</a> <br />");
 				add_contextual_help(WPSC_DIR_NAME.'/display-items',"<a target='_blank' href='http://www.instinct.co.nz/e-commerce/products/'>About this page</a>");
 			}
+
 			add_submenu_page($base_page,TXT_WPSC_VARIATIONS, TXT_WPSC_VARIATIONS, 7, WPSC_DIR_NAME.'/display_variations.php');
 			add_submenu_page($base_page,TXT_WPSC_MARKETING, TXT_WPSC_MARKETING, 7, WPSC_DIR_NAME.'/display-coupons.php');
 			if (file_exists(dirname(__FILE__).'/gold_cart_files/csv_import.php')) {
@@ -532,7 +541,8 @@ jQuery(document).ready( function() {
 
 function wpsc_admin_css() {
   $siteurl = get_option('siteurl'); 
-  if((strpos($_SERVER['REQUEST_URI'], WPSC_DIR_NAME.'') !== false) || ($_GET['mass_upload'] == 'true')) {
+  
+  if((strpos($_SERVER['REQUEST_URI'], WPSC_DIR_NAME) !== false) || ($_GET['mass_upload'] == 'true') || (strpos($_SERVER['REQUEST_URI'], 'wp-admin/index.php') !== false) && !isset($_GET['page']) ) {
   	if(function_exists('add_object_page')) {
   		echo "<link href='".WPSC_URL."/admin_2.7.css' rel='stylesheet' type='text/css' />";
   	} else {
@@ -1080,20 +1090,24 @@ if(($_POST['ajax'] == "true") || ($_GET['ajax'] == "true")) {
 		}
 	
 	if($_POST['buynow'] == "true") {
-		$id = $wpdb->escape((int)$_REQUEST['product_id']);
-		$price = $wpdb->escape((float)$_REQUEST['price']);
-		$downloads = get_option('max_downloads');
-		$product_sql = "SELECT * FROM ".$wpdb->prefix."product_list WHERE id = ".$id." LIMIT 1";
-		$product_info = $wpdb->get_results($product_sql, ARRAY_A);
-		$product_info = $product_info[0];
-		$sessionid = (mt_rand(100,999).time());
-		$sql = "INSERT INTO `".$wpdb->prefix."purchase_logs` ( `totalprice` , `sessionid` , `date`, `billing_country`, `shipping_country`,`shipping_region`, `user_ID`, `discount_value` ) VALUES ( '".$price."', '".$sessionid."', '".time()."', 'BuyNow', 'BuyNow', 'BuyNow' , NULL , 0)";
-		$wpdb->query($sql) ;
-		$log_id = $wpdb->get_var("SELECT `id` FROM `".$wpdb->prefix."purchase_logs` WHERE `sessionid` IN('".$sessionid."') LIMIT 1") ;
-		$cartsql = "INSERT INTO `".$wpdb->prefix."cart_contents` ( `prodid` , `purchaseid`, `price`, `pnp`, `gst`, `quantity`, `donation`, `no_shipping` ) VALUES ('".$id."', '".$log_id."','".$price."','0', '0','1', '".$donation."', '1')";
-		$wpdb->query($cartsql);
-		$wpdb->query("INSERT INTO `".$wpdb->prefix."download_status` ( `fileid` , `purchid` , `downloads` , `active` , `datetime` ) VALUES ( '".$product_info['file']."', '".$log_id."', '$downloads', '0', NOW( ));");
+		if(is_numeric($_REQUEST['product_id']) && is_numeric($_REQUEST['price'])) {
+			$id = $wpdb->escape((int)$_REQUEST['product_id']);
+			$price = $wpdb->escape((float)$_REQUEST['price']);
+			$downloads = get_option('max_downloads');
+			$product_sql = ;
+			$product_info = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."product_list WHERE id = ".$id." LIMIT 1", ARRAY_A);
+			if(count($product_info) > 0) {
+				$sessionid = (mt_rand(100,999).time());
+				$sql = "INSERT INTO `".$wpdb->prefix."purchase_logs` ( `totalprice` , `sessionid` , `date`, `billing_country`, `shipping_country`,`shipping_region`, `user_ID`, `discount_value` ) VALUES ( '".$price."', '".$sessionid."', '".time()."', 'BuyNow', 'BuyNow', 'BuyNow' , NULL , 0)";
+				$wpdb->query($sql) ;
+				$log_id = $wpdb->get_var("SELECT `id` FROM `".$wpdb->prefix."purchase_logs` WHERE `sessionid` IN('".$sessionid."') LIMIT 1") ;
+				$cartsql = "INSERT INTO `".$wpdb->prefix."cart_contents` ( `prodid` , `purchaseid`, `price`, `pnp`, `gst`, `quantity`, `donation`, `no_shipping` ) VALUES ('".$id."', '".$log_id."','".$price."','0', '0','1', '".$donation."', '1')";
+				$wpdb->query($cartsql);
+				$wpdb->query("INSERT INTO `".$wpdb->prefix."download_status` ( `fileid` , `purchid` , `downloads` , `active` , `datetime` ) VALUES ( '".$product_info['file']."', '".$log_id."', '$downloads', '0', NOW( ));");
+			}
+		}
 	exit();
+	
 	}
 	
     
@@ -2309,7 +2323,7 @@ function wpsc_obtain_the_title() {
 		}
   }
   if(isset($product_list ) && ($product_list != null)) {
-  	$output = $product_list['name'];
+  	$output = htmlentities(stripslashes($product_list['name']), ENT_QUOTES);
   }
 	return $output;
 }
@@ -2494,19 +2508,78 @@ if( IS_WP27 ) {
 }
 
 function wpsc_admin_latest_activity() {
-		echo "<p>";
-		echo "<strong>".TXT_WPSC_TOTAL_THIS_MONTH."</strong><br />";
+global $wpdb;
+		$totalOrders = $wpdb->get_var("SELECT COUNT(*) FROM `".$wpdb->prefix."purchase_logs`");
+	
+		 
+		/*
+		 * This is the right hand side for the past 30 days revenue on the wp dashboard
+		 */
+		
+		echo "<div id='leftDashboard'>";
+		echo "<strong class='dashboardHeading'>".TXT_WPSC_TOTAL_THIS_MONTH."</strong><br />";
+		echo "<p class='dashboardWidgetSpecial'>";
+		// calculates total amount of orders for the month
 		$year = date("Y");
 		$month = date("m");
 		$start_timestamp = mktime(0, 0, 0, $month, 1, $year);
 		$end_timestamp = mktime(0, 0, 0, ($month+1), 0, $year);
-		echo nzshpcrt_currency_display(admin_display_total_price($start_timestamp, $end_timestamp),1);
+		$sql = "SELECT COUNT(*) FROM `".$wpdb->prefix."purchase_logs` WHERE `date` BETWEEN '$start_timestamp' AND '$end_timestamp' ORDER BY `date` DESC";
+		$currentMonthOrders = $wpdb->get_var($sql);
+		
+		//calculates amount of money made for the month
+		$currentMonthsSales = nzshpcrt_currency_display(admin_display_total_price($start_timestamp, $end_timestamp),1);
+		echo $currentMonthsSales;
+		echo "<span class='dashboardWidget'>".TXT_WPSC_SALES_TITLE."</span>";
 		echo "</p>";
-		echo "<p>";
-		echo "<strong>".TXT_WPSC_TOTAL_INCOME."</strong><br />";
+		echo "<p class='dashboardWidgetSpecial'>";
+		echo "<span class='pricedisplay'>";
+		echo $currentMonthOrders;
+		echo "</span>";
+		echo "<span class='dashboardWidget'>".TXT_WPSC_ORDERS_TITLE."</span>";
+		echo "</p>";
+		echo "<p class='dashboardWidgetSpecial'>";
+		//echo "<span class='pricedisplay'>";
+		//calculates average sales amount per order for the month
+		$monthsAverage = ((int)admin_display_total_price($start_timestamp, $end_timestamp)/(int)$currentMonthOrders);
+		echo nzshpcrt_currency_display($monthsAverage,1);
+		//echo "</span>";
+		echo "<span class='dashboardWidget'>".TXT_WPSC_AVGORDER_TITLE."</span>";
+		echo "</p>";
+		
+		
+		echo "</div>";
+		/*
+		 *This is the left side for the total life time revenue on the wp dashboard
+		 */
+		
+		echo "<div id='rightDashboard' >";
+		echo "<strong class='dashboardHeading'>".TXT_WPSC_TOTAL_INCOME."</strong><br />";
+
+		echo "<p class='dashboardWidgetSpecial'>";
 		echo nzshpcrt_currency_display(admin_display_total_price(),1);
+		echo "<span class='dashboardWidget'>".TXT_WPSC_SALES_TITLE."</span>";
 		echo "</p>";
+		echo "<p class='dashboardWidgetSpecial'>";
+		echo "<span class='pricedisplay'>";
+		echo $totalOrders;
+		echo "</span>";
+		echo "<span class='dashboardWidget'>".TXT_WPSC_ORDERS_TITLE."</span>";
+		echo "</p>";
+		echo "<p class='dashboardWidgetSpecial'>";
+		//echo "<span class='pricedisplay'>";
+		//calculates average sales amount per order for the month
+		$totalAverage = ((int)admin_display_total_price()/(int)$totalOrders);
+		echo nzshpcrt_currency_display($totalAverage,1);
+		//echo "</span>";
+		echo "<span class='dashboardWidget'>".TXT_WPSC_AVGORDER_TITLE."</span>";
+		echo "</p>";
+		echo "</div>";
+		echo "<div style='clear:both'></div>";
+
+
 }
+
 add_action('wpsc_admin_pre_activity','wpsc_admin_latest_activity');
 
 /*

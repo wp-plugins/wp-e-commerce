@@ -79,12 +79,17 @@ function wpsc_shipping_country_list($selected_country = null, $selected_region =
 	$country_data = $wpdb->get_results("SELECT * FROM `".$wpdb->prefix."currency_list` ORDER BY `country` ASC",ARRAY_A);
 	$output .= "<select name='country' id='current_country' onchange='submit_change_country();' >";
 	foreach ($country_data as $country) {
+	// 23-02-09 fix for custom target market by jeffry
+	// recon this should be taken out and put into a function somewhere maybe,,,
+	 if($country['visible'] == '1'){
 		$selected ='';
 		if($selected_country == $country['isocode']) {
 			$selected = "selected='true'";
 		}
 		$output .= "<option value='".$country['isocode']."' $selected>".$country['country']."</option>";
+	 }
 	}
+
 	$output .= "</select>";
 	
 	if ($selected_country == 'US') {
@@ -136,7 +141,8 @@ if(isset($_POST['zipcode'])) {
 		$output .= " <input type='text' style='color:".$color.";' onclick='if (this.value==\"Your Zipcode\") {this.value=\"\";this.style.color=\"#000\";}' onblur='if (this.value==\"\") {this.style.color=\"#999\"; this.value=\"Your Zipcode\"; }' value='".$zipvalue."' size='10' name='zipcode' id='zipcode'>";
 	}
 	return $output;
-}
+} // closes wpsc_shipping_country_list
+
 
 ?>
 		<div class="wrap wpsc_container">
