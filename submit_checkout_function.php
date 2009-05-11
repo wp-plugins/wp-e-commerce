@@ -167,7 +167,7 @@ function nzshpcrt_submit_checkout() {
 			
 			$name_parts = explode('.',basename($file_data['name']));
 			$extension = array_pop($name_parts);
-			echo $extension ."<br />";
+			//echo $extension ."<br />";
 		  if($mime_type_data['is_reliable'] == true) {
 		    $mime_type = $mime_type_data['mime_type'];
 		  } else {
@@ -344,6 +344,20 @@ function nzshpcrt_submit_checkout() {
         $donation = 1;
       } else {
         $price = calculate_product_price($row, $variations);
+				
+				$levels = get_product_meta($cart_item->product_id, 'table_rate_price');
+				$levels = $levels[0];
+				if ($levels != '') {
+					foreach($levels['quantity'] as $key => $qty) {
+						if ($quantity >= $qty) {
+							$unit_price = $levels['table_price'][$key];
+							if ($unit_price != '')
+								$price = $unit_price;
+						}
+					}
+				}
+        
+        
         if($product_data['notax'] != 1) {
           $price = nzshpcrt_calculate_tax($price, $_SESSION['selected_country'], $_SESSION['selected_region']);
           if(get_option('base_country') == $_SESSION['selected_country']) {

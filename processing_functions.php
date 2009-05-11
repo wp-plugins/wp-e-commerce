@@ -35,6 +35,18 @@ function nzshpcrt_overall_total_price($country_code = null, $for_display = false
 			$price = $quantity * $cart_item->donation_price;
 		} else {
 			$price = $quantity * calculate_product_price($product_id, $product_variations,'stay',$extras);
+			$levels = get_product_meta($product_id, 'table_rate_price');
+			$levels = $levels[0];
+			if ($levels != '') {
+				foreach($levels['quantity'] as $key => $qty) {
+					if ($quantity >= $qty) {
+						$unit_price = $levels['table_price'][$key];
+						if ($unit_price != '')
+							$price = $quantity * $unit_price;
+					}
+				}
+			}
+			
 			$unaltered_price = $quantity * calculate_product_price($product_id, $product_variations,'stay',$extras);
 			if($country_code != null) {
 				if($product['notax'] != 1) {

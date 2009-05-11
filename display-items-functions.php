@@ -81,8 +81,9 @@ return $output;
 }
 function price_and_stock_box($product_data=''){
 	global $closed_postboxes, $wpdb, $variations_processor;
-	$table_rate_price = get_product_meta($product['id'], 'table_rate_price');
+	$table_rate_price = get_product_meta($product_data['id'], 'table_rate_price');
 	$table_rate_price = $table_rate_price[0];
+	//echo("<pre>".print_r($table_rate_price,true)."</pre>");
 	$output = '';
 	if ($product_data == 'empty') {
 		$display = "style='visibility:hidden;'";
@@ -142,10 +143,11 @@ function price_and_stock_box($product_data=''){
           
           	if ($table_rate_price != '') {
           		foreach($table_rate_price['quantity'] as $key => $qty) {
-					if ($qty != '')
-						$output .= '<tr><td><input type="text" size="10" value="'.$qty.'" name="productmeta_values[table_rate_price][quantity][]"/> and above</td><td><input type="text" size="10" value="'.$table_rate_price['table_price'][$key].'" name="productmeta_values[table_rate_price][table_price][]"/></td><td><img src="'.WPSC_URL.'/images/cross.png" class="remove_line"></td></tr>';
-				}
-			}
+								if ($qty != '') {
+									$output .= '<tr><td><input type="text" size="10" value="'.$qty.'" name="productmeta_values[table_rate_price][quantity][]"/> and above</td><td><input type="text" size="10" value="'.$table_rate_price['table_price'][$key].'" name="productmeta_values[table_rate_price][table_price][]"/></td><td><img src="'.WPSC_URL.'/images/cross.png" class="remove_line"></td></tr>';
+								}
+							}
+						}
           
           $output .= "<tr><td><input type='text' size='10' value='' name='productmeta_values[table_rate_price][quantity][]'/> and above</td><td><input type='text' size='10' value='' name='productmeta_values[table_rate_price][table_price][]'/></td></tr>
           </table>
