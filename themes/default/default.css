@@ -1449,7 +1449,7 @@ div.wpsc_page_numbers a.selected {
 /* Widget CSS */
 
 .shopping-cart-wrapper form {
-  clear: both;
+  clear: right;
 }
 /*span.pluspostagetax {
   float: right;
@@ -1493,4 +1493,6 @@ position:relative;
   float: left;
 }
 
-
+.list_productdisplay .alt {
+	background-color: rgb(238, 238, 238);
+}

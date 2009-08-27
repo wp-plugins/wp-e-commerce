@@ -3,6 +3,8 @@
 This is a language file for the WP Shopping Cart plugin version 3.7
 */
 
+define('TXT_WPSC_SHIPPING_SAME_AS_BILLING', 'Enable Shipping Same as Billing Option: ');
+define('TXT_WPSC_UDPATING_CART', 'Updating...');
 // define('TXT_WPSC_CATEGORY_GRID_VIEW', 'Lock Tax to Billing Country');
 define('TXT_WPSC_LOCK_TAX', 'Lock Tax to Billing Country');
 define('TXT_WPSC_REVIEW_YOUR_ORDER', 'Please review your order');
@@ -715,7 +717,7 @@ define('TXT_WPSC_TEXTAREA', 'Textarea');
 define('TXT_WPSC_HEADING', 'Heading');
 
 define('TXT_WPSC_MAKEPURCHASE', 'Make Purchase');
-define('TXT_WPSC_BUYPRODUCTS', 'Oops, there is nothing in your cart. <a href="http://theblend.co.nz/x-fine/">Please visit our shop</a>');
+define('TXT_WPSC_BUYPRODUCTS', 'Oops, there is nothing in your cart. <a href="'.get_option('product_list_url').'">Please visit our shop</a>');
 define('TXT_WPSC_BRANDHASBEENEDITED', 'The brand has been edited.');
 define('TXT_WPSC_SURETODELETEPRODUCT', 'Are you sure you want to delete this product?');
 define('TXT_WPSC_ADDBRAND', 'Add Brand');

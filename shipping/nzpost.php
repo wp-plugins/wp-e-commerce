@@ -1,7 +1,8 @@
-<?php
+<?php /*
 class nzpost {
 	var $internal_name, $name;
 	function nzpost () {
+
 		$this->internal_name = "nzpost";
 		$this->name="NZ Post";
 		$this->is_external=true;
@@ -9,6 +10,7 @@ class nzpost {
 		$this->requires_weight=false;
 		$this->needs_zipcode=false;
 		$this->xml2Array;
+
 		return true;
 	}
 	
@@ -77,5 +79,5 @@ class nzpost {
 	}
 }
 $nzpost = new nzpost();
-$wpsc_shipping_modules[$nzpost->getInternalName()] = $nzpost;
+$wpsc_shipping_modules[$nzpost->getInternalName()] = $nzpost;*/
 ?>
