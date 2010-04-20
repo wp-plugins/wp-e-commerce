@@ -585,7 +585,7 @@ function setting_button(){
 	return $output;
 }
 
-function wpsc_right_now() {
+function wpsc_right_now($hidden = '') {
   global $wpdb,$nzshpcrt_imagesize_info;
 	$year = date("Y");
 	$month = date("m");
@@ -624,10 +624,9 @@ function wpsc_right_now() {
   
   $replace_values[":theme:"] = get_option('wpsc_selected_theme');
   $replace_values[":versionnumber:"] = WPSC_PRESENTABLE_VERSION;
-  
 	if (function_exists('add_object_page')) {
 		$output="";	
-		$output.="<div id='dashboard_right_now' class='postbox'>";
+		$output.="<div id='dashboard_right_now' class='postbox ".((array_search('dashboard_right_now', $hidden) !== false) ? 'closed' : '')."'>";
 		$output.="	<h3 class='hndle'>";
 		$output.="		<span>".__('Current Month', 'wpsc')."</span>";
 		$output.="		<br class='clear'/>";
@@ -720,7 +719,7 @@ function wpsc_packing_slip($purchase_id) {
   global $wpdb;
 	$purch_sql = "SELECT * FROM `".WPSC_TABLE_PURCHASE_LOGS."` WHERE `id`='".$purchase_id."'";
 		$purch_data = $wpdb->get_row($purch_sql,ARRAY_A) ;
-			
+			//exit('<pre>'.print_r($purch_data, true).'</pre>');
 
 	  //echo "<p style='padding-left: 5px;'><strong>".__('Date', 'wpsc')."</strong>:".date("jS M Y", $purch_data['date'])."</p>";
 
@@ -912,7 +911,10 @@ function wpsc_packing_slip($purchase_id) {
 				echo '<td>';
 				echo '</tr>';
 				}
+			echo '<tr><td>Total Shipping</td><td>'.$purch_data['base_shipping'].'</td></tr>';
+			echo '<tr><td>Total Price</td><td>'.$purch_data['totalprice'].'</td></tr>';
 			echo "</table>";
+
 			echo "</div>\n\r";
 		} else {
 			echo "<br />".__('This users cart was empty', 'wpsc');

@@ -21,7 +21,7 @@ global $wpsc_query, $wpdb;
 	<?php if(wpsc_display_categories()): ?>
 	  <?php if(get_option('wpsc_category_grid_view') == 1) :?>
 			<div class='wpsc_categories wpsc_category_grid'>
-				<?php wpsc_start_category_query(array('category_group'=> 1, 'show_thumbnails'=> 1)); ?>
+				<?php wpsc_start_category_query(array('category_group'=> get_option('wpsc_default_category'), 'show_thumbnails'=> 1)); ?>
 					<a href="<?php wpsc_print_category_url();?>" class="wpsc_category_grid_item" title='<?php wpsc_print_category_name();?>'>
 						<?php wpsc_print_category_image(45, 45); ?>
 					</a>
@@ -31,7 +31,7 @@ global $wpsc_query, $wpdb;
 			</div>
 	  <?php else:?>
 			<ul class='wpsc_categories'>
-				<?php wpsc_start_category_query(array('category_group'=> 1, 'show_thumbnails'=> get_option('show_category_thumbnails'))); ?>
+				<?php wpsc_start_category_query(array('category_group'=> get_option('wpsc_default_category'), 'show_thumbnails'=> get_option('show_category_thumbnails'))); ?>
 						<li>
 							<?php wpsc_print_category_image(32, 32); ?>
 							
@@ -134,8 +134,8 @@ global $wpsc_query, $wpdb;
 
 						
 							<?php if(wpsc_has_multi_adding()): ?>
-								<label class='wpsc_quantity_update' for='wpsc_quantity_update_<?php echo wpsc_the_product_id(); ?>'><?php echo __('Quantity', 'wpsc'); ?>:</label>
-								<input type="text" id='wpsc_quantity_update' name="wpsc_quantity_update_<?php echo wpsc_the_product_id(); ?>" size="2" value="1"/>
+								<label class='wpsc_quantity_update' for='wpsc_quantity_update[<?php echo wpsc_the_product_id(); ?>]'><?php echo __('Quantity', 'wpsc'); ?>:</label>
+								<input type="text" id='wpsc_quantity_update' name="wpsc_quantity_update[<?php echo wpsc_the_product_id(); ?>]" size="2" value="1"/>
 								<input type="hidden" name="key" value="<?php echo wpsc_the_cart_item_key(); ?>"/>
 								<input type="hidden" name="wpsc_update_quantity" value="true"/>
 							<?php endif ;?>

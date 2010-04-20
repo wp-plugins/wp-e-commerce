@@ -2,7 +2,7 @@
 Theme Name: Default Theme
 Theme URI: http://instinct.co.nz
 Description: Default Theme
-Version: 3.5
+Version: 3.6
 Author: Thomas Howard
 Author URI: http://instinct.co.nz
 */
@@ -15,7 +15,6 @@ Author URI: http://instinct.co.nz
 .wpsc_container{
   position: relative;
   _zoom: 1;
-  clear: both;
   } 
 
 div.productdisplay img {
@@ -24,10 +23,7 @@ div.productdisplay img {
  border: none;
  }
 
-a.wpsc-current-cat{
- font-weight: bold;
- color:#000000 !important;
-}
+ 
 #change_country{
  float:left;
  }
@@ -1479,7 +1475,7 @@ margin-bottom:10px;
 position:relative;
 }
  .clear_category_group {
-	clear: both;
+/* 	clear: both; */
 }
  .widget_wpsc_categorisation h4.wpsc_category_title {
 	margin-top: 4px;

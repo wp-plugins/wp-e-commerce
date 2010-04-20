@@ -3,7 +3,7 @@
 Plugin Name:WP Shopping Cart
 Plugin URI: http://www.getshopped.org
 Description: A plugin that provides a WordPress Shopping Cart. Visit the <a href='http://getshopped.org/forums'>getshopped forums</a> for support.
-Version: 3.7.6 Beta 2
+Version: 3.7.6.1
 Author: Instinct
 Author URI: http://www.getshopped.org
 */
@@ -14,9 +14,9 @@ Author URI: http://www.getshopped.org
 // this is to make sure it sets up the table name constants correctly on activation
 global $wpdb;
 define('WPSC_VERSION', '3.7');
-define('WPSC_MINOR_VERSION', '44');
+define('WPSC_MINOR_VERSION', '51');
 
-define('WPSC_PRESENTABLE_VERSION', '3.7.6 Beta 2');
+define('WPSC_PRESENTABLE_VERSION', '3.7.6.1');
 
 define('WPSC_DEBUG', false);
 define('WPSC_GATEWAY_DEBUG', false);
@@ -127,6 +127,9 @@ require_once(WPSC_FILE_PATH."/wpsc-includes/form-display.functions.php");
 require_once(WPSC_FILE_PATH."/wpsc-includes/merchant.class.php");
 require_once(WPSC_FILE_PATH."/wpsc-includes/meta.functions.php");
 require_once(WPSC_FILE_PATH."/wpsc-includes/productfeed.php");
+
+//Add deprecated functions in this file please
+require_once(WPSC_FILE_PATH."/wpsc-includes/deprecated.functions.php");
 //exit(print_r($v1,true));
 if($v1[0] >= 2.8){
 	require_once(WPSC_FILE_PATH."/wpsc-includes/upgrades.php");
@@ -288,7 +291,13 @@ $shipping_directory = WPSC_FILE_PATH.'/shipping';
 $nzshpcrt_shipping_list = wpsc_list_dir($shipping_directory);
 foreach($nzshpcrt_shipping_list as $nzshpcrt_shipping) {
 	if(stristr( $nzshpcrt_shipping , '.php' )) {
-		require(WPSC_FILE_PATH."/shipping/".$nzshpcrt_shipping);
+		if($nzshpcrt_shipping == 'ups.php'){
+			if (phpMinV('5')){
+			require(WPSC_FILE_PATH."/shipping/".$nzshpcrt_shipping);
+			}
+		}else{
+			require(WPSC_FILE_PATH."/shipping/".$nzshpcrt_shipping);
+		}
 	}
 }
 $wpsc_shipping_modules = apply_filters('wpsc_shipping_modules',$wpsc_shipping_modules);

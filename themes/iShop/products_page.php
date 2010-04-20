@@ -193,8 +193,8 @@ global $wpsc_query, $wpdb;
 												
 					<!-- THIS IS THE QUANTITY OPTION MUST BE ENABLED FROM ADMIN SETTINGS -->
 					<?php if(wpsc_has_multi_adding()): ?>
-						<label class='wpsc_quantity_update' for='wpsc_quantity_update_<?php echo wpsc_the_product_id(); ?>'><?php echo __('Quantity', 'wpsc'); ?>:</label>						
-						<input type="text" id='wpsc_quantity_update_<?php echo wpsc_the_product_id(); ?>' name="wpsc_quantity_update" size="2" value="1"/>
+						<label class='wpsc_quantity_update' for='wpsc_quantity_update[<?php echo wpsc_the_product_id(); ?>]'><?php echo __('Quantity', 'wpsc'); ?>:</label>						
+						<input type="text" id='wpsc_quantity_update[<?php echo wpsc_the_product_id(); ?>]' name="wpsc_quantity_update" size="2" value="1"/>
 						<input type="hidden" name="key" value="<?php echo wpsc_the_cart_item_key(); ?>"/>
 						<input type="hidden" name="wpsc_update_quantity" value="true"/>
 					<?php endif ;?>
@@ -209,11 +209,11 @@ global $wpsc_query, $wpdb;
 							
 							<?php else : ?>
 								<?php if(wpsc_product_on_special()) : ?>
-									<span class='oldprice'><?php echo __('Price', 'wpsc'); ?>: <?php echo wpsc_product_normal_price(); ?></span><br />
+									<span class='oldprice'><?php echo __('Price', 'wpsc'); ?>: <?php echo wpsc_product_normal_price(get_option('wpsc_hide_decimals')); ?></span><br />
 								<?php endif; ?>
-								  <span id="product_price_<?php echo wpsc_the_product_id(); ?>" class="pricedisplay"><?php echo wpsc_the_product_price(); ?></span><?php echo __('Price', 'wpsc'); ?>:<br/>
+								  <span id="product_price_<?php echo wpsc_the_product_id(); ?>" class="pricedisplay"><?php echo wpsc_the_product_price(get_option('wpsc_hide_decimals')); ?></span><?php echo __('Price', 'wpsc'); ?>:<br/>
 								<?php if(get_option('display_pnp') == 1) : ?>
-									<span class="pricedisplay"><?php echo wpsc_product_postage_and_packaging(); ?></span><?php echo __('P&amp;P', 'wpsc'); ?>:  <br />
+									<span class="pricedisplay"><?php echo wpsc_product_postage_and_packaging(get_option('wpsc_hide_decimals')); ?></span><?php echo __('P&amp;P', 'wpsc'); ?>:  <br />
 								<?php endif; ?>							
 							<?php endif; ?>
 						</div>

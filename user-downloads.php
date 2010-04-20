@@ -1,6 +1,6 @@
 <?php
 	global $wpdb, $user_ID;
-	$purchases= $wpdb->get_col("SELECT `id` FROM `".WPSC_TABLE_PURCHASE_LOGS."` WHERE user_ID = ".(int)$user_ID."") ;
+	$purchases= $wpdb->get_col("SELECT `id` FROM `".WPSC_TABLE_PURCHASE_LOGS."` WHERE user_ID = ".(int)$user_ID." AND user_ID !='0'") ;
 	$rowcount = count($purchases);
 	//echo "<pre>".print_r($purchases,true)."</pre>";
 	
@@ -67,5 +67,8 @@ if(count($files) > 0) {
 	<?php
 } else {	
 	echo __('You have not purchased any downloadable products yet.', 'wpsc'); 
-}
+}?>
+</div>
+<?php
+
 ?>

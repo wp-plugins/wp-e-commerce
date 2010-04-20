@@ -21,14 +21,14 @@ if(in_array('paypal_pro',(array)get_option('custom_gateway_options'))) {
  
 	$gateway_checkout_form_fields[$nzshpcrt_gateways[$num]['internalname']] = "
 	<tr %s>
-		<td>Credit Card Number *</td>
+		<td>Credit Card Number: *</td>
 		<td>
 			<input type='text' value='' name='card_number' />
 			<p class='validation-error'>%s</p>
 		</td>
 	</tr>
 	<tr %s>
-		<td>Credit Card Expiry *</td>
+		<td>Credit Card Expiry: *</td>
 		<td>
 			<select class='wpsc_ccBox' name='expiry[month]'>
 			".$months."
@@ -52,13 +52,13 @@ if(in_array('paypal_pro',(array)get_option('custom_gateway_options'))) {
 		</td>
 	</tr>
 	<tr %s>
-		<td>CVV *</td>
+		<td>CVV: *</td>
 		<td><input type='text' size='4' value='' maxlength='4' name='card_code' />
 		<p class='validation-error'>%s</p>
 		</td>
 	</tr>
 	<tr %s>
-		<td>Card Type *</td>
+		<td>Card Type: *</td>
 		<td>
 		<select class='wpsc_ccBox' name='cctype'>
 			<option value='Visa'>Visa</option>
@@ -246,7 +246,7 @@ function gateway_paypal_pro($seperator, $sessionid){
 	}
 //exit($transaction);
 	$response = send($transaction);
-	exit('<pre>'.print_r($response, true).'</pre><pre>'.print_r($data, true).'</pre>');
+	//exit('<pre>'.print_r($response, true).'</pre><pre>'.print_r($data, true).'</pre>');
 	if($response->ack == 'Success' || $response->ack == 'SuccessWithWarning'){
 		//redirect to  transaction page and store in DB as a order with accepted payment
 		$sql = "UPDATE `".WPSC_TABLE_PURCHASE_LOGS."` SET `processed`= '2' WHERE `sessionid`=".$sessionid;

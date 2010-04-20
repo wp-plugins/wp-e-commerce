@@ -367,9 +367,9 @@ class wpsc_checkout {
   
   function form_name() {
 		if($this->form_name_is_required() && ($this->checkout_item->type != 'heading')){
-			return stripslashes($this->checkout_item->name).' * ';
+			return stripslashes($this->checkout_item->name).': * ';
 		}else{
-			return stripslashes($this->checkout_item->name);
+			return stripslashes($this->checkout_item->name).': ';
 		}
   }  
    
@@ -405,13 +405,13 @@ class wpsc_checkout {
   function form_field() {
 		global $wpdb, $user_ID;
 		//$meta_data[$form_field['id']]
-		//exit('<pre>'.print_r($this, true).'</pre>');
+		//exit('<pre>'.print_r($_SESSION['wpsc_checkout_saved_values'], true).'</pre>');
 		
 		if((count($_SESSION['wpsc_checkout_saved_values']) <= 0) && ($user_ID > 0)) {
 			//$_SESSION['wpsc_checkout_saved_values'] = get_usermeta($user_ID, 'wpshpcrt_usr_profile');
 		}
 		$saved_form_data = htmlentities(stripslashes($_SESSION['wpsc_checkout_saved_values'][$this->checkout_item->id]), ENT_QUOTES, 'UTF-8');
-		//exit('<pre>'.print_r($_SESSION['wpsc_checkout_saved_values'], true).'</pre>');
+		//exit('<pre>HERE'.print_r($_POST, true).'</pre>');
 		$an_array = '';
 		if(function_exists('wpsc_get_ticket_checkout_set')){
 			if($this->checkout_item->checkout_set == wpsc_get_ticket_checkout_set()){
@@ -443,11 +443,10 @@ class wpsc_checkout {
 			$output = wpsc_country_region_list($this->checkout_item->id , false, $_SESSION['wpsc_selected_country'], $_SESSION['wpsc_selected_region'], $this->form_element_id());
 			break;
 
-			case "delivery_country":
-			  
+			case "delivery_country":  
 				if(wpsc_uses_shipping()){ 
 				$country_name = $wpdb->get_var("SELECT `country` FROM `".WPSC_TABLE_CURRENCY_LIST."` WHERE `isocode`='".$_SESSION['wpsc_delivery_country']."' LIMIT 1");
-				$output = "<input title='".$this->checkout_item->unique_name."' type='hidden' id='".$this->form_element_id()."' class='shipping_country' name='collected_data[{$this->checkout_item->id}]' value='".$_SESSION['wpsc_delivery_country']."' size='4' /><span class='shipping_country_name'>".$country_name."</span> ";
+				$output = "<input title='".$this->checkout_item->unique_name."' type='hidden' id='".$this->form_element_id()."' class='shipping_country' name='collected_data[{$this->checkout_item->id}]' value='".$_SESSION['wpsc_delivery_country']."' /><span class='shipping_country_name'>".$country_name."</span> ";
 				}else{
 				$checkoutfields = true;
 				//$output = wpsc_shipping_country_list($checkoutfields);
@@ -486,13 +485,18 @@ class wpsc_checkout {
 			case "coupon":
 			default:
 			  $country_data = $wpdb->get_row("SELECT * FROM `".WPSC_TABLE_CURRENCY_LIST."` WHERE `isocode` IN('".$_SESSION['wpsc_delivery_country']."') LIMIT 1",ARRAY_A);
-				if($this->checkout_item->unique_name == 'shippingstate' && (wpsc_uses_shipping())&&($country_data['has_regions'] == 1)){
+				if($this->checkout_item->unique_name == 'shippingstate'){
+					if(wpsc_uses_shipping()&&($country_data['has_regions'] == 1)){
 					$region_name = $wpdb->get_var("SELECT `name` FROM `".WPSC_TABLE_REGION_TAX."` WHERE `id`='".$_SESSION['wpsc_delivery_region']."' LIMIT 1");
 				$output = "<input title='".$this->checkout_item->unique_name."' type='hidden' id='".$this->form_element_id()."' class='shipping_region' name='collected_data[{$this->checkout_item->id}]' value='".$_SESSION['wpsc_delivery_region']."' size='4' /><span class='shipping_region_name'>".$region_name."</span> ";
 
+					}else{
+						$output = "<input class='shipping_region' title='".$this->checkout_item->unique_name."' type='text' id='".$this->form_element_id()."' class='text' value='".$saved_form_data."' name='collected_data[{$this->checkout_item->id}]".$an_array."' />";
+	
+					}
 				}else{
 					$output = "<input title='".$this->checkout_item->unique_name."' type='text' id='".$this->form_element_id()."' class='text' value='".$saved_form_data."' name='collected_data[{$this->checkout_item->id}]".$an_array."' />";
-
+				
 				}
 				
 			break;

@@ -126,8 +126,9 @@ function wpsc_admin_pages(){
 				add_contextual_help(WPSC_DIR_NAME.'/display-items',"<a target='_blank' href='http://www.instinct.co.nz/e-commerce/products/'>About this page</a>");
 			}
 			//exit('base page:'.$base_page);
-			if(IS_WPMU){
-				$page_hooks[] = add_submenu_page($base_page,__('Marketing', 'wpsc'), __('Marketing', 'wpsc'), 11,'wpsc_display_coupons_page','wpsc_display_coupons_page');
+//			exit($GLOBALS['wp_version']);
+			if(IS_WPMU || $GLOBALS['wp_version'] == '3.0-alpha'){
+				$page_hooks[] = add_submenu_page($base_page,__('Marketing', 'wpsc'), __('Marketing', 'wpsc'), 10,'wpsc_display_coupons_page','wpsc_display_coupons_page');
 			}else{
 				$page_hooks[] = add_submenu_page($base_page,__('Marketing', 'wpsc'), __('Marketing', 'wpsc'), 7,'wpsc_display_coupons_page','wpsc_display_coupons_page');
 			}
@@ -754,6 +755,12 @@ function wpsc_admin_4months_widget_rightnow() {
 		echo "</div>";
     }
 }
+function wpsc_getshopped_news_meta_box(){
+	$rss = fetch_feed('http://getshopped.org/category/community-plugins/feed/'); 
+	$args = array('show_author' => 1, 'show_date' => 1, 'show_summary' => 1, 'items'=>3 );
+	wp_widget_rss_output($rss, $args); 
+}
+
 
 if( IS_WP27 ) {
     add_action('wp_dashboard_setup','wpsc_dashboard_4months_widget_setup');

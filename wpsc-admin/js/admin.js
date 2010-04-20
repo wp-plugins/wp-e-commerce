@@ -195,6 +195,7 @@ jQuery(document).ready( function () {
 	    axis: 'y',
 	    containment: 'table#wpsc_checkout_list',
 	    placeholder: 'checkout-placeholder',
+	    handle: '.drag',
     	
 	  }); 
 	  jQuery(this).bind('sortupdate', function(event, ui) {
@@ -433,10 +434,19 @@ jQuery(document).ready( function () {
 				wpsc_save_postboxes_state('store_page_wpsc-edit-products', '#poststuff');
 		});		
 	});
+ 	jQuery('#dashboard-widgets .postbox h3').livequery(function(){
+	  jQuery(this).click( function() {
+			jQuery(jQuery(this).parent('div.postbox')).toggleClass('closed');
+				if(jQuery(jQuery(this).parent('div.postbox')).hasClass('closed')) {
+					jQuery('a.togbox',this).html('+');
+				} else {
+					jQuery('a.togbox',this).html('&ndash;');
+				}
+				wpsc_save_postboxes_state('store_page_wpsc-sale-logs', '#dashboard-widgets-main-content-wpsc');
+		});		
+	});
  
 
-
-	
 	jQuery('a.add_new_form_set').livequery(function(){
 	  jQuery(this).click( function() {
 			jQuery(".add_new_form_set_forms").toggle();
@@ -465,8 +475,7 @@ jQuery(document).ready( function () {
 			postboxes.save_state('store_page_wpsc-edit-products');
 		});
 	});
-	
-	
+		
 	// postbox sorting
 	jQuery('.meta-box-sortables').livequery(function(){
 	  jQuery(this).sortable({
@@ -530,7 +539,7 @@ jQuery(document).ready( function () {
 	  });
 	});
 
-	jQuery('a.closeimagesettings').livequery(function(){
+	jQuery('.closeimagesettings').livequery(function(){
 	  jQuery(this).click( function() {
 				jQuery('.image_settings_box').hide();
 	  });
@@ -848,9 +857,9 @@ function hideOptionElement(id, option) {
 
 
 function wpsc_save_postboxes_state(page, container) {
-  //console.log(container);
+//  console.log(container);
 	var closed = jQuery(container+' .postbox').filter('.closed').map(function() { return this.id; }).get().join(',');
-	jQuery.post(postboxL10n.requestFile, {
+	jQuery.post(ajaxurl, {
 		action: 'closed-postboxes',
 		closed: closed,
 		closedpostboxesnonce: jQuery('#closedpostboxesnonce').val(),

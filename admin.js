@@ -235,11 +235,13 @@ jQuery("div.previewimage").hover(
 	}
 );
 
-jQuery("a.closeimagesettings").click(
+jQuery(".closeimagesettings").click(
 	function (e) {
+		alert('uhuh');
 		jQuery("div#image_settings_box").hide();
 	}
 );
+
 
 jQuery("#table_rate_price").click(
 	function() {
@@ -600,6 +602,13 @@ jQuery(window).load( function () {
 			jQuery('#'+id).parent('.modify_coupon').hide();
 		}
 
+	});
+	jQuery("form[name='add_coupon'] input[name='submit_coupon']").click(function() {
+		var title = jQuery("form[name='add_coupon'] input[name='add_coupon_code']").val();
+		if ( title == '') {
+			alert('Please enter a coupon code.');
+			return false;
+		}
 	});
 	jQuery('a.closeEl').bind('click', toggleContent);
 /*
@@ -1051,12 +1060,6 @@ function enablebuttons(){
 		function(){
 			jQuery(this).hide();
 			jQuery('#image_settings_box').show('fast');
-		}
-	);
-	
-	jQuery("a.closeimagesettings").click(
-		function (e) {
-			jQuery("div#image_settings_box").hide();
 		}
 	);
 	
