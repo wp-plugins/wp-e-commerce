@@ -128,7 +128,7 @@ if(wpsc_cart_item_count() > 0) :
 						<?php 	if (!wpsc_have_shipping_quotes()) { continue; } // Don't display shipping method if it doesn't have at least one quote ?>
 						<tr><td class='shipping_header' colspan='5'><?php echo wpsc_shipping_method_name().__('- Choose a Shipping Rate', 'wpsc'); ?> </td></tr>
 						<?php while (wpsc_have_shipping_quotes()) : wpsc_the_shipping_quote();	?>
-							<tr class='shipping_quotes'>
+							<tr>
 								<td colspan='3'>
 									<label for='<?php echo wpsc_shipping_quote_html_id(); ?>'><?php echo wpsc_shipping_quote_name(); ?></label>
 								</td>
@@ -282,7 +282,7 @@ if(wpsc_cart_item_count() > 0) :
 		  		<tr <?php echo wpsc_the_checkout_item_error_class();?>>
 			<td>
 				<label for='<?php echo wpsc_checkout_form_element_id(); ?>'>
-				<?php echo wpsc_checkout_form_name();?>:
+				<?php echo wpsc_checkout_form_name();?>
 				</label>
 			</td>
 			<td>
@@ -314,7 +314,7 @@ if(wpsc_cart_item_count() > 0) :
 		</tr>
 		<?php endif; ?>		
 		<tr>
-			<td colspan='2'>
+			<td colspan='2' class='wpsc_gateway_container'>
 			
 			<?php  //this HTML displays activated payment gateways?>
 			  
@@ -380,7 +380,7 @@ if(wpsc_cart_item_count() > 0) :
 </div>
 <?php
 else:
-	echo __('Oops, there is nothing in your cart.', 'wpsc') . "<a href='".get_option("product_list_url")."'>" . __('Please visit our shop', 'wpsc') . "</a>";
+	echo __('Oops, there is nothing in your cart.', 'wpsc') . "<a href=".get_option("product_list_url").">" . __('Please visit our shop', 'wpsc') . "</a>";
 endif;
 do_action('wpsc_bottom_of_shopping_cart');
 ?>

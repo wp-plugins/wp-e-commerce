@@ -3,7 +3,7 @@
 Plugin Name:WP Shopping Cart
 Plugin URI: http://www.getshopped.org
 Description: A plugin that provides a WordPress Shopping Cart. Visit the <a href='http://getshopped.org/forums'>getshopped forums</a> for support.
-Version: 3.7.6 RC 2
+Version: 3.7.6.2
 Author: Instinct
 Author URI: http://www.getshopped.org
 */
@@ -14,9 +14,9 @@ Author URI: http://www.getshopped.org
 // this is to make sure it sets up the table name constants correctly on activation
 global $wpdb;
 define('WPSC_VERSION', '3.7');
-define('WPSC_MINOR_VERSION', '48');
+define('WPSC_MINOR_VERSION', '52');
 
-define('WPSC_PRESENTABLE_VERSION', '3.7.6 Beta 2');
+define('WPSC_PRESENTABLE_VERSION', '3.7.6.2');
 
 define('WPSC_DEBUG', false);
 define('WPSC_GATEWAY_DEBUG', false);
@@ -291,7 +291,13 @@ $shipping_directory = WPSC_FILE_PATH.'/shipping';
 $nzshpcrt_shipping_list = wpsc_list_dir($shipping_directory);
 foreach($nzshpcrt_shipping_list as $nzshpcrt_shipping) {
 	if(stristr( $nzshpcrt_shipping , '.php' )) {
-		require(WPSC_FILE_PATH."/shipping/".$nzshpcrt_shipping);
+		if($nzshpcrt_shipping == 'ups.php'){
+			if (phpMinV('5')){
+			require(WPSC_FILE_PATH."/shipping/".$nzshpcrt_shipping);
+			}
+		}else{
+			require(WPSC_FILE_PATH."/shipping/".$nzshpcrt_shipping);
+		}
 	}
 }
 $wpsc_shipping_modules = apply_filters('wpsc_shipping_modules',$wpsc_shipping_modules);
@@ -504,5 +510,29 @@ function wpsc_break_canonical_redirects($redirect_url, $requested_url) {
 }
 
 add_filter('redirect_canonical', 'wpsc_break_canonical_redirects', 10, 2);
+
+
+
+/**
+ * Update Notice
+ *
+ * Displays an update message below the auto-upgrade link in the WordPress admin
+ * to notify users that they should check the upgrade information and changelog
+ * before upgrading in case they need to may updates to their theme files.
+ *
+ * @package wp-e-commerce
+ * @since 3.7.6.1
+ */
+function wpsc_update_notice() {
+	$info_title = __( 'Please Note', 'wpsc' );
+	$info_text = sprintf( __( 'Before upgrading you should check the <a %s>upgrade information</a> and changelog as you may need to make updates to your template files.', 'wpsc' ), 'href="http://getshopped.org/resources/docs/upgrades/staying-current/" target="_blank"' );
+	echo '<div style="border-top:1px solid #CCC; margin-top:3px; padding-top:3px; font-weight:normal;"><strong style="color:#CC0000">' . strip_tags( $info_title ) . '</strong>: ' . strip_tags( $info_text, '<br><a><strong><em><span>' ) . '</div>';
+}
+
+if ( is_admin() ) {
+	add_action( 'in_plugin_update_message-' . plugin_basename( __FILE__ ), 'wpsc_update_notice' );
+}
+
+
 
 ?>

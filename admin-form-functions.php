@@ -560,13 +560,7 @@ return $output;
 
 }  
 function setting_button(){
-	$itemsFeedURL = "http://www.google.com/base/feeds/items";
 	$next_url  = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF']."?page=wpsc-edit-products";
-	$redirect_url = 'https://www.google.com/accounts/AuthSubRequest?session=1';
-	$redirect_url .= '&next=';
-	$redirect_url .= urlencode($next_url);
-	$redirect_url .= "&scope=";
-	$redirect_url .= urlencode($itemsFeedURL);
 	
 // 	$output.="<div><img src='".get_option('siteurl')."/wp-content/plugins/".WPSC_DIR_NAME."/images/settings_button.jpg' onclick='display_settings_button()'>";
 	$output.="<div style='float: right; margin-top: 0px; position: relative;'> | <a href='#' onclick='display_settings_button(); return false;' style='text-decoration: underline;'>".__('Settings', 'wpsc')." &raquo;</a>";
@@ -577,7 +571,6 @@ function setting_button(){
 	$output.="<li><a href='admin.php?page=wpsc-settings&amp;tab=gateway'>".__('Money and Payment', 'wpsc')."</a></li>";
 	$output.="<li><a href='admin.php?page=wpsc-settings&amp;tab=checkout'>".__('Checkout Page Settings', 'wpsc')."</a></li>";
 	//$output.="<li><a href='?page=".WPSC_DIR_NAME."/instructions.php'>Help/Upgrade</a></li>";
-	//$output.="<li><a href='{$redirect_url}'>".__('Login to Google base', 'wpsc')."</a></li>";
 	$output.="</ul>";
 //	$output.="<div>Checkout Settings</div>";
 	$output.="</span>&emsp;&emsp;</div>";
@@ -585,7 +578,7 @@ function setting_button(){
 	return $output;
 }
 
-function wpsc_right_now() {
+function wpsc_right_now($hidden = '') {
   global $wpdb,$nzshpcrt_imagesize_info;
 	$year = date("Y");
 	$month = date("m");
@@ -624,10 +617,9 @@ function wpsc_right_now() {
   
   $replace_values[":theme:"] = get_option('wpsc_selected_theme');
   $replace_values[":versionnumber:"] = WPSC_PRESENTABLE_VERSION;
-  
 	if (function_exists('add_object_page')) {
 		$output="";	
-		$output.="<div id='dashboard_right_now' class='postbox'>";
+		$output.="<div id='dashboard_right_now' class='postbox ".((array_search('dashboard_right_now', $hidden) !== false) ? 'closed' : '')."'>";
 		$output.="	<h3 class='hndle'>";
 		$output.="		<span>".__('Current Month', 'wpsc')."</span>";
 		$output.="		<br class='clear'/>";

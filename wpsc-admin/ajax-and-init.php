@@ -1329,7 +1329,7 @@ function wpsc_purchlog_edit_status($purchlog_id='', $purchlog_status='') {
 	if(($purchlog_status > $log_data['processed']) && ($log_data['processed'] <= 2)) {
 		transaction_results($log_data['sessionid'],false);
 	}
-	exit("1");
+//	exit("1");
 }
 
 if($_REQUEST['wpsc_admin_action'] == 'purchlog_edit_status') {
@@ -1340,14 +1340,15 @@ SELECT DISTINCT `products`.*, `category`.`category_id`,`order`.`order`, IF(ISNUL
 */
 function wpsc_save_product_order() {
   global $wpdb;
-	if(is_numeric($_POST['category_id'])) {
+	if(is_numeric($_POST['category_id']) ) {
 		$category_id = absint($_POST['category_id']);
 		$products = $_POST['product'];
 		$order=1;
+	//	echo '/*<pre>'.print_r($products,true).'</pre>*/';
 		foreach($products as $product_id) {
 			$product_id = absint($product_id);
 			$wpdb->query("REPLACE INTO `".WPSC_TABLE_PRODUCT_ORDER."`(`category_id`, `product_id`, `order`) VALUES ('{$category_id}', '{$product_id}', '{$order}' )");
-			//echo "/*  REPLACE INTO `".WPSC_TABLE_PRODUCT_ORDER."`(`category_id`, `product_id`, `order`) VALUES ('{$category_id}', '{$product_id}', '$order' ) */\n\r";
+	//		echo "/*  REPLACE INTO `".WPSC_TABLE_PRODUCT_ORDER."`(`category_id`, `product_id`, `order`) VALUES ('{$category_id}', '{$product_id}', '$order' ) */\n\r";
 			$order++;
 		} 
 		$success = true;

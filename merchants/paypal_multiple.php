@@ -54,11 +54,14 @@ function gateway_paypal_multiple($seperator, $sessionid) {
 //   $data['lc'] = 'US';
   $data['lc'] = $paypal_currency_code;
   $data['bn'] = 'wp-e-commerce';
-  
-  $data['no_shipping'] = (int)(bool)get_option('paypal_ship');
   if(get_option('address_override') == 1) {
 		$data['address_override'] = '1';
-	}
+  }
+  if((int)(bool)get_option('paypal_ship') == '1'){
+    $data['no_shipping'] = '0';
+	$data['address_override'] = '1';
+  }
+
   $data['no_note'] = '1';
   
   switch($paypal_currency_code) {
@@ -162,6 +165,7 @@ function gateway_paypal_multiple($seperator, $sessionid) {
   $data['invoice'] = $sessionid;
   
   // User details   
+  
   if($_POST['collected_data'][get_option('paypal_form_first_name')] != '') {
     $data['first_name'] = urlencode($_POST['collected_data'][get_option('paypal_form_first_name')]);
 	}
@@ -220,6 +224,8 @@ function gateway_paypal_multiple($seperator, $sessionid) {
   $data['upload'] = '1';
   $data['cmd'] = "_ext-enter";
   $data['redirect_cmd'] = "_cart";
+  $data = apply_filters('wpsc_paypal_standard_post_data',$data);
+
   $datacount = count($data);
   $num = 0;
   foreach($data as $key=>$value) {

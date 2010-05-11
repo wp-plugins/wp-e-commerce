@@ -94,6 +94,32 @@ function wpsc_cart_total_widget(){
 }
 
 /**
+ * Cart Subtotal Widget
+ *
+ * Can be used to display the cart total excluding shipping and coupons.
+ *
+ * @since 3.7.6.2
+ *
+ * @return string The subtotal price of the cart, with a currency sign.
+ */
+function wpsc_cart_subtotal_widget() {
+
+	global $wpsc_cart;
+	
+	$total = $wpsc_cart->calculate_subtotal();
+	
+	if ( wpsc_tax_isincluded() == false ) {
+		$total += $wpsc_cart->calculate_total_tax();
+	}
+	if ( get_option( 'add_plustax' ) == 1 ) {
+		return $wpsc_cart->process_as_currency( $wpsc_cart->calculate_subtotal() );
+	}
+	
+	return $wpsc_cart->process_as_currency( $total );
+	
+}
+
+/**
 * nzshpcrt_overall_total_price function, no parameters
 * @return string the total price of the cart, with a currency sign
 */
@@ -481,7 +507,9 @@ function wpsc_have_morethanone_shipping_quote(){
         $wpsc_cart->rewind_shipping_methods();
         $wpsc_cart->update_shipping('flatrate', $name);
         return false;
+
     }
+
     return true;
 }
 
@@ -593,7 +621,7 @@ class wpsc_cart {
     }
 	  $this->update_location();
 	  $this->get_tax_rate();
-	  $this->unique_id = sha1(uniqid(rand(), true));
+	  $this->unique_id = sha1(uniqid(rand(),true));
 	  
 	  $this->get_shipping_method();
   }
@@ -655,7 +683,7 @@ class wpsc_cart {
 	  
 	  $this->shipping_methods = get_option('custom_shipping_options');
 	  $this->shipping_method_count = count($this->shipping_methods);
-		
+
 		if((get_option('do_not_use_shipping') != 1) && (count($this->shipping_methods) > 0)  ) {
 			if(array_search($this->selected_shipping_method, (array)$this->shipping_methods) === false) {
 				//unset($this->selected_shipping_method);
@@ -668,6 +696,7 @@ class wpsc_cart {
 					$this->shipping_quotes = $wpsc_shipping_modules[$this->selected_shipping_method]->getQuote();
 				}
 			} else {
+//				exit('Here <pre>'.print_r($custom_shipping, true).'</pre>');
 				// otherwise select the first one with any quotes
 				foreach((array)$custom_shipping as $shipping_module) {
 					// if the shipping module does not require a weight, or requires one and the weight is larger than zero
@@ -682,7 +711,7 @@ class wpsc_cart {
 				
 			}
 		}
-		
+		//		exit('<pre>'.print_r($this, true).'</pre>');
 		//echo('<pre>'.print_r($custom_shipping,true).'</pre>');
   }
   
@@ -714,19 +743,24 @@ class wpsc_cart {
 	*/
   function update_shipping($method, $option) {
     global $wpdb, $wpsc_shipping_modules;
+    
+//     if($method == 'weightrate') {
+//      exit("<pre>".print_r(debug_backtrace(),true)."</pre>");
+//     }
 		$this->selected_shipping_method = $method;
-		if(is_callable(array($wpsc_shipping_modules[$method]), "getQuote"  )) {		
+		//if(is_callable(array($wpsc_shipping_modules[$this->selected_shipping_method]), "getQuote"  )) {
 			$this->shipping_quotes = $wpsc_shipping_modules[$method]->getQuote();
-		}
+		//}
 		//exit('<pre>'.print_r($this->shipping_quotes,true).'</pre> quotes');
 		$this->selected_shipping_option = $option;
 		
 		foreach($this->cart_items as $key => $cart_item) {
-			$this->cart_items[$key]->calculate_shipping();
+			$this->cart_items[$key]->refresh_item();
 		}
 		$this->clear_cache();
 		$this->get_shipping_option();	
 	}
+  
   
 	/**
 	* get_tax_rate method, gets the tax rate as a percentage, based on the selected country and region
@@ -853,6 +887,7 @@ class wpsc_cart {
 		}	
 		$this->cart_item_count = count($this->cart_items);
 		$this->clear_cache();
+		do_action ("wpsc_cart_updated", &$this);
 		return $status;
 	}
   
@@ -1040,6 +1075,7 @@ class wpsc_cart {
 		$this->subtotal = null;
 		$this->total_price = null;
 		$this->uses_shipping = null;
+		$this->shipping_quotes = null;
 		$this->get_shipping_option();	
 	}
   

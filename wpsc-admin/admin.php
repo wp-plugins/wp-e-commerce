@@ -238,14 +238,8 @@ function  wpsc_admin_include_css_and_js() {
 		'separate' => __('Separate tags with commas'),
 	));
 	if(defined('WPSC_GOLD_DIR_NAME') && WPSC_GOLD_DIR_NAME != ''){
-		wp_enqueue_style('gold_cart', WPSC_UPGRADES_URL . 'gold_cart_files/gold_cart.css',false, $version_identifier, 'all');
+		wp_enqueue_style('gold_cart', WPSC_GOLD_FILE_URL.'/gold_cart.css',false, $version_identifier, 'all');
 	}
-	//jQuery wysiwyg
-	//  	if ( user_can_richedit() ) {
-	// 		wp_enqueue_script('editor');
-	// 	}
-	// 	wp_enqueue_script('media-upload');
-	//   wp_enqueue_style('thickbox');
 
 	// Prototype breaks dragging and dropping, I need it gone
 	wp_deregister_script('prototype');
@@ -755,6 +749,12 @@ function wpsc_admin_4months_widget_rightnow() {
 		echo "</div>";
     }
 }
+function wpsc_getshopped_news_meta_box(){
+	$rss = fetch_feed('http://getshopped.org/category/community-plugins/feed/'); 
+	$args = array('show_author' => 1, 'show_date' => 1, 'show_summary' => 1, 'items'=>3 );
+	wp_widget_rss_output($rss, $args); 
+}
+
 
 if( IS_WP27 ) {
     add_action('wp_dashboard_setup','wpsc_dashboard_4months_widget_setup');

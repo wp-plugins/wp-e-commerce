@@ -182,7 +182,7 @@ function wpsc_enqueue_user_script_and_css() {
 		wp_enqueue_style( 'wpsc-theme-css', $theme_url, false, $version_identifier, 'all');
 		wp_enqueue_style( 'wpsc-theme-css-compatibility', WPSC_URL. '/themes/compatibility.css', false, $version_identifier, 'all');
 		wp_enqueue_style( 'wpsc-product-rater', WPSC_URL.'/js/product_rater.css', false, $version_identifier, 'all');
-		wp_enqueue_style( 'wp-e-commerce-dynamic', $siteurl."/index.php?wpsc_user_dynamic_css=true&category=$category_id" , false, $version_identifier, 'all' );
+		wp_enqueue_style( 'wp-e-commerce-dynamic',$siteurl."/index.php?wpsc_user_dynamic_css=true&category=$category_id" , false, $version_identifier, 'all' );
 		wp_enqueue_style( 'wpsc-thickbox', WPSC_URL.'/js/thickbox.css', false, $version_identifier, 'all');
 		
 		
@@ -215,7 +215,7 @@ if(strpos($_SERVER['SCRIPT_NAME'], "wp-admin") === false) {
 }
 
 function wpsc_product_list_rss_feed() {
-	$rss_url = add_query_arg('wpsc_action', 'rss');
+	$rss_url = htmlentities(add_query_arg('wpsc_action', 'rss'));
   echo "<link rel='alternate' type='application/rss+xml' title='".get_option('blogname')." Product List RSS' href='{$rss_url}'/>";
 }
 add_action('wp_head', 'wpsc_product_list_rss_feed');

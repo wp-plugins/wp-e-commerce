@@ -18,22 +18,22 @@ function options_categorylist() {
 	} else {
 		$selected = '';
 	}
-	$categorylist .= "<option value='list' ".$selected." >".__('Show list of product groups', 'wpsc')."</option>";
+	$categorylist .= "<option value='list' ".$selected." >".__('Show Category List', 'wpsc')."</option>";
 	
 	if(get_option('wpsc_default_category') == 'all+list')  {
 		$selected = "selected='selected'";
 	} else {
 		$selected = '';
 	}
-	$categorylist .= "<option value='all+list' ".$selected." >".__('Show all products + list', 'wpsc')."</option>";
-
+	$categorylist .= "<option value='all+list' ".$selected." >".__('Show All Products + Category List', 'wpsc')."</option>";
+	$categorylist .="<optgroup label='Select a default Product Category:'></optgroup>";
 	foreach($group_data as $group) {
 			$cat_sql = "SELECT * FROM `".WPSC_TABLE_PRODUCT_CATEGORIES."` WHERE `group_id` IN ({$group['id']}) AND `active`='1'";
 			$category_data = $wpdb->get_results($cat_sql,ARRAY_A);
 			if($category_data != null) {
 		    	  			
 				
-				$categorylist .= "<optgroup label='{$group['name']}'>";;
+				$categorylist .= "<optgroup label='{$group['name']}'>";
 				foreach((array)$category_data as $category)  {
 					if(get_option('wpsc_default_category') == $category['id'])  {
 						$selected = "selected='selected'";
@@ -285,7 +285,7 @@ global $wpdb;
 		<h3 class="form_group"><?php echo __('Product Page Settings', 'wpsc');?></h3>
 		<table class='wpsc_options form-table'>		
 		<tr>
-			<th scope="row"><?php echo __('Product Display', 'wpsc');?>:</th>
+			<th scope="row"><?php echo __('Catalog View', 'wpsc');?>:</th>
 			<td>
 			<?php
 			$display_pnp = get_option('product_view');
@@ -413,7 +413,7 @@ global $wpdb;
 			?>			
 								
 			<tr>
-				<th scope="row"><?php echo __('Select Theme', 'wpsc');?>:</th>
+				<th scope="row"><?php echo __('Theme', 'wpsc');?>:</th>
 				<td>
 				<?php
 				echo wpsc_list_product_themes();
@@ -422,7 +422,7 @@ global $wpdb;
 			</tr>
 
 			<tr>
-				<th scope="row"><?php echo __('Select what product group you want to display on the products page', 'wpsc'); ?>:</th>
+				<th scope="row"><?php echo __('Product page displays', 'wpsc'); ?>:</th>
 				<td>
 				<?php echo options_categorylist(); ?>
 				</td>
@@ -438,6 +438,10 @@ global $wpdb;
 					$wpsc_sort_by2 = "selected ='selected'";
 					break;
 					
+					case 'dragndrop':
+					$wpsc_sort_by4 = "selected='selected'";
+					break;
+					
 					case 'id':
 					default:
 					$wpsc_sort_by3 = "selected ='selected'";
@@ -446,17 +450,18 @@ global $wpdb;
 			?>
 			<tr>
 				<th scope="row">
-					<?php echo __('Sort Product By', 'wpsc');?>:
+					<?php echo __('Sort Products By', 'wpsc');?>:
 				</th>
 				<td>
 					<select name='wpsc_options[wpsc_sort_by]'>
 					<option <?php echo $wpsc_sort_by1; ?> value='name'><?php echo __('Name', 'wpsc');?></option>
 					<option <?php echo $wpsc_sort_by2; ?> value='price'><?php echo __('Price', 'wpsc');?></option>
+					<option <?php echo $wpsc_sort_by4; ?> value='dragndrop'><?php echo __('Drag &amp; Drop', 'wpsc');?></option>
 					<option <?php echo $wpsc_sort_by3; ?> value='id'><?php echo __('Time Uploaded', 'wpsc');?></option>
-					</select>
+					</select><br />
+					<?php _e('If you have used the drag-drop interface on the edit-products page to order your products then you must use the Drag &amp; Drop option.','wpsc'); ?>
 				</td>
 			</tr>
-
 			<tr>
 				<th scope="row"><?php echo __('Show Breadcrumbs', 'wpsc');?>:</th>
 				<td>

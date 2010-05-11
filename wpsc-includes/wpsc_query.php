@@ -303,11 +303,12 @@ function wpsc_the_product_permalink( $category_id = null ) {
 	return wpsc_product_url( $wpsc_query->product['id'], $category_id );
 }
 
+
 /**
 * wpsc product price function
 * @return string - the product price
 */
-function wpsc_the_product_price() {
+function wpsc_the_product_price($no_decimals = false) {
 	global $wpsc_query;	
 	$price = calculate_product_price($wpsc_query->product['id'], $wpsc_query->first_variations);	
 	if(($wpsc_query->product['special_price'] > 0) && (($wpsc_query->product['price'] - $wpsc_query->product['special_price'] ) >= 0) && ($variations_output[1] === null)) {
@@ -315,11 +316,10 @@ function wpsc_the_product_price() {
 	} else {
 		$output = nzshpcrt_currency_display($price, $wpsc_query->product['notax'], true);
 	}
-	if(get_option('display_pnp') == 1) {
-		//$output = nzshpcrt_currency_display($wpsc_query->product['pnp'], 1);
+	if($no_decimals == true) {
+		$output = array_shift(explode(".", $output));
 	}
-	//echo $price;
- 	 $output = apply_filters('wpsc_price_display_changer', $output);
+//	echo 'NO DECIMALS VALUE:'.$no_decimals;
 	//echo "<pre>".print_r($wpsc_query->product,true)."</pre>";
 	return $output;
 }
@@ -519,22 +519,27 @@ function wpsc_the_product_image($width = null, $height = null) {
 		if(is_numeric($wpsc_query->product['image'])){
 			$image_file_name = $wpdb->get_var("SELECT `image` FROM `".WPSC_TABLE_PRODUCT_IMAGES."` WHERE `id`= '".$wpsc_query->product['image']."' LIMIT 1");
 		}else{
+
 			$image_file_name = $wpsc_query->product['image'];
 		}
 		$wpsc_query->product['image_file'] = $wpsc_query->product['image'];
 	}
 	
-	$image_path = WPSC_IMAGE_DIR . $image_file_name;
+	if ($wpsc_query->product['thumbnail_state'] == 3) {
+		$image_path = WPSC_THUMBNAIL_DIR . $image_file_name;
+	} else {
+		$image_path = WPSC_IMAGE_DIR . $image_file_name;
+	}
+
 	$image_file_name_parts = explode(".",$image_file_name);
 	$extension = array_pop($image_file_name_parts);
-	
+
 	if($image_file_name != null) {
 		if(($width > 0) && ($height > 0) && ($width <= 1024) && ($height <= 1024)) {
-			$cache_filename = basename("product_img_{$image_id}_{$height}x{$width}");
-			
-			if(file_exists(WPSC_CACHE_DIR.$cache_filename.$extension)) {
+			$cache_filename = basename("product_img_{$wpsc_query->product['image']}_{$height}x{$width}");
+			if(file_exists(WPSC_CACHE_DIR.$cache_filename.'.'.$extension)) {
 				$original_modification_time = filemtime($image_path);
-				$cache_modification_time = filemtime(WPSC_CACHE_DIR.$cache_filename.$extension);
+				$cache_modification_time = filemtime(WPSC_CACHE_DIR.$cache_filename.'.'.$extension);
 				if($original_modification_time < $cache_modification_time) {
 					$use_cache = true;
 				}
@@ -544,7 +549,7 @@ function wpsc_the_product_image($width = null, $height = null) {
 				if(is_ssl()) {
 					$cache_url = str_replace("http://", "https://", $cache_url);
 				}
-				$image_url = $cache_url.$cache_filename.$extension;
+				$image_url = $cache_url.$cache_filename.'.'.$extension;
 			} else {
 				$image_url = "index.php?image_id=".$wpsc_query->product['image']."&amp;width=".$width."&amp;height=".$height;
 			}
@@ -751,6 +756,52 @@ function wpsc_the_variation_name() {
 	return stripslashes($wpsc_query->variation['name']);
 }
 
+/**
+* wpsc the variation stock function
+* @return string - HTML attribute to disable select options and radio buttons
+*/
+function wpsc_the_variation_stock() {
+	global $wpsc_query, $wpdb;
+	$out_of_stock = false;
+	if(($wpsc_query->variation_group_count == 1) && ($wpsc_query->product['quantity_limited'] == 1)) {
+		$product_id = $wpsc_query->product['id'];
+		$variation_group_id = $wpsc_query->variation_group['variation_id'];
+		$variation_id = $wpsc_query->variation['id'];
+		
+
+		$priceandstock_id = $wpdb->get_var("SELECT `priceandstock_id` FROM `".WPSC_TABLE_VARIATION_COMBINATIONS."` WHERE `product_id` = '{$product_id}' AND `value_id` IN ( '$variation_id' ) AND `all_variation_ids` IN('$variation_group_id') LIMIT 1");
+		
+		$variation_stock_data = $wpdb->get_var("SELECT `stock` FROM `".WPSC_TABLE_VARIATION_PROPERTIES."` WHERE `id` = '{$priceandstock_id}' LIMIT 1");
+		
+	}
+	return $variation_stock_data;
+}
+
+
+/**
+* wpsc the variation price function
+* @return string - the variation price
+*/
+function wpsc_the_variation_price() {
+	global $wpdb, $wpsc_query;
+	
+    if(count($wpsc_query->variation_groups) == 1) {
+		//echo "<pre>".print_r($wpsc_query->variation, true)."</pre>";
+		$product_id = $wpsc_query->product['id'];
+		$variation_group_id = $wpsc_query->variation_group['variation_id'];
+		$variation_id = $wpsc_query->variation['id'];
+		
+		$priceandstock_id = $wpdb->get_var("SELECT `priceandstock_id` FROM `".WPSC_TABLE_VARIATION_COMBINATIONS."` WHERE `product_id` = '{$product_id}' AND `value_id` IN ( '$variation_id' ) AND `all_variation_ids` IN('$variation_group_id') LIMIT 1");
+		
+		$variation_price = $wpdb->get_var("SELECT `price` FROM `".WPSC_TABLE_VARIATION_PROPERTIES."` WHERE `id` = '{$priceandstock_id}' LIMIT 1");
+
+		$output = nzshpcrt_currency_display($variation_price, $wpsc_query->product['notax'], true);    		
+    } else {
+    	$output = false;
+    }
+
+	return $output;
+}
 /**
 * wpsc the variation ID function
 * @return integer - the variation ID
@@ -1386,7 +1437,6 @@ class WPSC_Query {
 										
 					
 				$range_sql="SELECT * FROM `".WPSC_TABLE_PRODUCT_LIST."` WHERE ".implode(" AND ", $product_sql_parts)."";
-				//echo $range_sql;
 
 				$product_list = $wpdb->get_results($range_sql,ARRAY_A);
 			}
@@ -1546,7 +1596,9 @@ class WPSC_Query {
 					$order_by = "`".WPSC_TABLE_PRODUCT_LIST."`.`name` $order";
 				} else if (get_option('wpsc_sort_by') == 'price') {
 					$order_by = "`".WPSC_TABLE_PRODUCT_LIST."`.`price` $order";
-				} else {
+				} elseif(get_option('wpsc_sort_by') == 'dragndrop'){
+					$order_by = "`".WPSC_TABLE_PRODUCT_ORDER."`.`order` ASC";
+				}else {
 					if(	$order == 'ASC'){
 						$order = 'DESC';
 					}else{
@@ -1554,6 +1606,7 @@ class WPSC_Query {
 					}				
 					$order_by = "`".WPSC_TABLE_PRODUCT_LIST."`.`id` $order";
 				}
+
 				$rowcount = $wpdb->get_var("SELECT COUNT( DISTINCT `".WPSC_TABLE_PRODUCT_LIST."`.`id`) AS `count` FROM `".WPSC_TABLE_PRODUCT_LIST."`,`".WPSC_TABLE_ITEM_CATEGORY_ASSOC."` WHERE `".WPSC_TABLE_PRODUCT_LIST."`.`publish`='1' AND `".WPSC_TABLE_PRODUCT_LIST."`.`active`='1' AND `".WPSC_TABLE_PRODUCT_LIST."`.`id` = `".WPSC_TABLE_ITEM_CATEGORY_ASSOC."`.`product_id` $no_donations_sql $group_sql");
 				
 				if(!is_numeric($products_per_page) || ($products_per_page < 1)) { $products_per_page = $rowcount; }
@@ -1561,16 +1614,22 @@ class WPSC_Query {
 					$startnum = 0;			
 				}
 				
-				$sql = "SELECT DISTINCT `".WPSC_TABLE_PRODUCT_LIST."`.* FROM `".WPSC_TABLE_PRODUCT_LIST."`,`".WPSC_TABLE_ITEM_CATEGORY_ASSOC."` WHERE `".WPSC_TABLE_PRODUCT_LIST."`.`publish`='1' AND `".WPSC_TABLE_PRODUCT_LIST."`.`active`='1' AND `".WPSC_TABLE_PRODUCT_LIST."`.`id` = `".WPSC_TABLE_ITEM_CATEGORY_ASSOC."`.`product_id` $no_donations_sql $group_sql ORDER BY `".WPSC_TABLE_PRODUCT_LIST."`.`special`, $order_by LIMIT $startnum, $products_per_page";
+				$sql = "SELECT DISTINCT `".WPSC_TABLE_PRODUCT_LIST."`.*, `".WPSC_TABLE_PRODUCT_ORDER."`.`order` FROM `".WPSC_TABLE_PRODUCT_LIST."`
+				 LEFT JOIN `".WPSC_TABLE_ITEM_CATEGORY_ASSOC."` ON `".WPSC_TABLE_PRODUCT_LIST."`.`id` = `".WPSC_TABLE_ITEM_CATEGORY_ASSOC."`.`product_id`
+				 LEFT JOIN `".WPSC_TABLE_PRODUCT_ORDER."` ON `".WPSC_TABLE_PRODUCT_LIST."`.`id` = `".WPSC_TABLE_PRODUCT_ORDER."`.`product_id`
+				 WHERE `".WPSC_TABLE_PRODUCT_LIST."`.`publish`='1' AND `".WPSC_TABLE_PRODUCT_LIST."`.`active`='1'  $no_donations_sql $group_sql ORDER BY `".WPSC_TABLE_PRODUCT_LIST."`.`special`, $order_by LIMIT $startnum, $products_per_page";
+				if(get_option('wpsc_sort_by') == 'dragndrop'){
+				$sql = "SELECT `products`.* FROM `".WPSC_TABLE_PRODUCT_LIST."` AS `products` LEFT JOIN `".WPSC_TABLE_PRODUCT_ORDER."` AS `order` ON `products`.`id`= `order`.`product_id` WHERE `products`.`active`='1' AND `products`.`publish`='1' AND `order`.`category_id`='0' $search_sql ORDER BY `order`.`order`";
+			}
 			}
 		}
 		
-	
+		//exit($sql);
 					
 		//echo "{$sql}";
 		$this->category = $this->query_vars['category_id'];
 		$this->products = $wpdb->get_results($sql,ARRAY_A);
-		
+	//	exit('<pre>'.print_r($this->products,true).'</pre>');
 		$this->total_product_count = $rowcount;
 		
 		if($rowcount > $products_per_page) {

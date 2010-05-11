@@ -196,6 +196,7 @@ function wpsc_admin_products_list($category_id = 0) {
 		$is_sortable = true;
 	} else {
 		$itempp = 10;
+		
 		if ($_GET['pageno']!='all') {
 		  if($_GET['pageno'] > 0) {
 				$page = absint($_GET['pageno']);
@@ -204,11 +205,19 @@ function wpsc_admin_products_list($category_id = 0) {
 		  }
 			$start = (int)($page * $itempp) - $itempp;
 			$sql = "SELECT DISTINCT * FROM `".WPSC_TABLE_PRODUCT_LIST."` AS `products` WHERE `products`.`active`='1' $search_sql ORDER BY `products`.`date_added` DESC LIMIT $start,$itempp";
+			if(get_option('wpsc_sort_by') == 'dragndrop'){
+				$sql = "SELECT DISTINCT * FROM `".WPSC_TABLE_PRODUCT_LIST."` AS `products` LEFT JOIN `".WPSC_TABLE_PRODUCT_ORDER."` AS `order` ON `products`.`id`= `order`.`product_id` WHERE `products`.`active`='1' AND `order`.`category_id`='0' $search_sql ORDER BY `order`.`order`";
+			}
+		
 		} else {
-			$sql = "SELECT DISTINCT * FROM `".WPSC_TABLE_PRODUCT_LIST."` AS `products` WHERE `products`.`active`='1' $search_sql ORDER BY `products`.`date_added`";
+				$sql = "SELECT DISTINCT * FROM `".WPSC_TABLE_PRODUCT_LIST."` AS `products` WHERE `products`.`active`='1' $search_sql ORDER BY `products`.`date_added`";
+
 		}
+
 	}  
+			//	exit($sql);
 	$product_list = $wpdb->get_results($sql,ARRAY_A);
+	//exit('<pre>'.print_r($product_list, true).'</pre>');
 	$num_products = $wpdb->get_var("SELECT COUNT(DISTINCT `products`.`id`) FROM `".WPSC_TABLE_PRODUCT_LIST."` AS `products` WHERE `products`.`active`='1' $search_sql");
 	
 	if (isset($itempp)) {
@@ -235,12 +244,13 @@ function wpsc_admin_products_list($category_id = 0) {
 		
 		
 		
-		
+		<?php	if(get_option('wpsc_sort_by') != 'dragndrop'){ ?>
 		<div class="tablenav-pages">
 			<?php
 				echo $page_links;
 			?>	
 		</div>
+		<?php } ?>
 		
 		<div class="alignleft actions">
 			<form action="admin.php" method="get">
@@ -310,12 +320,17 @@ function wpsc_admin_products_list($category_id = 0) {
 							$product_name = htmlentities(stripslashes($product['name']), ENT_QUOTES, 'UTF-8');
 						}
 						
-						
+
 					$category_html = '';	
+					if(get_option('wpsc_sort_by') != 'dragndrop'){
 					$category_list = $wpdb->get_results("SELECT `".WPSC_TABLE_PRODUCT_CATEGORIES."`.`id`,`".WPSC_TABLE_PRODUCT_CATEGORIES."`.`name` FROM `".WPSC_TABLE_ITEM_CATEGORY_ASSOC."` , `".WPSC_TABLE_PRODUCT_CATEGORIES."` WHERE `".WPSC_TABLE_ITEM_CATEGORY_ASSOC."`.`product_id` IN ('".$product['id']."') AND `".WPSC_TABLE_ITEM_CATEGORY_ASSOC."`.`category_id` = `".WPSC_TABLE_PRODUCT_CATEGORIES."`.`id` AND `".WPSC_TABLE_PRODUCT_CATEGORIES."`.`active` IN('1')",ARRAY_A);
+					}else{
+					$category_list = $wpdb->get_results("SELECT `".WPSC_TABLE_PRODUCT_CATEGORIES."`.`id`,`".WPSC_TABLE_PRODUCT_CATEGORIES."`.`name` FROM `".WPSC_TABLE_PRODUCT_CATEGORIES."` LEFT JOIN `".WPSC_TABLE_ITEM_CATEGORY_ASSOC."` ON `".WPSC_TABLE_ITEM_CATEGORY_ASSOC."`.`category_id`= `".WPSC_TABLE_PRODUCT_CATEGORIES."`.`id` WHERE `".WPSC_TABLE_ITEM_CATEGORY_ASSOC."`.`product_id` IN ('".$product['product_id']."')  AND `".WPSC_TABLE_PRODUCT_CATEGORIES."`.`active` IN('1')",ARRAY_A);
+					}
 					$i = 0;
 					foreach((array)$category_list as $category_row) {
 						if($i > 0) {
+							
 							$category_html .= "<br />";
 						}
 						
@@ -324,7 +339,11 @@ function wpsc_admin_products_list($category_id = 0) {
 						$i++;
 					}        
 									
-						
+								if(get_option('wpsc_sort_by') == 'dragndrop'){ 
+									$product['id'] = $product['product_id'];
+								}
+								
+								
 						?>
 							<tr class="product-edit <?php echo ( wpsc_publish_status($product['id']) ) ? ' wpsc_published' : ' wpsc_not_published'; ?>" id="product-<?php echo $product['id']?>" >
 									<th class="check-column" scope="row">
@@ -373,7 +392,7 @@ function wpsc_admin_products_list($category_id = 0) {
 											</span>
 											 |
 											<span class="delete">
-												<a class='submitdelete'
+												<a class='submitdelete delete_button'
 													title='<?php echo attribute_escape(__('Delete this product', 'wpsc')); ?>'
 													href='<?php echo wp_nonce_url("admin.php?wpsc_admin_action=delete_product&amp;product={$product['id']}", 'delete_product_' . $product['id']); ?>'
 													onclick="if ( confirm(' <?php echo js_escape(sprintf( __("You are about to delete this product '%s'\n 'Cancel' to stop, 'OK' to delete."), $product['name'] )) ?>') ) { return true;}return false;"

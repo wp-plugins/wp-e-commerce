@@ -73,7 +73,7 @@ jQuery(document).ready(function () {
 					jQuery("select#region").show();	
 					shipName = jQuery('input.shipping_region').attr('name');
 					shipID = jQuery('input.shipping_region').attr('id');
-					jQuery('input.shipping_region').replaceWith('<input type="hidden"  class="shipping_region" value="'+stateID+'" name="'+shipName+'" id="'+shipName+'" />');	
+					jQuery('input.shipping_region').replaceWith('<input type="hidden"  class="shipping_region" value="'+stateID+'" name="'+shipName+'" id="'+shipName+'" /><span class="shipping_region_name"></span>');	
 					jQuery("select#region :selected").html(state).attr('selected','selected');
 					jQuery('span.shipping_region_name').html(state);
 				}
@@ -287,7 +287,7 @@ function wpsc_fancy_notification(parent_form){
     //console.log(form_button_id);
     //return;
     var container_offset = {};
-    new_container_offset = jQuery('#products_page_container').offset(options, container_offset);
+    new_container_offset = jQuery('#products_page_container').offset();
     
 		if(container_offset['left'] == null) {
       container_offset['left'] = new_container_offset.left;
@@ -295,13 +295,13 @@ function wpsc_fancy_notification(parent_form){
     }    
 
     var button_offset = {};
-    new_button_offset = jQuery('#'+form_button_id).offset(options, button_offset)
+    new_button_offset = jQuery('#'+form_button_id).offset()
     
     if(button_offset['left'] == null) {
       button_offset['left'] = new_button_offset.left;
       button_offset['top'] = new_button_offset.top;
     }
-        
+//     console.log((button_offset['left'] - container_offset['left'] + 10));   
     jQuery('#fancy_notification').css("left", (button_offset['left'] - container_offset['left'] + 10) + 'px');
     jQuery('#fancy_notification').css("top", ((button_offset['top']  - container_offset['top']) -60) + 'px');
        

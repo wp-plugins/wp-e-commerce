@@ -57,12 +57,16 @@ function wpsc_add_to_cart() {
   foreach((array)$_POST['variation'] as $key => $variation) {
     $provided_parameters['variation_values'][(int)$key] = (int)$variation;
   }
-//exit('<pre>'.print_r($_POST['wpsc_quantity_update'][$_POST['product_id']], true).'</pre>');
+//exit('<pre>'.print_r($_POST, true).'</pre>');
   if($_POST['quantity'] > 0 && (!isset($_POST['wpsc_quantity_update']))) {
 		$provided_parameters['quantity'] = (int)$_POST['quantity'];
   } else if (isset($_POST['wpsc_quantity_update'])) {
 		$wpsc_cart->remove_item($_POST['key']);
-		$provided_parameters['quantity'] = (int)$_POST['wpsc_quantity_update'][$_POST['product_id']];
+		if(is_numeric($_POST['wpsc_quantity_update'])){
+			$provided_parameters['quantity'] = (int)$_POST['wpsc_quantity_update'];
+		}else{
+			$provided_parameters['quantity'] = (int)$_POST['wpsc_quantity_update'][$_POST['product_id']];
+		}
   }
 //  exit('<pre>'.print_r($_POST, true).'</pre>');
   if($_POST['is_customisable'] == 'true') {
@@ -213,6 +217,7 @@ function wpsc_empty_cart() {
 				});
 		";
 		}
+
 		exit();
   }
 
@@ -363,24 +368,30 @@ function wpsc_update_shipping_price() {
   global $wpdb, $wpsc_cart;
  	$quote_shipping_method = $_POST['key1'];
  	$quote_shipping_option = $_POST['key'];
- //	exit('<pre>'.print_r($wpsc_cart, true).'</pre>');
+
+	//If no $_POST key variable means it is activated through shipping same as billing
  	if($quote_shipping_method == '' && $quote_shipping_option == ''){
  		$quote_shipping_method = $wpsc_cart->selected_shipping_method;
-	
- 	}
-	$wpsc_cart->update_shipping($quote_shipping_method, $quote_shipping_option);
-	if($_POST['key1'] == ''  && $_POST['key'] == ''){
-		$i=0;
+ 		$i=0;
+		//if it is from shipping same as billing then per item shipping may need to be calculated...
 		foreach($wpsc_cart->cart_items as $cart_item){
 			$product_ship = $cart_item->calculate_shipping($quote_shipping_method);
 			
 			echo "jQuery('#shipping_".$i."').html('".htmlspecialchars(nzshpcrt_currency_display($product_ship, false,true))."');\n\r";
 			$i++;
 		}
-	}
-//	if(count($wpsc_cart->shipping_quotes) > 0 && $_POST['key1'] == ''  && $_POST['key'] == ''){
+ 	}else{
+ 		$wpsc_cart->update_shipping($quote_shipping_method, $quote_shipping_option);
+ 		echo "jQuery('.pricedisplay.checkout-shipping').html('".wpsc_cart_shipping()."');\n\r";
+		echo "jQuery('.pricedisplay.checkout-total').html('".wpsc_cart_total()."');\n\r";
+		exit();	
+ 	}
+	
+	//if(count($wpsc_cart->shipping_quotes) > 0 && $_POST['key1'] == ''  && $_POST['key'] == ''){
 		while (wpsc_have_shipping_methods()) : wpsc_the_shipping_method(); 
 		 	if (!wpsc_have_shipping_quotes()) { continue; } // Don't display shipping method if it doesn't have at least one quote 
+		 		
+				$output .="<tr><td class='shipping_header' colspan='5'>".wpsc_shipping_method_name().__('- Choose a Shipping Rate', 'wpsc')."</td></tr>";
 				while (wpsc_have_shipping_quotes()) : wpsc_the_shipping_quote();	
 				$output .="<tr class='shipping_quotes'>";
 				$output .="<td colspan='3'>";
@@ -401,11 +412,15 @@ function wpsc_update_shipping_price() {
 				endwhile;
 		endwhile; 
 	$output = str_replace(Array("\n","\r") , Array("\\n","\\r"),addslashes($output));
-	echo "jQuery('tr.shipping_quotes').remove();";
-	echo "jQuery('#wpsc_shopping_cart_container .productcart :first').append(\"".$output."\");\n\r";
+	echo "var shipping =jQuery('td.shipping_header').parent('tr');";
+	echo "shipping.nextAll('tr').remove();\n\r";
+	echo "shipping.parent().append(\"".$output."\");\n\r";
+	echo "shipping.empty();";
 //	}
-	$tax = $wpsc_cart->calculate_total_tax();
-	if($tax >0){
+
+	$wpsc_cart->update_shipping($quote_shipping_method, $quote_shipping_option);
+	
+	if(wpsc_cart_tax(false) > 0){
 		echo  "jQuery(\"tr.total_tax\").show();\n\r";
 		echo  "jQuery('#checkout_tax').html(\"<span class='pricedisplay'>".wpsc_cart_tax()."</span>\");\n\r";
 	}
@@ -511,14 +526,16 @@ function wpsc_update_location() {
 	}
 
 	//exit();
-	if($_GET['ajax'] == 'true') {
+	if($_REQUEST['ajax'] == 'true') {
 		exit();
 	}
 }
   
 // execute on POST and GET
+
 if($_REQUEST['wpsc_ajax_actions'] == 'update_location') {
-	add_action('init', 'wpsc_update_location');
+	add_action('init', 'wpsc_update_location',110);
+
 }
 
 

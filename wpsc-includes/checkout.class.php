@@ -85,7 +85,7 @@ function wpsc_the_checkout_item_error_class($as_attribute = true) {
 	  $class_name = 'validation-error';
 	}
 	if(($as_attribute == true)){
-	 $output = "class='".$class_name.wpsc_shipping_details()."'";
+	 $output = "class='".$class_name.wpsc_shipping_details()." wpsc_checkout_field".$wpsc_checkout->checkout_item->id."'";
 	} else {
 		$output = $class_name;
 	}
@@ -367,9 +367,9 @@ class wpsc_checkout {
   
   function form_name() {
 		if($this->form_name_is_required() && ($this->checkout_item->type != 'heading')){
-			return stripslashes($this->checkout_item->name).' * ';
+			return stripslashes($this->checkout_item->name).': * ';
 		}else{
-			return stripslashes($this->checkout_item->name);
+			return stripslashes($this->checkout_item->name).': ';
 		}
   }  
    
