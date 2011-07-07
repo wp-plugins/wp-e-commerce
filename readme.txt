@@ -3,10 +3,10 @@ Contributors: mufasa, jghazally, valentinas, mychelle, garyc40
 Donate link: http://getshopped.org
 Tags: e-commerce, wp-e-commerce, shop, cart, paypal, authorize, stock control, ecommerce, shipping, tax
 Requires at least: 3.0
-Tested up to: 3.1.1
+Tested up to: 3.2
 Stable tag: 3.8.5
 
-WP e-Commerce is a Web 2.0 application designed with usability, aesthetics, and presentation in mind. 
+WP e-Commerce is a Web 2.0 application designed with usability, aesthetics, and presentation in mind.
 
 == Description ==
 
@@ -43,6 +43,7 @@ After upgrading from earlier versions look for link "Update Store". This will up
 * Change: User can specify 0 in thumbnail width or height to make it scale proportional.
 * Change: Show display name, not internal name for shipping method on purchase log view.
 * Change: Presentation settings page is restored to WPEC Settings page when WooTheme is activated.
+* Fix: Add to cart using Donation widget causes the page to reload and the item is added twice.
 * Fix: Free-shipping discount causes tax to be calculated incorrectly.
 * Fix: Paypal Buy Now button passes the wrong price to Paypal if product is on sale.
 * Fix: Thumbnail sizes are not generated correctly.
