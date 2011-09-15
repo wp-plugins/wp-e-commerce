@@ -4,22 +4,22 @@ Donate link: http://getshopped.org/
 Tags: e-commerce, shop, ecommerce, cart, dropshop, ajax, web2.0, paypal, authorize, exchange, stock control, e commerce,
 Requires at least: 2.7
 Tested up to: 3.0.2
-Stable tag: 3.7.8
+Stable tag: 3.8.6
 
-WP e-Commerce is a Web 2.0 application designed with usability, aesthetics, and presentation in mind. 
+WP e-Commerce is a Web 2.0 application designed with usability, aesthetics, and presentation in mind.
 
 == Description ==
 
 The WP e-Commerce shopping cart plugin for WordPress is an elegant easy to use fully featured shopping cart application suitable for selling your products, services, and or fees online.
 
-WP e-Commerce is a Web 2.0 application designed with usability, aesthetics, and presentation in mind. 
+WP e-Commerce is a Web 2.0 application designed with usability, aesthetics, and presentation in mind.
 
 Perfect for:
 
 * Bands & Record Labels
 * Clothing Companies
 * Crafters & Artists
-* Books, DVDs & MP3 files 
+* Books, DVDs & MP3 files
 
 == Installation ==
 
@@ -32,16 +32,19 @@ Simply copy the new files across and replace the old files saving saving ones yo
 
 When updating it is important that you do not overwrite the entire images folder. Instead you should copy over the contents of the new images folder into the existing images folder on your server - saving all the exiting product images you may have already uploaded.
 
-If you experience database errors try de-activating and re-activating your plugin. 
+If you experience database errors try de-activating and re-activating your plugin.
 
-== Changelog == 
+== Changelog ==
+= 3.7.8.1 =
+* Fix: Security vulnerability in chronopay.
+
 = 3.7.8 =
 * Fixed Paypal Standard not sending Coupon Discount Values
 * Added in recent Turkish and Russian Language Files
 * Added in notice about 3.8 Public Beta
 * Fixed List View to Prevent JS Error on add to cart
 * Fix theme core files from outputting "*/?>" - props James Collins
-* Fix Product Thumbnail Deletion for Browsers that don't have console defined. 
+* Fix Product Thumbnail Deletion for Browsers that don't have console defined.
 * Fix product image upload so it works when uploading product images that contain apostrophes in their file names.
 * Make sure JPG cache images are created as JPGs not PNGs to reduce filesize
 
@@ -73,7 +76,7 @@ If you experience database errors try de-activating and re-activating your plugi
 * Added new POT file for translations
 
 = 3.7.6.7 =
-* Added back the hourly Cron Job for clearing the Claimed Stock  
+* Added back the hourly Cron Job for clearing the Claimed Stock
 * Stripslahses added to transaction results message and Order Notes (removes the / in front of ' and ")
 * Dashboard widget does not include sales that have been canceled by Paypal Pro
 * Australia Post Shipping Module, fix for International quotes
@@ -129,7 +132,7 @@ If you experience database errors try de-activating and re-activating your plugi
 * Google Checkout do not send shipping if shipping is 0
 * New Spanish translations
 * Removed 'Click to Download' from purchase receipts and transaction results page
-* Removed old unused Google Base Code 
+* Removed old unused Google Base Code
 * New changes to purchase logs totals and tax
 * Fixes to javascript errors from ratings.js
 * Image Thumbnail Patch submitted by the amazing leewillis77
@@ -139,10 +142,10 @@ If you experience database errors try de-activating and re-activating your plugi
 * New update message display below the auto-upgrade link in the WordPress plugin page submitted by the awesome husobj
 * Image Cache fix should speed up those thumbnails
 
-= 3.7.6.1 = 
+= 3.7.6.1 =
 * Bugfix release
 
-= 3.7.6 = 
+= 3.7.6 =
 * Significant upgrade
 * New Pagination Implementation
 * Improved marketing, including Google Merchant Centre support
@@ -188,7 +191,7 @@ If you experience database errors try de-activating and re-activating your plugi
 * Sender from the 'resend email to buyer' link on the purchase log details page has been fixed
 * Shipping Discount Bug that stopped shipping working at all.
 * Categories Widget has had numerous changes –
-* Better MU support. 
+* Better MU support.
 * Canadian Tax – Fixes
 * US Tax –Fixes
 * Product Categories Caching Issue  Resolved
@@ -201,14 +204,14 @@ If you experience database errors try de-activating and re-activating your plugi
 * HTML Tables can now be added to product descriptions
 * Flat Rate and Weight Rate improvements
 
-= 3.7.4 =  
+= 3.7.4 =
 * Changes to shipping to fix the bugs from 3.7.3 with shipping and the new shipping_discount feature
 * Fixes for variations under grid view
 
 == Upgrade Notice ==
 
 = 3.7.6.5 =
-Fixes issue with deprecated WPSC_TXT constants being undefined and displaying in front end of site. All users encountering this issue are advised to upgrade. 
+Fixes issue with deprecated WPSC_TXT constants being undefined and displaying in front end of site. All users encountering this issue are advised to upgrade.
 Also Fixed the gateway issue where DPS or Authorize do not show up on the Payments Option Page even after activating Gold Cart.
 
 = 3.7.6.4 =

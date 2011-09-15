@@ -3,7 +3,7 @@
 Plugin Name: WP e-Commerce Plugin
 Plugin URI: http://getshopped.org
 Description: A plugin that provides a WordPress Shopping Cart. See also: <a href="http://getshopped.org" target="_blank">GetShopped.org</a> | <a href="http://getshopped.org/forums/" target="_blank">Support Forum</a> | <a href="http://getshopped.org/resources/docs/" target="_blank">Documentation</a>
-Version: 3.7.8
+Version: 3.7.8.1
 Author: Instinct Entertainment
 Author URI: http://getshopped.org
 */
@@ -17,7 +17,7 @@ if ( function_exists('memory_get_usage') && ( (int) @ini_get('memory_limit') < 6
 define('WPSC_VERSION', '3.7');
 define('WPSC_MINOR_VERSION', '59');
 
-define('WPSC_PRESENTABLE_VERSION', '3.7.8');
+define('WPSC_PRESENTABLE_VERSION', '3.7.8.1');
 
 define('WPSC_DEBUG', false);
 define('WPSC_GATEWAY_DEBUG', false);
@@ -62,8 +62,8 @@ if(isset($wpdb->blogid)) {
 	define('IS_WPMU', 0);
 }
 
-/* 
-  load plugin text domain for get_text files. Plugin language will be the same 
+/*
+  load plugin text domain for get_text files. Plugin language will be the same
   as wordpress language defined in wp-config.php line 67
 */
 load_plugin_textdomain('wpsc', false, dirname( plugin_basename(__FILE__) ) . '/languages');
@@ -143,7 +143,7 @@ if($v1[0] >= 2.8){
 
 if (!IS_WP25) {
 	require_once(WPSC_FILE_PATH.'/editor.php');
-} else { 
+} else {
 	require_once(WPSC_FILE_PATH.'/js/tinymce3/tinymce.php');
 }
 
@@ -161,13 +161,13 @@ $nzshpcrt_log_states[1]['name'] = TXT_WPSC_PROCESSING;
 $nzshpcrt_log_states[2]['name'] = __('Closed Order', 'wpsc');
 
 
-require_once(WPSC_FILE_PATH."/currency_converter.inc.php"); 
-require_once(WPSC_FILE_PATH."/shopping_cart_functions.php"); 
-require_once(WPSC_FILE_PATH."/homepage_products_functions.php"); 
-require_once(WPSC_FILE_PATH."/transaction_result_functions.php"); 
+require_once(WPSC_FILE_PATH."/currency_converter.inc.php");
+require_once(WPSC_FILE_PATH."/shopping_cart_functions.php");
+require_once(WPSC_FILE_PATH."/homepage_products_functions.php");
+require_once(WPSC_FILE_PATH."/transaction_result_functions.php");
 // include_once(WPSC_FILE_PATH.'/submit_checkout_function.php');
 require_once(WPSC_FILE_PATH."/admin-form-functions.php");
-require_once(WPSC_FILE_PATH."/shipwire_functions.php"); 
+require_once(WPSC_FILE_PATH."/shipwire_functions.php");
 
 /* widget_section */
 include_once(WPSC_FILE_PATH.'/widgets/product_tag_widget.php');
@@ -208,7 +208,7 @@ if(IS_WPMU == 1) {
 	if ( !defined('WP_CONTENT_DIR') ) {
 		define( 'WP_CONTENT_DIR', ABSPATH . 'wp-content');
 	}
-	
+
 	$upload_path = WP_CONTENT_DIR."/uploads";
 	$upload_url = WP_CONTENT_URL."/uploads";
 }*/
@@ -223,7 +223,7 @@ $upload_url = $wp_upload_dir_data['baseurl'];
 if(is_ssl()) {
 	 $upload_url = str_replace("http://", "https://", $upload_url);
 }
-	
+
 $wpsc_upload_dir = "{$upload_path}/wpsc/";
 $wpsc_file_dir = "{$wpsc_upload_dir}downloadables/";
 $wpsc_preview_dir = "{$wpsc_upload_dir}previews/";
@@ -271,7 +271,7 @@ define('WPSC_UPGRADES_URL', $wpsc_upgrades_url);
 
 define('WPSC_THEMES_URL', $wpsc_themes_url);
 
-/* 
+/*
  * This plugin gets the merchants from the merchants directory and
  * needs to search the merchants directory for merchants, the code to do this starts here
  */
@@ -288,10 +288,10 @@ foreach((array)$nzshpcrt_merchant_list as $nzshpcrt_merchant) {
 }
 
 $nzshpcrt_gateways = apply_filters('wpsc_gateway_modules',$nzshpcrt_gateways);
-/* 
+/*
  * and ends here
  */
- 
+
 // include shipping modules here.
 $shipping_directory = WPSC_FILE_PATH.'/shipping';
 $nzshpcrt_shipping_list = wpsc_list_dir($shipping_directory);
@@ -312,22 +312,22 @@ if(is_file(WPSC_UPGRADES_DIR . "gold_cart_files/gold_shopping_cart.php")) {
   require_once(WPSC_UPGRADES_DIR . "gold_cart_files/gold_shopping_cart.php");
 }
 
-// need to sort the merchants here, after the gold ones are included. 
+// need to sort the merchants here, after the gold ones are included.
 if(!function_exists('wpsc_merchant_sort')) {
-	function wpsc_merchant_sort($a, $b) { 
+	function wpsc_merchant_sort($a, $b) {
 		return strnatcmp(strtolower($a['name']), strtolower($b['name']));
 	}
 }
 uasort($nzshpcrt_gateways, 'wpsc_merchant_sort');
 
 // make an associative array of references to gateway data.
-$wpsc_gateways = array(); 
+$wpsc_gateways = array();
 foreach((array)$nzshpcrt_gateways as $key => $gateway) {
 	$wpsc_gateways[$gateway['internalname']] = &$nzshpcrt_gateways[$key];
 }
 
 $theme_path = WPSC_FILE_PATH . '/themes/';
-if((get_option('wpsc_selected_theme') != '') && (file_exists($theme_path.get_option('wpsc_selected_theme')."/".get_option('wpsc_selected_theme').".php") )) {    
+if((get_option('wpsc_selected_theme') != '') && (file_exists($theme_path.get_option('wpsc_selected_theme')."/".get_option('wpsc_selected_theme').".php") )) {
   include_once(WPSC_FILE_PATH.'/themes/'.get_option('wpsc_selected_theme').'/'.get_option('wpsc_selected_theme').'.php');
 }
 $current_version_number = get_option('wpsc_version');
@@ -364,7 +364,7 @@ if(!function_exists('wpsc_start_the_query')) {
 	function wpsc_start_the_query() {
 	  global $wp_query, $wpsc_query;
 	  $wpsc_query = new WPSC_query();
-	
+
 		$post_id = $wp_query->post->ID;
 		$page_url = get_permalink($post_id);
 		if(get_option('shopping_cart_url') == $page_url) {
@@ -389,9 +389,9 @@ if(!function_exists('wpsc_initialisation')){
 	function wpsc_initialisation() {
 	  global $wpsc_cart,  $wpsc_theme_path, $wpsc_theme_url, $wpsc_category_url_cache;
 	  // set the theme directory constant
-	  
+
 		$file_names = array();
-		
+
 		// Check that theme folder exists to prevent fatal timeout error
 		// which crashes WordPress.
 		if ( is_dir( WPSC_THEMES_PATH ) ) {
@@ -403,7 +403,7 @@ if(!function_exists('wpsc_initialisation')){
 				}
 			}
 		}
-		
+
 	  if(count($file_names) > 0) {
 			$wpsc_theme_path = WPSC_THEMES_PATH;
 			$wpsc_theme_url = WPSC_THEMES_URL;
@@ -419,7 +419,7 @@ if(!function_exists('wpsc_initialisation')){
 			$theme_dir = get_option('wpsc_selected_theme');
 		}
 		define('WPSC_THEME_DIR', $theme_dir);
-	  
+
 	  // initialise the cart session, if it exist, unserialize it, otherwise make it
 		if(isset($_SESSION['wpsc_cart'])) {
 			if(is_object($_SESSION['wpsc_cart'])) {
@@ -452,11 +452,11 @@ switch(get_option('cart_location')) {
   case 1:
   add_action('wp_list_pages','nzshpcrt_shopping_basket');
   break;
-  
+
   case 2:
   add_action('the_content', 'nzshpcrt_shopping_basket' , 14);
   break;
-  
+
   default:
   break;
 }
@@ -483,7 +483,7 @@ if(is_ssl()) {
 
 /**
  * This serializes the shopping cart variable as a backup in case the unserialized one gets butchered by various things
- */  
+ */
 if(!function_exists('wpsc_serialize_shopping_cart')){
 	function wpsc_serialize_shopping_cart() {
 	  global $wpdb, $wpsc_start_time, $wpsc_cart, $wpsc_category_url_cache;
@@ -496,16 +496,16 @@ if(!function_exists('wpsc_serialize_shopping_cart')){
 		if($wpsc_category_url_cache != $previous_category_url_cache) {
 			update_option('wpsc_category_url_cache', $wpsc_category_url_cache);
 		}
-	  
+
 	  return true;
-	} 
-} 
+	}
+}
 add_action('shutdown','wpsc_serialize_shopping_cart');
 
 
 function wpsc_break_canonical_redirects($redirect_url, $requested_url) {
 	global $wp_query;
-	
+
 	if(is_numeric($wp_query->query_vars['category_id'] )) {
 		return false;
 	}
