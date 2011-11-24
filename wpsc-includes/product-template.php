@@ -377,7 +377,7 @@ function wpsc_the_product_price( $no_decimals = false ) {
 	if ( isset($wpsc_variations->first_variations) && count( $wpsc_variations->first_variations ) > 0 ) {
 		//select the variation ID with lowest price
 		$output = wpsc_product_variation_price_available(get_the_ID());
-		$from = ' from ';
+		$from = __( ' from ', 'wpsc' );
 	} else {
 		$product_id = get_the_ID();
 		$from = '';
