@@ -3,6 +3,8 @@ $any_bad_inputs = false;
 $changes_saved = false;
 $_SESSION['collected_data'] = null;
 if($_POST['collected_data'] != null) {
+  if( ! wp_verify_nonce( $_POST['_wpsc_user_profile'], 'wpsc_user_profile') )
+    die( __( 'It would appear either you are trying to hack into this account, or your session has expired.  Hoping for the latter.', 'wpsc' ) );
   foreach((array)$_POST['collected_data'] as $value_id => $value) {
     $form_sql = "SELECT * FROM `".WPSC_TABLE_CHECKOUT_FORMS."` WHERE `id` = '$value_id' LIMIT 1";
     $form_data = $wpdb->get_results($form_sql,ARRAY_A);
@@ -16,13 +18,13 @@ if($_POST['collected_data'] != null) {
           $bad_input = true;
 				}
         break;
-        
+
         case "delivery_country":
         if(($value != null)) {
           $_SESSION['delivery_country'] == $value;
 				}
         break;
-        
+
         default:
         break;
         }
@@ -31,32 +33,32 @@ if($_POST['collected_data'] != null) {
           case __('First Name', 'wpsc'):
           $bad_input_message .= __('Please enter a valid name', 'wpsc') . "";
           break;
-  
+
           case __('Last Name', 'wpsc'):
           $bad_input_message .= __('Please enter a valid surname', 'wpsc') . "";
           break;
-  
+
           case __('Email', 'wpsc'):
           $bad_input_message .= __('Please enter a valid email address', 'wpsc') . "";
           break;
-  
+
           case __('Address 1', 'wpsc'):
           case __('Address 2', 'wpsc'):
           $bad_input_message .= __('Please enter a valid address', 'wpsc') . "";
           break;
-  
+
           case __('City', 'wpsc'):
           $bad_input_message .= __('Please enter your town or city.', 'wpsc') . "";
           break;
-  
+
           case __('Phone', 'wpsc'):
           $bad_input_message .= __('Please enter a valid phone number', 'wpsc') . "";
           break;
-  
+
           case __('Country', 'wpsc'):
           $bad_input_message .= __('Please select your country from the list.', 'wpsc') . "";
           break;
-  
+
           default:
           $bad_input_message .= __('Please enter a valid', 'wpsc') . " " . strtolower($form_data['name']) . ".";
           break;
@@ -72,7 +74,7 @@ if($_POST['collected_data'] != null) {
 
   $new_meta_data = serialize($meta_data);
   update_usermeta($user_ID, 'wpshpcrt_usr_profile', $meta_data);
-} 
+}
 ?>
 <div class="wrap" style=''>
 <?php
@@ -106,7 +108,7 @@ foreach($form_data as $form_field)
     echo "
     <tr>
       <td colspan='2'>\n\r";
-    echo "<strong>".$form_field['name']."</strong>";        
+    echo "<strong>".$form_field['name']."</strong>";
     echo "
       </td>
     </tr>\n\r";
@@ -117,7 +119,7 @@ foreach($form_data as $form_field)
         {
         continue;
         }
-      
+
       echo "
       <tr>
         <td align='left'>\n\r";
@@ -139,35 +141,36 @@ foreach($form_data as $form_field)
         case "delivery_city":
         echo "<input type='text' value='".$meta_data[$form_field['id']]."' name='collected_data[".$form_field['id']."]' />";
         break;
-        
+
         case "address":
         case "delivery_address":
         case "textarea":
         echo "<textarea name='collected_data[".$form_field['id']."]'>".$meta_data[$form_field['id']]."</textarea>";
         break;
-        
-        
+
+
         case "region":
         case "delivery_region":
         echo "<select name='collected_data[".$form_field['id']."]'>".nzshpcrt_region_list($_SESSION['collected_data'][$form_field['id']])."</select>";
         break;
-        
-        
-        case "country":   
+
+
+        case "country":
         break;
-        
+
         case "delivery_country":
         echo "<select name='collected_data[".$form_field['id']."]' >".nzshpcrt_country_list($meta_data[$form_field['id']])."</select>";
         break;
-        
+
         case "email":
         echo "<input type='text' value='".$meta_data[$form_field['id']]."' name='collected_data[".$form_field['id']."]' />";
         break;
-        
+
         default:
         echo "<input type='text' value='".$meta_data[$form_field['id']]."' name='collected_data[".$form_field['id']."]' />";
         break;
         }
+      echo wp_nonce_field( 'wpsc_user_profile', '_wpsc_user_profile' );
       echo "
         </td>
       </tr>\n\r";
