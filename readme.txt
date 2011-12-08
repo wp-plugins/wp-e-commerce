@@ -4,7 +4,7 @@ Donate link: http://getshopped.org/
 Tags: e-commerce, shop, ecommerce, cart, dropshop, ajax, web2.0, paypal, authorize, exchange, stock control, e commerce,
 Requires at least: 2.7
 Tested up to: 3.0.2
-Stable tag: 3.8.6
+Stable tag: 3.8.7.4
 
 WP e-Commerce is a Web 2.0 application designed with usability, aesthetics, and presentation in mind.
 
@@ -35,6 +35,9 @@ When updating it is important that you do not overwrite the entire images folder
 If you experience database errors try de-activating and re-activating your plugin.
 
 == Changelog ==
+= 3.7.8.2 =
+* Fix: Security vulnerability in various files.
+
 = 3.7.8.1 =
 * Fix: Security vulnerability in chronopay.
 
