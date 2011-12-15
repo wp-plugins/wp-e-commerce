@@ -28,7 +28,7 @@ function nzshpcrt_region_list( $selected_country = null, $selected_region = null
 		$selected_region = get_option( 'base_region' );
 
 	$output = "";
-	$region_list = $wpdb->get_results( "SELECT `" . WPSC_TABLE_REGION_TAX . "`.* FROM `" . WPSC_TABLE_REGION_TAX . "`, `" . WPSC_TABLE_CURRENCY_LIST . "`  WHERE `" . WPSC_TABLE_CURRENCY_LIST . "`.`isocode` IN('" . $selected_country . "') AND `" . WPSC_TABLE_CURRENCY_LIST . "`.`id` = `" . WPSC_TABLE_REGION_TAX . "`.`country_id`", ARRAY_A );
+	$region_list = $wpdb->get_results( $wpdb->prepare( "SELECT `" . WPSC_TABLE_REGION_TAX . "`.* FROM `" . WPSC_TABLE_REGION_TAX . "`, `" . WPSC_TABLE_CURRENCY_LIST . "`  WHERE `" . WPSC_TABLE_CURRENCY_LIST . "`.`isocode` IN(%s) AND `" . WPSC_TABLE_CURRENCY_LIST . "`.`id` = `" . WPSC_TABLE_REGION_TAX . "`.`country_id`", $selected_country ), ARRAY_A );
 	
 	if ( $region_list != null ) {
 		$output .= "<option value=''>None</option>";
@@ -169,8 +169,8 @@ function wpsc_select_product_file( $product_id = null ) {
 	);
 
 	$attached_files = (array)get_posts( $args );
-
-	$output = "<span class='admin_product_notes select_product_note '>" . __( 'File(s) attached: ', 'wpsc' ) . "</span><br>";
+	$output = "<a name='wpsc_downloads'></a>";
+	$output .= "<span class='admin_product_notes select_product_note '>" . __( 'File(s) attached: ', 'wpsc' ) . "</span><br>";
 	$output .= "<div class='ui-widget-content multiple-select select_product_file'>";
 	$num = 0;
 
