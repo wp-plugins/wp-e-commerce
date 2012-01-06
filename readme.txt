@@ -35,6 +35,9 @@ When updating it is important that you do not overwrite the entire images folder
 If you experience database errors try de-activating and re-activating your plugin.
 
 == Changelog ==
+= 3.7.8.3 =
+* Fix: XSS security vulnerability.
+
 = 3.7.8.2 =
 * Fix: Security vulnerability in various files.
 
