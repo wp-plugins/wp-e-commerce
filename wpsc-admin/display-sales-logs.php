@@ -574,7 +574,7 @@ if(!isset($purchlogs)){
  	?>
  	<form  action='' method='post'>
  		<input type='hidden' name='wpsc_admin_action' value='purchlogs_search' />
- 		<input type='text' value='<?php if(isset($_POST['purchlogs_searchbox'])) echo $_POST['purchlogs_searchbox']; ?>' name='purchlogs_searchbox' id='purchlogs_searchbox' />
+ 		<input type='text' value='<?php if(isset($_POST['purchlogs_searchbox'])) echo esc_attr( $_POST['purchlogs_searchbox'] ); ?>' name='purchlogs_searchbox' id='purchlogs_searchbox' />
  		<input type="submit" value="<?php _e('Search Logs'); ?>"  class="button-secondary action" />
   	</form>
  	<?php
