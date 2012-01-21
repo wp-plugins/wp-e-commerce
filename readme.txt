@@ -156,6 +156,22 @@ After upgrading from earlier versions look for link "Update Store". This will up
 
 
 == Changelog ==
+= 3.8.7.6 =
+* New: Default hook to filter sessionid for previously selected payment gateways.
+* Change: Stock notification emails are now sent to "purchase log email address" rather than admin address.
+* Fix: 3.7 -> 3.8 Database Upgrade Routine fails when importing variations sets with the same name.
+* Fix: Category link structure is not correct in pagination links with hierarchical category permalink.
+* Fix: Fix SQL error when using "?items_per_page=all" query.
+* Fix: Missing "Use as product thumbnail" on WordPress 3.3.
+* Fix: Products Page does not support custom page template - uses page.php instead.
+* Fix: Products page, category items per page is broken, relies on 'posts per page' setting in Settings -> reading.
+* Fix: Sticky post view broken due to deprecated query_string filter.
+* Fix: Sub-pages of Products Page aren't supported.
+* Fix: Total Quantity check for coupons.
+* Fix: Use ->add_help_tab() to support WP 3.3 admin screen API.
+* Fix: [wpsc_products] shortcode does not use 'Sort Product By' setting - it defaults to date-based ordering.
+* Fix: dashboard.css is loaded for WordPress > 3.3 (404 error).
+
 = 3.8.7.5 =
 * Fix XSS vulnerability.
 
