@@ -35,9 +35,9 @@ function wpsc_transaction_theme() {
 		echo $_SESSION['payflow_message'];
 		$_SESSION['payflow_message'] = '';
 	}
-	
+
 	$dont_show_transaction_results = false;
-	
+
 	if ( isset( $_SESSION['wpsc_previous_selected_gateway'] ) ) {
 		// Replaces the ugly if else for gateways
 		switch($_SESSION['wpsc_previous_selected_gateway']){
@@ -48,7 +48,7 @@ function wpsc_transaction_theme() {
 				if(isset($_SESSION['reshash']['PAYMENTINFO_0_TRANSACTIONTYPE']) && in_array( $_SESSION['reshash']['PAYMENTINFO_0_TRANSACTIONTYPE'], array( 'expresscheckout', 'cart' ) ) )
 					$dont_show_transaction_results = false;
 				else
-					$dont_show_transaction_results = true;		
+					$dont_show_transaction_results = true;
 			break;
 			case 'dps':
 				$sessionid = decrypt_dps_response();
@@ -57,48 +57,48 @@ function wpsc_transaction_theme() {
 			case 'paystation':
 				$ec = $_GET['ec'];
 				$result= $_GET['em'];
-				
+
 				if($result == 'Transaction successful' && $ec == 0)
-						$processed_id = '3';					
-				
+						$processed_id = '3';
+
 				if($result == 'Insufficient Funds' && $ec == 5){
 					$processed_id = '6';
-				
+
 					$payment_instructions = printf( __( 'Sorry your transaction was not accepted due to insufficient funds <br /><a href="%1$s">Click here to go back to checkout page</a>.', 'wpsc' ), get_option( "shopping_cart_url" ) );
 				}
 				if($processed_id){
 					$wpdb->update( WPSC_TABLE_PURCHASE_LOGS, array('processed' => $processed_id),array('sessionid'=>$sessionid), array('%f') );
-				}		
+				}
 			break;
-			case 'wpsc_merchant_paymentexpress' : 
+			case 'wpsc_merchant_paymentexpress' :
                // Payment Express sends back there own session id, which is temporarily stored in the Auth field
                // so just swapping that over here
-               $query = "SELECT `sessionid` FROM  `" .WPSC_TABLE_PURCHASE_LOGS. "` WHERE  `authcode` ='" . $sessionid . "'";
+               $query = $wpdb->prepare( "SELECT `sessionid` FROM  `" .WPSC_TABLE_PURCHASE_LOGS. "` WHERE  `authcode` =%s", $sessionid );
                $result = $wpdb->get_var($query);
                if($result != null){
                    // just in case they are using an older version old gold cart (pre 2.9.5)
                    $sessionid = $result;
                    $dont_show_transaction_results = true;
-               }  
+               }
            break;
            case 'eway_hosted':
                $sessionid = decrypt_eway_uk_response();
            break;
-           //default filter for other payment gateways to use 
+           //default filter for other payment gateways to use
 		   default:
            		$sessionid = apply_filters('wpsc_previous_selected_gateway_' . $_SESSION['wpsc_previous_selected_gateway']);
            break;
 		}
 	}
-	
+
 	if(!$dont_show_transaction_results ) {
 		if ( !empty($sessionid) ){
-			$cart_log_id = $wpdb->get_var( "SELECT `id` FROM `" . WPSC_TABLE_PURCHASE_LOGS . "` WHERE `sessionid`= " . $sessionid . " LIMIT 1" );
+			$cart_log_id = $wpdb->get_var( $wpdb->prepare( "SELECT `id` FROM `" . WPSC_TABLE_PURCHASE_LOGS . "` WHERE `sessionid`= %s LIMIT 1", $sessionid ) );
 			return transaction_results( $sessionid, true );
 		}else
 		printf( __( 'Sorry your transaction was not accepted.<br /><a href="%1$s">Click here to go back to checkout page</a>.', 'wpsc' ), get_option( "shopping_cart_url" ) );
 	}
-	
+
 }
 
 
@@ -113,13 +113,13 @@ function wpsc_transaction_theme() {
  */
 function transaction_results( $sessionid, $display_to_screen = true, $transaction_id = null ) {
 	// Do we seriously need this many globals?
-	global $wpdb, $wpsc_cart, $echo_to_screen, $purchase_log, $order_url; 
+	global $wpdb, $wpsc_cart, $echo_to_screen, $purchase_log, $order_url;
 	global $message_html, $cart, $errorcode,$wpsc_purchlog_statuses, $wpsc_gateways;
-	
+
 	$wpec_taxes_controller = new wpec_taxes_controller();
 	$is_transaction = false;
 	$errorcode = 0;
-	$purchase_log = $wpdb->get_row( "SELECT * FROM `" . WPSC_TABLE_PURCHASE_LOGS . "` WHERE `sessionid`= " . $sessionid . " LIMIT 1", ARRAY_A );
+	$purchase_log = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `" . WPSC_TABLE_PURCHASE_LOGS . "` WHERE `sessionid`= %s LIMIT 1", $sessionid ), ARRAY_A );
 	$order_status = $purchase_log['processed'];
 	$curgateway = $purchase_log['gateway'];
 	//new variable to check whether function is being called from resen_email
@@ -127,20 +127,20 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 		$resend_email = true;
 	else
 		$resend_email = false;
-		
+
 	if( !is_bool( $display_to_screen )  )
 		$display_to_screen = true;
-		
+
 	$echo_to_screen = $display_to_screen;
 
 	if ( is_numeric( $sessionid ) ) {
 		if ( $echo_to_screen )
 			echo apply_filters( 'wpsc_pre_transaction_results', '' );
-		
+
 		// New code to check whether transaction is processed, true if accepted false if pending or incomplete
 		$is_transaction = wpsc_check_purchase_processed($purchase_log['processed']);
 		$message_html = $message = stripslashes( get_option( 'wpsc_email_receipt' ) );
-	
+
 		if( $is_transaction ){
 			$message = __('The Transaction was successful', 'wpsc')."\r\n".$message;
 			$message_html = __('The Transaction was successful', 'wpsc')."<br />".$message_html;
@@ -153,7 +153,7 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 			$shipping_country = $purchase_log['shipping_country'];
 		} elseif (  !empty($country) ) {
 			$country = $wpdb->get_var( "SELECT `value` FROM `" . WPSC_TABLE_SUBMITED_FORM_DATA . "` WHERE `log_id`=" . $purchase_log['id'] . " AND `form_id` = '" . get_option( 'country_form_field' ) . "' LIMIT 1" );
-						
+
 			$billing_country = $country;
 			$shipping_country = $country;
 		}
@@ -161,7 +161,7 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 		$email = wpsc_get_buyers_email($purchase_log['id']);
 		$previous_download_ids = array( );
 		$product_list = $product_list_html = $report_product_list = '';
-	
+
 		$cart = $wpdb->get_results( "SELECT * FROM `" . WPSC_TABLE_CART_CONTENTS . "` WHERE `purchaseid` = '{$purchase_log['id']}'" , ARRAY_A );
 		if ( ($cart != null) && ($errorcode == 0) ) {
 			$total_shipping = '';
@@ -190,7 +190,7 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 								);
 
 							$download_file_posts = (array)get_posts( $argsdl );
-	
+
 							foreach((array)$download_file_posts as $single_file_post){
 								if($single_file_post->ID == $single_download['fileid']){
 									$current_Dl_product_file_post = $single_file_post;
@@ -198,12 +198,12 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 								}
 							}
 							$file_name = $current_Dl_product_file_post->post_title;
-							
+
 							if ( $single_download['uniqueid'] == null )
 								$link[] = array( "url" => site_url( "?downloadid=" . $single_download['id'] ), "name" => $file_name );
 							else
 								$link[] = array( "url" => site_url( "?downloadid=" . $single_download['uniqueid'] ), "name" => $file_name );
-							
+
 						}
 					} else {
 						$order_status = $purchase_log['processed'];
@@ -246,7 +246,7 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 					$product_list .= $additional_content;
 					$product_list_html .= $additional_content;
 				} else {
-				
+
 					$product_list.= " - " . $row['quantity'] . " " . $row['name'] . "  " . $message_price . "\n\r";
 					if ( $shipping > 0 )
 						$product_list .= sprintf(__( ' - Shipping: %s
@@ -284,7 +284,7 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 			$total_shipping += $purchase_log['base_shipping'];
 
 			$total = $purchase_log['totalprice'];
-			
+
 			$total_price_email = '';
 			$total_price_html = '';
 			$total_tax_html = '';
@@ -298,8 +298,8 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 ', 'wpsc' ), wpsc_currency_display( $total, array( 'display_as_html' => false ) ));
 			if ( $purchase_log['discount_value'] > 0 ) {
 				$discount_email = __( 'Discount', 'wpsc' ) . "\n\r: ";
-				$discount_email .=$purchase_log['discount_data'] . ' : ' . wpsc_currency_display( $purchase_log['discount_value'], array( 'display_as_html' => false ) ) . "\n\r"; 
-				
+				$discount_email .=$purchase_log['discount_data'] . ' : ' . wpsc_currency_display( $purchase_log['discount_value'], array( 'display_as_html' => false ) ) . "\n\r";
+
 				$report.= $discount_email . "\n\r";
 				$total_shipping_email .= $discount_email;
 				$total_shipping_html.= __( 'Discount', 'wpsc' ) . ": " . wpsc_currency_display( $purchase_log['discount_value'] ) . "\n\r";
@@ -308,7 +308,7 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 			//only show total tax if tax is not included
 			if($wpec_taxes_controller->wpec_taxes_isenabled() && !$wpec_taxes_controller->wpec_taxes_isincluded()){
 				$total_tax_html .= __('Total Tax', 'wpsc').': '. wpsc_currency_display( $purchase_log['wpec_taxes_total'] )."\n\r";
-				$total_tax .= __('Total Tax', 'wpsc').': '. wpsc_currency_display( $purchase_log['wpec_taxes_total'] , array( 'display_as_html' => false ) )."\n\r"; 		
+				$total_tax .= __('Total Tax', 'wpsc').': '. wpsc_currency_display( $purchase_log['wpec_taxes_total'] , array( 'display_as_html' => false ) )."\n\r";
 			}
 			if ( wpsc_uses_shipping() )
 				$total_shipping_html.= '<hr>' . sprintf(__( 'Total Shipping: %s
@@ -317,12 +317,12 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 ', 'wpsc' ), wpsc_currency_display( $total ) );
 			$report_id = sprintf(__("Purchase # %s
 ", 'wpsc'), $purchase_log['id']);
-			
+
 			if ( isset( $_GET['ti'] ) ) {
 				$message.= "\n\r" . __( 'Your Transaction ID', 'wpsc' ) . ": " . $_GET['ti'];
 				$message_html.= "\n\r" . __( 'Your Transaction ID', 'wpsc' ) . ": " . $_GET['ti'];
 				$report.= "\n\r" . __( 'Transaction ID', 'wpsc' ) . ": " . $_GET['ti'];
-			} 
+			}
 			$message = apply_filters( 'wpsc_transaction_result_message', $message );
 			$message = str_replace( '%purchase_id%', $report_id, $message );
 			$message = str_replace( '%product_list%', $product_list, $message );
@@ -331,7 +331,7 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 			$message = str_replace( '%total_price%', $total_price_email, $message );
 			$message = str_replace( '%shop_name%', get_option( 'blogname' ), $message );
 			$message = str_replace( '%find_us%', $purchase_log['find_us'], $message );
-			
+
 			$report = apply_filters( 'wpsc_transaction_result_report', $report );
 			$report = str_replace( '%purchase_id%', $report_id, $report );
 			$report = str_replace( '%product_list%', $report_product_list, $report );
@@ -340,7 +340,7 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 			$report = str_replace( '%total_price%', $total_price_email, $report );
 			$report = str_replace( '%shop_name%', get_option( 'blogname' ), $report );
 			$report = str_replace( '%find_us%', $purchase_log['find_us'], $report );
-			
+
 			$message_html = apply_filters( 'wpsc_transaction_result_message_html', $message_html );
 			$message_html = str_replace( '%purchase_id%', $report_id, $message_html );
 			$message_html = str_replace( '%product_list%', $product_list_html, $message_html );
@@ -356,13 +356,13 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 				$message = apply_filters('wpsc_email_message', $message, $report_id, $product_list, $total_tax, $total_shipping_email, $total_price_email);
 
 				if ( !$is_transaction ) {
-	
+
 					$payment_instructions = strip_tags( stripslashes( get_option( 'payment_instructions' ) ) );
 					if(!empty($payment_instructions))
-						$payment_instructions .= "\n\r";					
+						$payment_instructions .= "\n\r";
 					$message = __( 'Thank you, your purchase is pending, you will be sent an email once the order clears.', 'wpsc' ) . "\n\r" . $payment_instructions . $message;
 					$message_html = __( 'Thank you, your purchase is pending, you will be sent an email once the order clears.', 'wpsc' ) . "\n\r" . $payment_instructions . $message_html;
-					
+
 					// prevent email duplicates
 					if ( ! get_transient( "{$sessionid}_pending_email_sent" ) ) {
 						wp_mail( $email, __( 'Order Pending: Payment Required', 'wpsc' ), $message );
@@ -380,11 +380,11 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 			$report_user = __( 'Customer Details', 'wpsc' ) . "\n\r";
 			$form_sql = "SELECT * FROM `" . WPSC_TABLE_SUBMITED_FORM_DATA . "` WHERE `log_id` = '" . $purchase_log['id'] . "'";
 			$form_data = $wpdb->get_results( $form_sql, ARRAY_A );
-			
+
 			if ( $form_data != null ) {
 				foreach ( $form_data as $form_field ) {
 					$form_data = $wpdb->get_row( "SELECT * FROM `" . WPSC_TABLE_CHECKOUT_FORMS . "` WHERE `id` = '" . $form_field['form_id'] . "' LIMIT 1", ARRAY_A );
-		
+
 					switch ( $form_data['type'] ) {
 						case "country":
 							$country_code = $form_field['value'];
@@ -396,9 +396,9 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 							break;
 
 						case "delivery_country":
-							$report_user .= $form_data['name'] . ": " . wpsc_get_country( $form_field['value'] ) . "\n";			
+							$report_user .= $form_data['name'] . ": " . wpsc_get_country( $form_field['value'] ) . "\n";
 							break;
-					
+
 						default:
 							if ($form_data['name'] == 'State' && is_numeric($form_field['value'])){
 								$report_user .= __( 'Delivery State', 'wpsc' ) . ": " . wpsc_get_state_by_id( $form_field['value'], 'name' ) . "\n";
