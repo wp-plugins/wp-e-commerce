@@ -70,6 +70,10 @@ function wpsc_transaction_theme() {
 					$wpdb->update( WPSC_TABLE_PURCHASE_LOGS, array('processed' => $processed_id),array('sessionid'=>$sessionid), array('%f') );
 				}		
 			break;
+			//default filter for other payment gateways to use 
+			default:
+               $sessionid = apply_filters('wpsc_previous_selected_gateway');
+           break;
 		}
 	}
 	
