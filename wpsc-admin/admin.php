@@ -219,6 +219,7 @@ function wpsc_admin_pages() {
  * @since 3.8.8
  */
 function wpsc_add_help_tabs() {
+	global $current_screen;
 	$tabs = array(
 		// Store Settings Page
 		'settings_page_wpsc-settings' => array(
@@ -288,7 +289,7 @@ function wpsc_add_help_tabs() {
 		),
 	);
 
-	$screen = get_current_screen();
+	$screen = $current_screen;
 	if ( array_key_exists( $screen->id, $tabs ) ) {
 		$tab = $tabs[$screen->id];
 		$content = '<p><strong>' . __( 'For More Information', 'wpsc' ) . '</strong></p>';
