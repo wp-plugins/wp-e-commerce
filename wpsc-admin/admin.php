@@ -200,8 +200,6 @@ function wpsc_admin_pages() {
 		update_option( 'wpsc_trackingid_message', __( "Track & Trace means you may track the progress of your parcel with our online parcel tracker, just login to our website and enter the following Tracking ID to view the status of your order.\n\nTracking ID: %trackid%\n", 'wpsc' ) );
 	}
 
-	add_action( 'load-' . $edit_options_page, 'wpsc_load_settings_page', 1 );
-
 	// Help tabs
 	add_action( 'load-' . $edit_options_page , 'wpsc_add_help_tabs' );
 	add_action( 'load-' . $purchase_log_page,  'wpsc_add_help_tabs' );
