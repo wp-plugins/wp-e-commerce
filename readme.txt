@@ -156,6 +156,11 @@ After upgrading from earlier versions look for link "Update Store". This will up
 
 
 == Changelog ==
+= 3.8.7.6.1 =
+* Fix: PHP Warning for 'wpsc_load_settings_page' callback.
+* Fix: PHP Warning in wpsc-transaction_results_functions.php.
+* Fix: get_current_screen() is not available in WP 3.0.
+
 = 3.8.7.6 =
 * New: Default hook to filter sessionid for previously selected payment gateways.
 * Change: Stock notification emails are now sent to "purchase log email address" rather than admin address.
