@@ -156,6 +156,9 @@ After upgrading from earlier versions look for link "Update Store". This will up
 
 
 == Changelog ==
+= 3.8.7.6.2 =
+* Fix: Session ID is overridden.
+
 = 3.8.7.6.1 =
 * Fix: PHP Warning for 'wpsc_load_settings_page' callback.
 * Fix: PHP Warning in wpsc-transaction_results_functions.php.
