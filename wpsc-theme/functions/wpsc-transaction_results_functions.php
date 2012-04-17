@@ -89,7 +89,6 @@ function wpsc_transaction_theme() {
            		$sessionid = apply_filters('wpsc_previous_selected_gateway_' . $_SESSION['wpsc_previous_selected_gateway'], $sessionid);
            break;
 
-
 		}
 	}
 
