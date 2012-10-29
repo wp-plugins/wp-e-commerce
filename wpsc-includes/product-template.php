@@ -399,6 +399,8 @@ function wpsc_product_variation_price_available( $product_id, $from_text = false
 	}
 
 	sort( $prices );
+	if ( empty( $prices ) )
+		$prices[] = 0;
 	$price = apply_filters( 'wpsc_do_convert_price', $prices[0], $product_id );
 	$price = wpsc_currency_display( $price, array( 'display_as_html' => false ) );
 
@@ -1190,6 +1192,7 @@ function _wpsc_regenerate_thumbnail_size( $thumbnail_id, $size ) {
 
 	$file = get_attached_file( $thumbnail_id );
 	$generated = wp_generate_attachment_metadata( $thumbnail_id, $file );
+
 	if ( empty( $generated ) )
 		return false;
 	$metadata['sizes'] = array_merge( $metadata['sizes'], $generated['sizes'] );
@@ -1206,7 +1209,6 @@ function _wpsc_regenerate_thumbnail_size( $thumbnail_id, $size ) {
  * @return string - the URL to the thumbnail image
  */
 function wpsc_the_product_thumbnail( $width = null, $height = null, $product_id = 0, $page = 'products-page' ) {
-
 	$thumbnail = false;
 
 	$display = wpsc_check_display_type();
@@ -1226,47 +1228,53 @@ function wpsc_the_product_thumbnail( $width = null, $height = null, $product_id 
 	$thumbnail_id = wpsc_the_product_thumbnail_id( $product_id );
 
 	// If no thumbnail found for item, get it's parent image (props. TJM)
-	if ( ! $thumbnail_id ) {
+	if ( ! $thumbnail_id && $product->post_parent ) {
 		$thumbnail_id = wpsc_the_product_thumbnail_id( $product->post_parent );
 	}
 
-	//Overwrite height & width if custom dimensions exist for thumbnail_id
-	if ( 'grid' != $display && 'products-page' == $page && isset($thumbnail_id)) {
-		$custom_width = get_post_meta( $thumbnail_id, '_wpsc_custom_thumb_w', true );
-		$custom_height = get_post_meta( $thumbnail_id, '_wpsc_custom_thumb_h', true );
+	if ( ! $width && ! $height ) {
+		//Overwrite height & width if custom dimensions exist for thumbnail_id
+		if ( 'grid' != $display && 'products-page' == $page && isset($thumbnail_id)) {
+			$custom_width = get_post_meta( $thumbnail_id, '_wpsc_custom_thumb_w', true );
+			$custom_height = get_post_meta( $thumbnail_id, '_wpsc_custom_thumb_h', true );
 
-		if ( !empty( $custom_width ) && !empty( $custom_height ) ) {
-			$width = $custom_width;
-			$height = $custom_height;
+			if ( !empty( $custom_width ) && !empty( $custom_height ) ) {
+				$width = $custom_width;
+				$height = $custom_height;
+			}
+		} elseif( $page == 'single' && isset($thumbnail_id)) {
+			$custom_thumbnail = get_post_meta( $thumbnail_id, '_wpsc_selected_image_size', true );
+			if ( ! $custom_thumbnail ) {
+				$custom_thumbnail = 'medium-single-product';
+				$current_size = image_get_intermediate_size( $thumbnail_id, $custom_thumbnail );
+				$settings_width = get_option( 'single_view_image_width' );
+				$settings_height = get_option( 'single_view_image_height' );
 
+				if (  ! $current_size
+				     || (
+				     	     $current_size['width'] != $settings_width
+					      && $current_size['height'] != $settings_height
+					    )
+				)
+					_wpsc_regenerate_thumbnail_size( $thumbnail_id, $custom_thumbnail );
+			}
+
+			$src = wp_get_attachment_image_src( $thumbnail_id, $custom_thumbnail );
+
+			if ( !empty( $src ) && is_string( $src[0] ) ) {
+				$thumbnail = $src[0];
+			}
+		} elseif ( $page == 'manage-products' && isset( $thumbnail_id ) ) {
+			$current_size = image_get_intermediate_size( $thumbnail_id, 'admin-product-thumbnails' );
+
+			if ( ! $current_size )
+				_wpsc_regenerate_thumbnail_size( $thumbnail_id, 'admin-product-thumbnails' );
+
+			$src = wp_get_attachment_image_src( $thumbnail_id, 'admin-product-thumbnails' );
+
+			if ( ! empty( $src ) && is_string( $src[0] ) )
+				$thumbnail = $src[0];
 		}
-	} elseif( $page == 'single' && isset($thumbnail_id)) {
-		$custom_thumbnail = get_post_meta( $thumbnail_id, '_wpsc_selected_image_size', true );
-		if ( ! $custom_thumbnail ) {
-			$custom_thumbnail = 'medium-single-product';
-			$current_size = image_get_intermediate_size( $thumbnail_id, $custom_thumbnail );
-			$settings_width = get_option( 'single_view_image_width' );
-			$settings_height = get_option( 'single_view_image_height' );
-
-			if ( ! $current_size || $current_size['width'] != $settings_width || $current_size['height'] != $settings_height )
-				_wpsc_regenerate_thumbnail_size( $thumbnail_id, $custom_thumbnail );
-		}
-
-		$src = wp_get_attachment_image_src( $thumbnail_id, $custom_thumbnail );
-
-		if ( !empty( $src ) && is_string( $src[0] ) ) {
-			$thumbnail = $src[0];
-		}
-	} elseif ( $page == 'manage-products' && isset( $thumbnail_id ) ) {
-		$current_size = image_get_intermediate_size( $thumbnail_id, 'admin-product-thumbnails' );
-
-		if ( ! $current_size )
-			_wpsc_regenerate_thumbnail_size( $thumbnail_id, 'admin-product-thumbnails' );
-
-		$src = wp_get_attachment_image_src( $thumbnail_id, 'admin-product-thumbnails' );
-
-		if ( ! empty( $src ) && is_string( $src[0] ) )
-			$thumbnail = $src[0];
 	}
 
 	// calculate the height based on the ratio of the original demensions
@@ -1714,7 +1722,7 @@ function wpsc_the_variation_price( $return_as_numeric = false ) {
 
 		$product_id = get_the_ID();
 		$wpq = array( 'variations' => $wpsc_variations->variation->slug,
-			'post_status' => 'inherit,publish',
+			'post_status' => array( 'inherit', 'publish' ),
 			'post_type' => 'wpsc-product',
 			'post_parent' => $product_id );
 		$query = new WP_Query( $wpq );
@@ -1827,23 +1835,6 @@ function wpsc_remove_currency_code( $args ) {
 	return $args;
 }
 
-function wpsc_get_up_to_text( $product_id ) {
-
-		add_filter( 'wpsc_toggle_display_currency_code', 'wpsc_remove_currency_code' );
-
-		$savings_text  = '';
-
-		if ( wpsc_product_has_children( $product_id ) ) {
-			$maybe_variation_price = wpsc_product_variation_price_available( $product_id );
-			$savings_text = apply_filters( 'wpsc_you_save_variation_text', __( 'up to', 'wpsc' ) );
-		}
-
-		remove_filter( 'wpsc_toggle_display_currency_code', 'wpsc_remove_currency_code' );
-
-		return $savings_text;
-
-}
-
 function wpsc_you_save( $args = null ){
 
 	$defaults = array(
@@ -1894,7 +1885,7 @@ function wpsc_get_downloadable_file($file_id){
 *
 * @return boolean true if product does have variations, false otherwise
 */
-function wpsc_product_has_children( $id ){
+function wpsc_product_has_children( $id, $exclude_unpublished = true ){
 	return wpsc_product_has_variations( $id );
 }
 
@@ -1916,7 +1907,7 @@ function wpsc_product_has_variations( $id = 0 ) {
 		$args = array(
 			'post_parent' => $id,
 			'post_type'   => 'wpsc-product',
-			'post_status' => 'inherit publish'
+			'post_status' => array( 'inherit', 'publish' ),
 		);
 		$children = get_children( $args );
 

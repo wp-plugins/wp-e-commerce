@@ -18,12 +18,14 @@ class WPSC_Product_Variations_Page
 	}
 
 	private function merge_meta_deep( $original, $updated ) {
-		foreach ( $original as $key => $value ) {
+		$keys = array_merge( array_keys( $original ), array_keys( $updated ) );
+
+		foreach ( $keys as $key ) {
 			if ( ! isset( $updated[$key] ) )
 				continue;
 
-			if ( is_array( $value ) ) {
-				$original[$key] = $this->merge_meta_deep( $value, $updated[$key] );
+			if ( is_array( $original[$key] ) ) {
+				$original[$key] = $this->merge_meta_deep( $original[$key]	, $updated[$key] );
 			} else {
 				$original[$key] = $updated[$key];
 				if ( in_array( $key, array( 'weight', 'wpec_taxes_taxable_amount', 'height', 'width', 'length' ) ) )
@@ -38,8 +40,10 @@ class WPSC_Product_Variations_Page
 	private function save_variation_meta( $id, $data ) {
 		$product_meta = get_product_meta( $id, 'product_metadata', true );
 		$product_meta = $this->merge_meta_deep( $product_meta, $data['product_metadata'] );
+
 		// convert to pound to maintain backward compat with shipping modules
-		$product_meta['weight'] = wpsc_convert_weight( $product_meta['weight'], $product_meta['weight_unit'], 'pound', true );
+		if ( isset( $data['product_metadata']['weight'] ) || isset( $data['product_metadata']['weight_unit'] ) )
+			$product_meta['weight'] = wpsc_convert_weight( $product_meta['weight'], $product_meta['weight_unit'], 'pound', true );
 
 		update_product_meta( $id, 'product_metadata', $product_meta );
 
@@ -307,6 +311,8 @@ class WPSC_Product_Variations_Page
 		if ( empty( $current_action ) )
 			return;
 
+		_wpsc_remove_refresh_variation_parent_term_hooks();
+
 		check_admin_referer( 'wpsc_product_variations_bulk_action', 'bulk_action_nonce' );
 		$sendback = $_SERVER['REQUEST_URI'];
 		$callback = 'process_bulk_action_' . $current_action;
@@ -328,6 +334,8 @@ class WPSC_Product_Variations_Page
 			'last_paged'
 		), $sendback );
 
+		_wpsc_refresh_parent_product_terms( $this->parent_id );
+		_wpsc_add_refresh_variation_parent_term_hooks();
 		if ( $current_action != 'edit' ) {
 			wp_redirect( $sendback );
 			exit;

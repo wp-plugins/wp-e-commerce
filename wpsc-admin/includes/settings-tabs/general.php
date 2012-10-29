@@ -44,9 +44,14 @@ class WPSC_Settings_Tab_General extends WPSC_Settings_Tab
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Base Country/Region', 'wpsc' ); ?>: </th>
 				<td>
-					<select id="wpsc-base-country-drop-down" name='wpsc_options[base_country]'>
-						<?php echo country_list( esc_attr( get_option( 'base_country' ) ) ); ?>
-					</select>
+					<?php
+						wpsc_country_dropdown( array(
+							'id'                => 'wpsc-base-country-drop-down',
+							'name'              => 'wpsc_options[base_country]',
+							'selected'          => get_option( 'base_country' ),
+							'include_invisible' => true,
+						) );
+					?>
 					<span id='wpsc-base-region-drop-down'>
 						<?php $this->display_region_drop_down(); ?>
 						<img src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" class="ajax-feedback" title="" alt="" />
@@ -115,7 +120,7 @@ class WPSC_Settings_Tab_General extends WPSC_Settings_Tab
 					<td>
 						<label><input type="radio" <?php checked( $hierarchical_category, 1 ); ?> name="wpsc_options[product_category_hierarchical_url]" value="1" /> <?php _e( 'Yes', 'wpsc' ); ?></label>&nbsp;&nbsp;
 						<label><input type="radio" <?php checked( $hierarchical_category, 0 ); ?>name="wpsc_options[product_category_hierarchical_url]" value="0" /> <?php _e( 'No', 'wpsc' ); ?></label><br />
-						<?php esc_html_e( 'When Hierarchical Product Category URL is enabled, parent product categories are also included in the product URL.<br />For example: example.com/products-page/parent-cat/sub-cat/product-name', 'wpsc' ); ?>
+						<?php _e( 'When Hierarchical Product Category URL is enabled, parent product categories are also included in the product URL.<br />For example: example.com/products-page/parent-cat/sub-cat/product-name', 'wpsc' ); ?>
 					</td>
 				</tr>
 			</table>

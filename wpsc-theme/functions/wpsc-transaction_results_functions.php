@@ -15,28 +15,21 @@ function transaction_results( $sessionid, $display_to_screen = true, $transactio
 	$echo_to_screen = $display_to_screen;
 
 	$purchase_log = new WPSC_Purchase_Log( $sessionid, 'sessionid' );
+
 	$message_html = _wpsc_transaction_results_html( $purchase_log );
+
 	$wpsc_cart->empty_cart();
 	return $message_html;
 }
 
 function _wpsc_transaction_results_html( $purchase_log ) {
-	$output = $purchase_log->get_html_output();
+	$output = wpsc_get_transaction_html_output( $purchase_log );
 
 	if ( version_compare( WPSC_VERSION, '3.8.9', '>=' ) )
 		echo $output;
 
-	return wpautop( $output );
+	return $output;
 }
-
-/**
- * WP eCommerce transaction results class
- *
- * This class is responsible for theming the transaction results page.
- *
- * @package wp-e-commerce
- * @since 3.8
- */
 
 function wpsc_transaction_theme() {
 	global $wpdb, $user_ID, $nzshpcrt_gateways, $sessionid, $cart_log_id, $errorcode;
@@ -56,7 +49,7 @@ function wpsc_transaction_theme() {
 
 	$selected_gateway = wpsc_get_customer_meta( 'selected_gateway' );
 	if ( $selected_gateway && in_array( $selected_gateway, array( 'paypal_certified', 'wpsc_merchant_paypal_express' ) ) )
-		$sessionid = $_SESSION['paypalexpresssessionid'];
+		$sessionid = wpsc_get_customer_meta( 'paypal_express_sessionid' );
 
 	if ( isset( $_REQUEST['eway'] ) && '1' == $_REQUEST['eway'] )
 		$sessionid = $_GET['result'];
@@ -76,7 +69,7 @@ function wpsc_transaction_theme() {
 			case 'wpsc_merchant_paypal_express':
 				echo wpsc_get_customer_meta( 'paypal_express_message' );
 
-				$reshash = wpsc_get_customer_meta( 'reshash' );
+				$reshash = wpsc_get_customer_meta( 'paypal_express_reshash' );
 				if( isset( $reshash['PAYMENTINFO_0_TRANSACTIONTYPE'] ) && in_array( $reshash['PAYMENTINFO_0_TRANSACTIONTYPE'], array( 'expresscheckout', 'cart' ) ) )
 					$dont_show_transaction_results = false;
 				else

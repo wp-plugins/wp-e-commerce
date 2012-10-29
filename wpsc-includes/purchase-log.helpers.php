@@ -52,8 +52,10 @@ function wpsc_get_plaintext_table( $headings, $rows ) {
 
 	$line = implode( '--', $line );
 	array_unshift( $output, $line );
-	array_unshift( $output, implode( '  ', $headings ) );
-	array_unshift( $output, $line );
+	if ( ! empty( $headings ) ) {
+		array_unshift( $output, implode( '  ', $headings ) );
+		array_unshift( $output, $line );
+	}
 	$output[] = $line;
 
 	return implode( "\r\n", $output ) . "\r\n";
@@ -84,7 +86,10 @@ function wpsc_get_downloadable_links( $purchase_log ) {
 	$cart_contents = $purchase_log->get_cart_contents();
 	$links = array();
 	foreach ( $cart_contents as $item ) {
-		$links[$item->name] = _wpsc_get_cart_item_downloadable_links( $item, $purchase_log );
+		$item_links = _wpsc_get_cart_item_downloadable_links( $item, $purchase_log );
+		if ( empty( $item_links ) )
+			continue;
+		$links[$item->name] = $item_links;
 	}
 
 	return $links;
@@ -105,23 +110,23 @@ function _wpsc_get_cart_item_downloadable_links( $item, $purchase_log ) {
 	$links = array();
 
 	foreach ( $results as $single_download ) {
-		$file_data = get_post( $single_download['product_id'] );
+		$file_data = get_post( $single_download->product_id );
 		$args = array(
 			'post_type'   => 'wpsc-product-file',
-			'post_parent' => $single_download['product_id'],
+			'post_parent' => $single_download->product_id,
 			'numberposts' => -1,
 			'post_status' => 'all',
 		);
 		$download_file_posts = (array) get_posts( $args );
 		foreach( $download_file_posts as $single_file_post ) {
-			if( $single_file_post->ID == $single_download['fileid'] ) {
+			if( $single_file_post->ID == $single_download->fileid ) {
 				$current_Dl_product_file_post = $single_file_post;
 				break;
 			}
 		}
 
 		$file_name = $current_Dl_product_file_post->post_title;
-		$downloadid = is_null( $single_download['uniqueid'] ) ? $single_download['id'] : $single_download['uniqueid'];
+		$downloadid = is_null( $single_download->uniqueid ) ? $single_download->id : $single_download->uniqueid;
 		$links[] = array(
 			'url' => add_query_arg( 'downloadid', $downloadid, site_url() ),
 			'name' => $file_name
@@ -136,11 +141,13 @@ function wpsc_get_purchase_log_html_table( $headings, $rows ) {
 
 	?>
 	<table class="wpsc-purchase-log-transaction-results">
-		<thead>
-			<?php foreach ( $headings as $heading => $align ): ?>
-				<th><?php echo esc_html( $heading ); ?></th>
-			<?php endforeach; ?>
-		</thead>
+		<?php if ( ! empty( $headings ) ): ?>
+			<thead>
+				<?php foreach ( $headings as $heading => $align ): ?>
+					<th><?php echo esc_html( $heading ); ?></th>
+				<?php endforeach; ?>
+			</thead>
+		<?php endif; ?>
 		<tbody>
 			<?php foreach ( $rows as $row ): ?>
 				<tr>
@@ -157,12 +164,16 @@ function wpsc_get_purchase_log_html_table( $headings, $rows ) {
 	return $output;
 }
 
-function _wpsc_process_transaction_coupon( $id ) {
-	$purchase_log = new WPSC_Purchase_Log( $id );
+function _wpsc_process_transaction_coupon( $purchase_log ) {
+	global $wpdb;
+
+	if ( ! is_object( $purchase_log ) )
+		$purchase_log = new WPSC_Purchase_Log( $purchase_log );
+
 	$discount_data = $purchase_log->get( 'discount_data' );
 	if ( ! empty( $discount_data ) ) {
 
-		$coupon_data = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `" . WPSC_TABLE_COUPON_CODES . "` WHERE coupon_code = %s LIMIT 1", $discount_data, ARRAY_A ) );
+		$coupon_data = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `" . WPSC_TABLE_COUPON_CODES . "` WHERE coupon_code = %s LIMIT 1", $discount_data ), ARRAY_A );
 
 		if ( 1 == $coupon_data['use-once'] ) {
 			$wpdb->update(
@@ -180,8 +191,9 @@ function _wpsc_process_transaction_coupon( $id ) {
 }
 
 function _wpsc_action_update_purchase_log_status( $id, $status, $old_status, $purchase_log ) {
-	$purchase_log->send_customer_email();
-	$purchase_log->send_admin_email();
+	wpsc_send_customer_email( $purchase_log );
+	wpsc_send_admin_email( $purchase_log );
+
 	if ( ! $purchase_log->is_transaction_completed() )
 		return;
 
@@ -189,3 +201,50 @@ function _wpsc_action_update_purchase_log_status( $id, $status, $old_status, $pu
 	wpsc_decrement_claimed_stock( $id );
 }
 add_action( 'wpsc_update_purchase_log_status', '_wpsc_action_update_purchase_log_status', 10, 4 );
+
+function wpsc_send_customer_email( $purchase_log ) {
+	if ( ! is_object( $purchase_log ) )
+		$purchase_log = new WPSC_Purchase_Log( $purchase_log );
+
+	if ( ! $purchase_log->is_transaction_completed() && ! $purchase_log->is_order_received() )
+		return;
+
+	$email = new WPSC_Purchase_Log_Customer_Notification( $purchase_log );
+	$email_sent = $email->send();
+
+	do_action( 'wpsc_transaction_send_email_to_customer', $email, $email_sent );
+	return $email_sent;
+}
+
+function wpsc_send_admin_email( $purchase_log, $force = false ) {
+	if ( ! is_object( $purchase_log ) )
+		$purchase_log = new WPSC_Purchase_Log( $purchase_log );
+
+	if ( $purchase_log->get( 'email_sent' ) && ! $force )
+		return;
+
+	$email = new WPSC_Purchase_Log_Admin_Notification( $purchase_log );
+	$email_sent = $email->send();
+
+	if ( $email_sent ) {
+		$purchase_log->set( 'email_sent', 1 );
+		$purchase_log->save();
+	}
+
+	do_action( 'wpsc_transaction_send_email_to_admin', $email, $email_sent );
+	return $email_sent;
+}
+
+function wpsc_get_transaction_html_output( $purchase_log ) {
+	if ( ! is_object( $purchase_log ) )
+		$purchase_log = new WPSC_Purchase_Log( $purchase_log );
+
+	if ( ! $purchase_log->is_transaction_completed() && ! $purchase_log->is_order_received() )
+		return '';
+
+	$notification = new WPSC_Purchase_Log_Customer_HTML_Notification( $purchase_log );
+	$output = $notification->get_html_message();
+
+	$output = apply_filters( 'wpsc_get_transaction_html_output', $output, $notification );
+	return $output;
+}

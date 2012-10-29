@@ -1792,6 +1792,7 @@ input.wpsc_cat_image_size {
 input.wpsc_cat_box {
     width:auto;
     margin:6px;
+    vertical-align:middle;
 }
 
 .wpsc_ie_field{
@@ -2040,7 +2041,11 @@ table.purchase-logs tr:hover .column-id .delete {
 	width: 60%;
 }
 
-#wpsc-product-variations-wrapper .column-stock, #wpsc-product-variations-wrapper .column-tax, #wpsc-product-variations-wrapper .column-price, #wpsc-product-variations-wrapper .column-sale_price, #wpsc-product-variations-wrapper .column-sku {
+#wpsc-product-variations-wrapper .column-stock,
+#wpsc-product-variations-wrapper .column-tax,
+#wpsc-product-variations-wrapper .column-price,
+#wpsc-product-variations-wrapper .column-sale_price,
+#wpsc-product-variations-wrapper .column-sku {
 	text-align:center;
 	width:11%;
 }
@@ -2072,6 +2077,10 @@ table.purchase-logs tr:hover .column-id .delete {
 
 #wpsc-product-variations-wrapper .wpsc-stock-editor-row td {
 	border-bottom-style:solid;
+}
+
+#wpsc-product-variations-wrapper {
+	padding-bottom: 5px;
 }
 
 #wpsc-product-variations-wrapper .submit {
@@ -2122,8 +2131,7 @@ table.purchase-logs tr:hover .column-id .delete {
 	margin: 0;
 }
 
-#wpsc_product_variation_forms,
-#wpsc_product_variation_forms .inside {
+#wpsc_product_variation_forms {
 	overflow: auto !important;
 }
 
@@ -2168,6 +2176,14 @@ table.purchase-logs tr:hover .column-id .delete {
 
 .wpsc-product-variations-tab-content {
 	padding: 0 10px;
+}
+
+.wpsc-save-product-variations.top {
+	margin: 8px 0 5px;
+}
+
+.wpsc-save-product-variations.bottom {
+	padding-bottom: 5px;
 }
 
 .wpsc-product-variation-thumbnail {

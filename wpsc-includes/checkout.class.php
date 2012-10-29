@@ -455,28 +455,14 @@ function wpsc_shipping_country_list( $shippingdetails = false ) {
 
 	$acceptable_countries = wpsc_get_acceptable_countries();
 
-	$output .= "<select name='country' id='current_country' " . $js . " >";
-
-	foreach ( $country_data as $country ) {
-		if ( $selected_country == $country['isocode'] )
-			$selected = "selected='selected'";
-
-		// As of 3.8.9, we deprecated Great Britain as a country in favor of the UK.
-		// See http://code.google.com/p/wp-e-commerce/issues/detail?id=1079
-		if ( 'GB' == $country['isocode'] && 'GB' != get_option( 'base_country' ) )
-			continue;
-
-		if ( $acceptable_countries && ! is_array( $acceptable_countries ) )
-			$disabled = '';
-		elseif ( is_array( $acceptable_countries ) )
-			$disabled = ! in_array( $country['id'], $acceptable_countries ) ? ' disabled = "disabled"' : '';
-		else
-			$disabled = '';
-
-		$output .= "<option value='" . $country['isocode'] . "' ". selected( $selected_country, $country['isocode'], false ) . $disabled .">" . esc_html( $country['country'] ) . "</option>";
-	}
-
-	$output .= "</select>";
+	$output .= wpsc_get_country_dropdown( array(
+		'name'                  => 'country',
+		'id'                    => 'current_country',
+		'additional_attributes' => $js,
+		'acceptable_ids'        => $acceptable_countries,
+		'selected'              => $selected_country,
+		'placeholder'           => '',
+	) );
 
 	$output .= wpsc_shipping_region_list( $selected_country, $selected_region, $shippingdetails );
 
@@ -534,7 +520,7 @@ function wpsc_get_acceptable_countries() {
 			$target_market_ids[$category_id] = $target_markets;
 	}
 
-	$have_target_market = ! empty( $target_market_id );
+	$have_target_market = ! empty( $target_market_ids );
 
 	//If we're comparing multiple categories
 	if ( count( $target_market_ids ) > 1 ) {
@@ -601,8 +587,12 @@ class wpsc_checkout {
 
 		$GLOBALS['wpsc_checkout_error_messages'    ] = wpsc_get_customer_meta( 'checkout_error_messages'     );
 		$GLOBALS['wpsc_gateway_error_messages'     ] = wpsc_get_customer_meta( 'gateway_error_messages'      );
-		$GLOBALS['wpsc_customer_checkout_details'  ] = wpsc_get_customer_meta( 'checkout_details'            );
 		$GLOBALS['wpsc_registration_error_messages'] = wpsc_get_customer_meta( 'registration_error_messages' );
+		$GLOBALS['wpsc_customer_checkout_details'  ] = apply_filters( 'wpsc_get_customer_checkout_details', wpsc_get_customer_meta( 'checkout_details' ) );
+
+		// legacy filter
+		if ( is_user_logged_in() )
+			$GLOBALS['wpsc_customer_checkout_details'] = apply_filters( 'wpsc_checkout_user_profile_get', $GLOBALS['wpsc_customer_checkout_details'], get_current_user_id() );
 
 		if ( ! is_array( $GLOBALS['wpsc_customer_checkout_details'] ) )
 			$GLOBALS['wpsc_customer_checkout_details'] = array();
@@ -793,7 +783,7 @@ class wpsc_checkout {
 	 * @access public
 	 */
 	function validate_forms() {
-		global $wpdb, $current_user, $user_ID, $wpsc_gateway_error_messages, $wpsc_checkout_error_messages, $wpsc_customer_checkout_details, $wpsc_registration_error_messages;
+		global $wpsc_cart, $wpdb, $current_user, $user_ID, $wpsc_gateway_error_messages, $wpsc_checkout_error_messages, $wpsc_customer_checkout_details, $wpsc_registration_error_messages;
 		$any_bad_inputs = false;
 		$bad_input_message = '';
 		$wpsc_gateway_error_messages      = array();
@@ -942,17 +932,16 @@ class wpsc_checkout {
 
 		wpsc_update_customer_meta( 'checkout_error_messages'     , $wpsc_checkout_error_messages     );
 		wpsc_update_customer_meta( 'gateway_error_messages'      , $wpsc_gateway_error_messages      );
-		wpsc_update_customer_meta( 'checkout_details'            , $wpsc_customer_checkout_details   );
 		wpsc_update_customer_meta( 'registration_error_messages' , $wpsc_registration_error_messages );
+
+		$filtered_checkout_details = apply_filters( 'wpsc_update_customer_checkout_details', $wpsc_customer_checkout_details );
+		// legacy filter
+		if ( is_user_logged_in() )
+			$filtered_checkout_details = apply_filters( 'wpsc_checkout_user_profile_update', $wpsc_customer_checkout_details, get_current_user_id() );
+		wpsc_update_customer_meta( 'checkout_details', $filtered_checkout_details );
 
 		if ( $location_changed )
 			$wpsc_cart->update_location();
-
-		if ( ( $any_bad_inputs == false ) && ( $user_ID > 0 ) ) {
-			$meta_data = $_POST['collected_data'];
-			$meta_data = apply_filters( 'wpsc_checkout_user_profile_update', $meta_data, $user_ID );
-			update_user_meta( $user_ID, 'wpshpcrt_usr_profile', $meta_data );
-		}
 
 		$states = array( 'is_valid' => !$any_bad_inputs, 'error_messages' => $bad_input_message );
 		$states = apply_filters('wpsc_checkout_form_validation', $states);

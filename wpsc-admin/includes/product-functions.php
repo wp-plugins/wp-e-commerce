@@ -59,11 +59,12 @@ function wpsc_admin_submit_product( $post_ID, $post ) {
 
 	// Product Weight
 	if(!isset($post_data['meta']['_wpsc_product_metadata']['display_weight_as'])) $post_data['meta']['_wpsc_product_metadata']['display_weight_as'] = '';
-        if(!isset($post_data['meta']['_wpsc_product_metadata']['display_weight_as'])) $post_data['meta']['_wpsc_product_metadata']['display_weight_as'] = '';
 
-	$weight = wpsc_convert_weight($post_data['meta']['_wpsc_product_metadata']['weight'], $post_data['meta']['_wpsc_product_metadata']['weight_unit'], "pound", true);
-	$post_data['meta']['_wpsc_product_metadata']['weight'] = (float)$weight;
+	if ( isset( $post_data['meta']['_wpsc_product_metadata']['weight'] ) ) {
+		$weight = wpsc_convert_weight($post_data['meta']['_wpsc_product_metadata']['weight'], $post_data['meta']['_wpsc_product_metadata']['weight_unit'], "pound", true);
+		$post_data['meta']['_wpsc_product_metadata']['weight'] = (float)$weight;
         $post_data['meta']['_wpsc_product_metadata']['display_weight_as'] = $post_data['meta']['_wpsc_product_metadata']['weight_unit'];
+	}
 
 	// table rate price
 	$post_data['meta']['_wpsc_product_metadata']['table_rate_price'] = isset( $post_data['table_rate_price'] ) ? $post_data['table_rate_price'] : array();
@@ -83,10 +84,10 @@ function wpsc_admin_submit_product( $post_ID, $post ) {
 		}
 	}
 
-
-	$post_data['meta']['_wpsc_product_metadata']['shipping']['local'] = (float)$post_data['meta']['_wpsc_product_metadata']['shipping']['local'];
-	$post_data['meta']['_wpsc_product_metadata']['shipping']['international'] = (float)$post_data['meta']['_wpsc_product_metadata']['shipping']['international'];
-
+	if ( isset( $post_data['meta']['_wpsc_product_metadata']['shipping'] ) ) {
+		$post_data['meta']['_wpsc_product_metadata']['shipping']['local'] = (float)$post_data['meta']['_wpsc_product_metadata']['shipping']['local'];
+		$post_data['meta']['_wpsc_product_metadata']['shipping']['international'] = (float)$post_data['meta']['_wpsc_product_metadata']['shipping']['international'];
+	}
 
 	// Advanced Options
 	$post_data['meta']['_wpsc_product_metadata']['engraved'] = (int)(bool)$post_data['meta']['_wpsc_product_metadata']['engraved'];
@@ -148,9 +149,6 @@ function wpsc_admin_submit_product( $post_ID, $post ) {
 
 	// and the custom meta
 	wpsc_update_custom_meta($product_id, $post_data);
-
-	// sort out the variations
-	wpsc_edit_product_variations( $product_id, $post_data );
 
 	//and the alt currency
 	if ( ! empty( $post_data['newCurrency'] ) ) {
@@ -1056,3 +1054,88 @@ function differential_price( $price ) {
 	if ( ! empty( $price ) && ( strchr( $price, '-' ) || strchr( $price, '+' ) ) && strchr( $price, '%' ) === false )
 		return true;
 }
+
+/**
+ * Refresh variation terms assigned to parent product based on the variations it has.
+ *
+ * @since 3.8.9
+ * @access private
+ * @param  int $parent_id Parent product ID
+ */
+function _wpsc_refresh_parent_product_terms( $parent_id ) {
+	$children = get_children( array(
+		'post_parent' => $parent_id,
+		'post_status' => array( 'publish', 'inherit' ),
+	) );
+
+	$children_ids = wp_list_pluck( $children, 'ID' );
+
+	$children_terms = wp_get_object_terms( $children_ids, 'wpsc-variation' );
+	$new_terms = array();
+	foreach ( $children_terms as $term ) {
+		if ( $term->parent )
+			$new_terms[] = $term->parent;
+	}
+
+	$children_term_ids = wp_list_pluck( $children_terms, 'term_id' );
+	$new_terms = array_merge( $new_terms, $children_term_ids );
+	$new_terms = array_unique( $new_terms );
+	$new_terms = array_map( 'absint', $new_terms );
+	wp_set_object_terms( $parent_id, $new_terms, 'wpsc-variation' );
+}
+
+/**
+ * Make sure parent product's assigned terms are refreshed when its variations are deleted or trashed
+ *
+ * @since 3.8.9
+ * @access private
+ * @param  int $post_id Parent product ID
+ */
+function _wpsc_action_refresh_variation_parent_terms( $post_id ) {
+	$post = get_post( $post_id );
+	if ( $post->post_type != 'wpsc-product' || ! $post->post_parent || in_array( $post->post_status, array( 'publish', 'inherit' ) ) )
+		return;
+
+	_wpsc_refresh_parent_product_terms( $post->post_parent );
+}
+
+/**
+ * Make sure parent product's assigned terms are refresh when its variations' statuses are changed
+ *
+ * @since 3.8.9
+ * @access private
+ * @param  string $new_status New status
+ * @param  string $old_status Old status
+ * @param  object $post       Variation object
+ */
+function _wpsc_action_transition_post_status( $new_status, $old_status, $post ) {
+	if ( $post->post_type != 'wpsc-product' || ! $post->post_parent )
+		return;
+
+	_wpsc_refresh_parent_product_terms( $post->post_parent );
+}
+
+/**
+ * Prevent parent terms from being refreshed when its variations are updated. This is useful when
+ * the variations are being mass updated.
+ *
+ * @since  3.8.9
+ * @access private
+ */
+function _wpsc_remove_refresh_variation_parent_term_hooks() {
+	remove_action( 'transition_post_status', '_wpsc_action_transition_post_status', 10, 3 );
+	remove_action( 'deleted_post', '_wpsc_action_refresh_variation_parent_terms', 10, 1 );
+}
+
+/**
+ * Add hooks so that parent product's assigned terms are refreshed when its variations are updated.
+ *
+ * @since  3.8.9
+ * @access private
+ */
+function _wpsc_add_refresh_variation_parent_term_hooks() {
+	add_action( 'transition_post_status', '_wpsc_action_transition_post_status', 10, 3 );
+	add_action( 'deleted_post', '_wpsc_action_refresh_variation_parent_terms', 10, 1 );
+}
+
+_wpsc_add_refresh_variation_parent_term_hooks();

@@ -321,6 +321,7 @@ function wpsc_admin_include_purchase_logs_css_and_js() {
 		'sent_message'                           => _x( 'Email Sent!', 'sending tracking email for purchase log', 'wpsc' ),
 		'current_view'                           => empty( $_REQUEST['status'] ) ? 'all' : $_REQUEST['status'],
 		'current_filter'                         => empty( $_REQUEST['m'] ) ? '' : $_REQUEST['m'],
+		'current_page'                           => empty( $_REQUEST['paged']) ? '' : $_REQUEST['paged'],
 	) );
 }
 
@@ -436,7 +437,7 @@ function wpsc_admin_include_css_and_js_refac( $pagehook ) {
 	$version_identifier = WPSC_VERSION . "." . WPSC_MINOR_VERSION;
 	$pages = array( 'index.php', 'options-general.php', 'edit.php', 'post.php', 'post-new.php' );
 
-	if ( ( in_array( $pagehook, $pages ) && $post_type == 'wpsc-product' )  || $current_screen->id == 'edit-wpsc_product_category' || $current_screen->id == 'dashboard_page_wpsc-sales-logs' || $current_screen->id == 'dashboard_page_wpsc-purchase-logs' || $current_screen->id == 'settings_page_wpsc-settings' || $current_screen->id == 'wpsc-product_page_wpsc-edit-coupons' || $current_screen->id == 'edit-wpsc-variation' || $current_screen->id == 'wpsc-product-variations-iframe' ) {
+	if ( ( in_array( $pagehook, $pages ) && $post_type == 'wpsc-product' )  || $current_screen->id == 'edit-wpsc_product_category' || $current_screen->id == 'dashboard_page_wpsc-sales-logs' || $current_screen->id == 'dashboard_page_wpsc-purchase-logs' || $current_screen->id == 'settings_page_wpsc-settings' || $current_screen->id == 'wpsc-product_page_wpsc-edit-coupons' || $current_screen->id == 'edit-wpsc-variation' || $current_screen->id == 'wpsc-product-variations-iframe' || ( $pagehook == 'media-upload-popup' && get_post_type( $_REQUEST['post_id'] ) == 'wpsc-product' ) ) {
 		wp_enqueue_script( 'livequery',                      WPSC_URL . '/wpsc-admin/js/jquery.livequery.js',             array( 'jquery' ), '1.0.3' );
 		wp_enqueue_script( 'wp-e-commerce-admin-parameters', admin_url( 'admin.php?wpsc_admin_dynamic_js=true' ), false,             $version_identifier );
 		wp_enqueue_script( 'wp-e-commerce-admin',            WPSC_URL . '/wpsc-admin/js/admin.js',                        array( 'jquery', 'jquery-ui-core', 'jquery-ui-sortable' ), $version_identifier, false );
@@ -444,15 +445,13 @@ function wpsc_admin_include_css_and_js_refac( $pagehook ) {
 
 		wp_enqueue_script( 'wpsc-sortable-table', WPSC_URL . '/wpsc-admin/js/sortable-table.js', array( 'jquery' ) );
 
-		if ( in_array( $current_screen->id, array( 'edit-wpsc-variation', 'wpsc-product' ) ) ) {
+		if ( in_array( $current_screen->id, array( 'wpsc-product', 'edit-wpsc-variation', 'wpsc-product' ) ) ) {
 			wp_enqueue_script( 'wp-e-commerce-variations', WPSC_URL . '/wpsc-admin/js/variations.js', array( 'jquery', 'wpsc-sortable-table' ), $version_identifier );
 			wp_localize_script(
 				'wp-e-commerce-variations',  // handle
 				'WPSC_Variations',           // variable name
 				array(                       // args
-					'add_variation_set_nonce' => _wpsc_create_ajax_nonce( 'add_variation_set' ),
-					'update_variations_nonce' => _wpsc_create_ajax_nonce( 'update_variations' ),
-					'thickbox_title'          => __( 'Add Media - %s', 'wpsc' ),
+					'thickbox_title' => __( 'Add Media - %s', 'wpsc' ),
 				)
 			);
 		}
@@ -472,23 +471,27 @@ function wpsc_admin_include_css_and_js_refac( $pagehook ) {
 			'variations_tutorial'      => esc_html__( 'Variations allow you to create options for your products. For example, if you\'re selling T-Shirts, they will generally have a "Size" option. Size will be the Variation Set name, and it will be a "New Variant Set". You will then create variants (small, medium, large) which will have the "Variation Set" of Size. Once you have made your set you can use the table on the right to manage them (edit, delete). You will be able to order your variants by dragging and dropping them within their Variation Set.', 'wpsc' )
 		) );
 	}
-
 	if ( $pagehook == 'wpsc-product-variations-iframe' ) {
 		wp_enqueue_script( 'wp-e-commerce-product-variations', WPSC_URL . '/wpsc-admin/js/product-variations.js', array( 'jquery' ), $version_identifier );
 		wp_localize_script( 'wp-e-commerce-product-variations', 'WPSC_Product_Variations', array(
-			'product_id' => $_REQUEST['product_id'],
+			'product_id'              => $_REQUEST['product_id'],
+			'add_variation_set_nonce' => _wpsc_create_ajax_nonce( 'add_variation_set' ),
 		) );
 	}
 
 	if ( $pagehook == 'media-upload-popup' ) {
-		wp_dequeue_script( 'set-post-thumbnail' );
-		wp_enqueue_script( 'wpsc-set-post-thumbnail', WPSC_URL . '/wpsc-admin/js/set-post-thumbnail.js', array( 'jquery' ), $version_identifier );
-		wp_localize_script( 'wpsc-set-post-thumbnail', 'WPSC_Set_Post_Thumbnail', array(
-			'link_text' => __( 'Use as Product Thumbnail', 'wpsc' ),
-			'saving'    => __( 'Saving...' ),
-			'error'     => __( 'Could not set that as the thumbnail image. Try a different attachment.' ),
-			'done'      => __( 'Done' ),
-		) );
+		$post = get_post( $_REQUEST['post_id'] );
+		if ( $post->post_type == 'wpsc-product' && $post->post_parent ) {
+			wp_dequeue_script( 'set-post-thumbnail' );
+			wp_enqueue_script( 'wpsc-set-post-thumbnail', WPSC_URL . '/wpsc-admin/js/set-post-thumbnail.js', array( 'jquery', 'wp-e-commerce-admin' ), $version_identifier );
+			wp_localize_script( 'wpsc-set-post-thumbnail', 'WPSC_Set_Post_Thumbnail', array(
+				'link_text' => __( 'Use as Product Thumbnail', 'wpsc' ),
+				'saving'    => __( 'Saving...' ),
+				'error'     => __( 'Could not set that as the thumbnail image. Try a different attachment.' ),
+				'done'      => __( 'Done' ),
+				'nonce'     => _wpsc_create_ajax_nonce( 'set_variation_product_thumbnail' ),
+			) );
+		}
 	}
 
 	if ( 'dashboard_page_wpsc-upgrades' == $pagehook || 'dashboard_page_wpsc-update' == $pagehook )
@@ -684,57 +687,55 @@ add_action( 'wpsc_admin_pre_activity', 'wpsc_admin_latest_activity' );
  */
 
 function wpsc_dashboard_widget_setup() {
-	if ( is_admin() && current_user_can( 'manage_options' ) ) {
-		$version_identifier = WPSC_VERSION . "." . WPSC_MINOR_VERSION;
-		// Enqueue the styles and scripts necessary
-		wp_enqueue_style( 'wp-e-commerce-admin', WPSC_URL . '/wpsc-admin/css/admin.css', false, $version_identifier, 'all' );
-		wp_enqueue_script( 'datepicker-ui', WPSC_URL . "/wpsc-core/js/ui.datepicker.js", array( 'jquery', 'jquery-ui-core', 'jquery-ui-sortable' ), $version_identifier );
+	$version_identifier = WPSC_VERSION . "." . WPSC_MINOR_VERSION;
+	// Enqueue the styles and scripts necessary
+	wp_enqueue_style( 'wp-e-commerce-admin', WPSC_URL . '/wpsc-admin/css/admin.css', false, $version_identifier, 'all' );
+	wp_enqueue_script( 'datepicker-ui', WPSC_URL . "/wpsc-core/js/ui.datepicker.js", array( 'jquery', 'jquery-ui-core', 'jquery-ui-sortable' ), $version_identifier );
 
-		$news_cap            = apply_filters( 'wpsc_dashboard_news_cap'           , 'manage_options' );
-		$sales_cap           = apply_filters( 'wpsc_dashboard_sales_summary_cap'  , 'manage_options' );
-		$quarterly_sales_cap = apply_filters( 'wpsc_dashboard_quarterly_sales_cap', 'manage_options' );
-		$monthly_sales_cap   = apply_filters( 'wpsc_dashboard_monthly_sales_cap'  , 'manage_options' );
+	$news_cap            = apply_filters( 'wpsc_dashboard_news_cap'           , 'manage_options' );
+	$sales_cap           = apply_filters( 'wpsc_dashboard_sales_summary_cap'  , 'manage_options' );
+	$quarterly_sales_cap = apply_filters( 'wpsc_dashboard_quarterly_sales_cap', 'manage_options' );
+	$monthly_sales_cap   = apply_filters( 'wpsc_dashboard_monthly_sales_cap'  , 'manage_options' );
 
-		// Add the dashboard widgets
-		if ( current_user_can( $news_cap ) )
-			wp_add_dashboard_widget( 'wpsc_dashboard_news', __( 'Getshopped News' , 'wpsc' ), 'wpsc_dashboard_news' );
-		if ( current_user_can( $sales_cap ) )
-			wp_add_dashboard_widget( 'wpsc_dashboard_widget', __( 'Sales Summary', 'wpsc' ), 'wpsc_dashboard_widget' );
-		if ( current_user_can( $quarterly_sales_cap ) )
-			wp_add_dashboard_widget( 'wpsc_quarterly_dashboard_widget', __( 'Sales by Quarter', 'wpsc' ), 'wpsc_quarterly_dashboard_widget' );
-		if ( current_user_can( $monthly_sales_cap ) )
-			wp_add_dashboard_widget( 'wpsc_dashboard_4months_widget', __( 'Sales by Month', 'wpsc' ), 'wpsc_dashboard_4months_widget' );
+	// Add the dashboard widgets
+	if ( current_user_can( $news_cap ) )
+		wp_add_dashboard_widget( 'wpsc_dashboard_news', __( 'Getshopped News' , 'wpsc' ), 'wpsc_dashboard_news' );
+	if ( current_user_can( $sales_cap ) )
+		wp_add_dashboard_widget( 'wpsc_dashboard_widget', __( 'Sales Summary', 'wpsc' ), 'wpsc_dashboard_widget' );
+	if ( current_user_can( $quarterly_sales_cap ) )
+		wp_add_dashboard_widget( 'wpsc_quarterly_dashboard_widget', __( 'Sales by Quarter', 'wpsc' ), 'wpsc_quarterly_dashboard_widget' );
+	if ( current_user_can( $monthly_sales_cap ) )
+		wp_add_dashboard_widget( 'wpsc_dashboard_4months_widget', __( 'Sales by Month', 'wpsc' ), 'wpsc_dashboard_4months_widget' );
 
-		// Sort the Dashboard widgets so ours it at the top
-		global $wp_meta_boxes;
-		$normal_dashboard = $wp_meta_boxes['dashboard']['normal']['core'];
+	// Sort the Dashboard widgets so ours it at the top
+	global $wp_meta_boxes;
+	$normal_dashboard = $wp_meta_boxes['dashboard']['normal']['core'];
 
-		// Backup and delete our new dashbaord widget from the end of the array
-		$wpsc_widget_backup = array();
-		if ( isset( $normal_dashboard['wpsc_dashboard_news'] ) ) {
-			$wpsc_widget_backup['wpsc_dashboard_news'] = $normal_dashboard['wpsc_dashboard_news'];
-			unset( $normal_dashboard['wpsc_dashboard_news'] );
-		}
-		if ( isset( $normal_dashboard['wpsc_dashboard_widget'] ) ) {
-			$wpsc_widget_backup['wpsc_dashboard_widget'] = $normal_dashboard['wpsc_dashboard_widget'];
-			unset( $normal_dashboard['wpsc_dashboard_widget'] );
-		}
-		if ( isset( $normal_dashboard['wpsc_quarterly_dashboard_widget'] ) ) {
-			$wpsc_widget_backup['wpsc_quarterly_dashboard_widget'] = $normal_dashboard['wpsc_quarterly_dashboard_widget'];
-			unset( $normal_dashboard['wpsc_quarterly_dashboard_widget'] );
-		}
-		if ( isset( $normal_dashboard['wpsc_dashboard_4months_widget'] ) ) {
-			$wpsc_widget_backup['wpsc_dashboard_4months_widget'] = $normal_dashboard['wpsc_dashboard_4months_widget'];
-			unset( $normal_dashboard['wpsc_dashboard_4months_widget'] );
-		}
-
-		// Merge the two arrays together so our widget is at the beginning
-		$sorted_dashboard = array_merge( $wpsc_widget_backup, $normal_dashboard );
-
-		// Save the sorted array back into the original metaboxes
-
-		$wp_meta_boxes['dashboard']['normal']['core'] = $sorted_dashboard;
+	// Backup and delete our new dashbaord widget from the end of the array
+	$wpsc_widget_backup = array();
+	if ( isset( $normal_dashboard['wpsc_dashboard_news'] ) ) {
+		$wpsc_widget_backup['wpsc_dashboard_news'] = $normal_dashboard['wpsc_dashboard_news'];
+		unset( $normal_dashboard['wpsc_dashboard_news'] );
 	}
+	if ( isset( $normal_dashboard['wpsc_dashboard_widget'] ) ) {
+		$wpsc_widget_backup['wpsc_dashboard_widget'] = $normal_dashboard['wpsc_dashboard_widget'];
+		unset( $normal_dashboard['wpsc_dashboard_widget'] );
+	}
+	if ( isset( $normal_dashboard['wpsc_quarterly_dashboard_widget'] ) ) {
+		$wpsc_widget_backup['wpsc_quarterly_dashboard_widget'] = $normal_dashboard['wpsc_quarterly_dashboard_widget'];
+		unset( $normal_dashboard['wpsc_quarterly_dashboard_widget'] );
+	}
+	if ( isset( $normal_dashboard['wpsc_dashboard_4months_widget'] ) ) {
+		$wpsc_widget_backup['wpsc_dashboard_4months_widget'] = $normal_dashboard['wpsc_dashboard_4months_widget'];
+		unset( $normal_dashboard['wpsc_dashboard_4months_widget'] );
+	}
+
+	// Merge the two arrays together so our widget is at the beginning
+	$sorted_dashboard = array_merge( $wpsc_widget_backup, $normal_dashboard );
+
+	// Save the sorted array back into the original metaboxes
+
+	$wp_meta_boxes['dashboard']['normal']['core'] = $sorted_dashboard;
 }
 
 /*
@@ -851,10 +852,8 @@ function wpsc_quarterly_dashboard_widget() {
 
 
 function wpsc_dashboard_widget() {
-	if ( current_user_can( 'manage_options' ) ) {
-		do_action( 'wpsc_admin_pre_activity' );
-		do_action( 'wpsc_admin_post_activity' );
-	}
+	do_action( 'wpsc_admin_pre_activity' );
+	do_action( 'wpsc_admin_post_activity' );
 }
 
 /*
@@ -969,17 +968,42 @@ function wpsc_print_admin_scripts() {
 }
 
 /**
- * wpsc_update_permalinks update the product pages permalinks when WordPress permalinks are changed
+ * Update products page URL options when permalink scheme changes.
  *
- * @public
- *
- * @3.8
- * @returns nothing
+ * @since  3.8.9
+ * @access private
  */
-function wpsc_update_permalinks( $return = '' ) {
+function _wpsc_action_permalink_structure_changed() {
+	$wp_version = get_bloginfo( 'version' );
+
+	// see WordPress core trac ticket:
+	// http://core.trac.wordpress.org/ticket/16736
+	// this has been fixed in WordPress 3.3
+	if ( version_compare( $wp_version, '3.3', '<' ) )
+		_wpsc_display_permalink_refresh_notice();
+		add_action( 'admin_notices', 'wpsc_check_permalink_notice' );
+
 	wpsc_update_page_urls( true );
 	return $return;
 }
+
+/**
+ * Display warning if the user is using WordPress prior to 3.3 because there is a bug with custom
+ * post type and taxonomy permalink generation.
+ *
+ * @access private
+ * @since 3.8.9
+ */
+function _wpsc_display_permalink_refresh_notice(){
+	?>
+	<div id="notice" class="error fade">
+		<p>
+			<?php printf( __( 'Due to <a href="%1$s">a bug in WordPress prior to version 3.3</a>, you might run into 404 errors when viewing your products. To work around this, <a href="%2$s">upgrade to WordPress 3.3 or later</a>, or simply click "Save Changes" below a second time.' , 'wpsc' ), 'http://core.trac.wordpress.org/ticket/16736', 'http://codex.wordpress.org/Updating_WordPress' ); ?>
+		</p>
+	</div>
+	<?php
+}
+
 
 /**
  * wpsc_ajax_ie_save save changes made using inline edit
@@ -1047,16 +1071,6 @@ function wpsc_add_meta_boxes(){
 	add_meta_box( 'dashboard_right_now', __( 'Current Month', 'wpsc' ), 'wpsc_right_now', 'dashboard_page_wpsc-sales-logs', 'top' );
 }
 
-function wpsc_check_permalink_notice(){
-
-?>
-<div id="notice" class="error fade"><p>
-<?php printf( __( 'Due to a problem in WordPress Permalinks and Custom Post Types, WP e-Commerce encourages you to refresh your permalinks a second time. (for a more geeky explanation visit <a href="%s">trac</a>)' , 'wpsc' ), 'http://core.trac.wordpress.org/ticket/16736' ); ?>
-</p></div>
-<?php
-
-}
-
 /**
  * Displays notice if user has Great Britain selected as their base country
  * Since 3.8.9, we have deprecated Great Britain in favor of the UK
@@ -1065,15 +1079,37 @@ function wpsc_check_permalink_notice(){
  * @since 3.8.9
  * @return html
  */
-function wpsc_gb_deprecated_notice() {
-	if ( 'GB' == get_option( 'base_country' ) )
-		echo '<div id="wpsc-warning" class="error"><p>' . sprintf( __( '<strong>We have deprecated Great Britain as a store option</strong>. <br /> We highly recommend changing your <em>Base Country</em> to the United Kingdom on the <a href="%1$s">General Settings</a> page.', 'wpsc' ), admin_url( 'options-general.php?page=wpsc-settings&tab=general' ) ) . '</p></div>';
+function _wpsc_action_admin_notices_deprecated_countries_notice() {
+	$base_country = get_option( 'base_country' );
+
+	if ( ! in_array( $base_country, WPSC_Country::get_outdated_isocodes() ) )
+		return;
+
+	switch ( $base_country ) {
+		case 'YU':
+			$message = __( 'Yugoslavia is no longer a valid official country name according to <a href="%1$s">ISO 3166</a> while both Serbia and Montenegro have been added to the country list.<br /> As a result, we highly recommend changing your <em>Base Country</em> to reflect this change on the <a href="%2$s">General Settings</a> page.', 'wpsc' );
+			break;
+		case 'UK':
+			$message = __( 'Prior to WP e-Commerce 3.8.9, in your database, United Kingdom\'s country code is UK and you have already selected that country code as the base country. However, now that you\'re using WP e-Commerce version %3$s, it is recommended that you change your base country to the official "GB" country code, according to <a href="%1$s">ISO 3166</a>.<br /> Please go to <a href="%2$s">General Setings</a> page to make this change.<br />The legacy "UK" item will be marked as "U.K. (legacy)" on the country drop down list. Simply switch to the official "United Kingdom (ISO 3166)" to use the "GB" country code.' , 'wpsc' );
+			break;
+		case 'AN':
+			$message = __( 'Netherlands Antilles is no longer a valid official country name according to <a href="%1$s">ISO 3166</a>.<br />Please consider changing your <em>Base Country</em> to reflect this change on the <a href="%2$s">General Settings</a> page.', 'wpsc' );
+		case 'TP':
+			$message = __( 'Prior to WP e-Commerce 3.8.9, in your database, East Timor\'s country code is TP and you have already selected that country code as the base country. However, now that you\'re using WP e-Commerce version %3$s, it is recommended that you change your base country to the official "TL" country code, according to <a href="%1$s">ISO 3166</a>.<br /> Please go to <a href="%2$s">General Setings</a> page to make this change.<br />The legacy "TP" item will be marked as "East Timor (legacy)" on the country drop down list. Simply switch to the official "Timor-Leste (ISO 3166)" to use the "TL" country code.' , 'wpsc' );
+			break;
+	}
+
+	$message = sprintf(
+		/* message */ $message,
+		/* %1$s    */ 'http://en.wikipedia.org/wiki/ISO_3166-1',
+		/* %2$s    */ admin_url( 'options-general.php?page=wpsc-settings&tab=general' ),
+		/* %3$s    */ WPSC_VERSION
+	);
+	echo '<div id="wpsc-warning" class="error"><p>' . $message . '</p></div>';
 }
 
-add_action( 'admin_notices', 'wpsc_gb_deprecated_notice' );
-add_action( 'permalink_structure_changed' , 'wpsc_check_permalink_notice' );
-add_action( 'permalink_structure_changed' , 'wpsc_update_permalinks' );
-/* add_action( 'get_sample_permalink_html' , 'wpsc_update_permalinks' ); // this just seems unnecessary and produces PHP notices */
+add_action( 'admin_notices', '_wpsc_action_admin_notices_deprecated_countries_notice' );
+add_action( 'permalink_structure_changed' , '_wpsc_action_permalink_structure_changed' );
 add_action( 'wp_ajax_category_sort_order', 'wpsc_ajax_set_category_order' );
 add_action( 'wp_ajax_variation_sort_order', 'wpsc_ajax_set_variation_order' );
 add_action( 'wp_ajax_wpsc_ie_save', 'wpsc_ajax_ie_save' );

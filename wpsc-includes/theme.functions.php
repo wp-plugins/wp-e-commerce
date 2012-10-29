@@ -396,7 +396,7 @@ function wpsc_single_template( $content ) {
 	if((!isset($wp_query->is_product)) && !isset($wp_query->query_vars['wpsc_product_category']))return $content;
 
 	// If we are a single products page
-	if ( 'wpsc-product' == $wp_query->post->post_type && !is_archive() && $wp_query->post_count <= 1 ) {
+	if ( !is_archive() && $wp_query->post_count > 0 && 'wpsc-product' == $wp_query->post->post_type && $wp_query->post_count <= 1 ) {
 		remove_filter( "the_content", "wpsc_single_template", 12 );
 		$single_theme_path = wpsc_get_template_file_path( 'wpsc-single_product.php' );
 		if( isset( $wp_query->query_vars['preview'] ) && $wp_query->query_vars['preview'])
@@ -437,20 +437,8 @@ function wpsc_is_viewable_taxonomy(){
  * @return $title (string) the new title
  */
 function wpsc_the_category_title($title='', $id=''){
-	global $wp_query;
+	global $wp_query, $wp_current_filter;
 	$post = get_post($id);
-
-	// If its the category page
-	if( wpsc_is_viewable_taxonomy() && isset( $wp_query->posts[0] ) && $wp_query->posts[0]->post_title == $post->post_title && $wp_query->is_archive && !is_admin() && isset($wp_query->query_vars['wpsc_product_category'])){
-		$category = get_term_by('slug',$wp_query->query_vars['wpsc_product_category'],'wpsc_product_category');
-		remove_filter('the_title','wpsc_the_category_title');
-	}
-
-	// If its the product_tag page
-	if( isset($wp_query->query_vars['taxonomy']) && 'product_tag' == $wp_query->query_vars['taxonomy'] && $wp_query->posts[0]->post_title == $post->post_title ){
-		$category = get_term_by('slug',$wp_query->query_vars['term'],'product_tag');
-		remove_filter('the_title','wpsc_the_category_title');
-	}
 
 	//if this is paginated products_page
 	if( $wp_query->in_the_loop && empty($category->name) && isset( $wp_query->query_vars['paged'] ) && $wp_query->query_vars['paged'] && isset( $wp_query->query_vars['page'] ) && $wp_query->query_vars['page'] && 'wpsc-product' == $wp_query->query_vars['post_type']){
@@ -1052,6 +1040,7 @@ function wpsc_products_page( $content = '' ) {
 		remove_filter( 'the_content', 'wpautop' );
 
 		list($wp_query, $wpsc_query) = array( $wpsc_query, $wp_query ); // swap the wpsc_query object
+
 		$GLOBALS['nzshpcrt_activateshpcrt'] = true;
 
 		// get the display type for the productspage
@@ -1065,12 +1054,14 @@ function wpsc_products_page( $content = '' ) {
 		ob_end_clean();
 		$output = str_replace( '$', '\$', $output );
 
-		$product_id = $wp_query->post->ID;
-		$product_meta = get_post_meta( $product_id, '_wpsc_product_metadata', true );
+		if ( $wp_query->post_count > 0 ) {
+			$product_id = $wp_query->post->ID;
+			$product_meta = get_post_meta( $product_id, '_wpsc_product_metadata', true );
 
-		list($wp_query, $wpsc_query) = array( $wpsc_query, $wp_query ); // swap the wpsc_query objects back
-		if ( ($is_single == false) || ($product_meta['enable_comments'] == '0') )
-			$GLOBALS['post'] = $wp_query->post;
+			list($wp_query, $wpsc_query) = array( $wpsc_query, $wp_query ); // swap the wpsc_query objects back
+			if ( ($is_single == false) || ($product_meta['enable_comments'] == '0') )
+				$GLOBALS['post'] = $wp_query->post;
+		}
 		$wp_query->current_post = $wp_query->post_count;
 		return preg_replace( "/(<p>)*\[productspage\](<\/p>)*/", $output, $content );
 	} elseif(is_archive() && wpsc_is_viewable_taxonomy()){
@@ -1123,6 +1114,9 @@ function wpsc_all_products_on_page(){
 		if ( ! $template = get_query_template( 'page', $templates ) )
 			$template = get_index_template();
 
+		if ( is_tax() )
+			_wpsc_reset_taxonomy_title();
+
 		add_filter( 'thesis_custom_loop', 'wpsc_thesis_compat' );
 
 		include( $template );
@@ -1130,6 +1124,20 @@ function wpsc_all_products_on_page(){
 	}
 }
 add_action('template_redirect', 'wpsc_all_products_on_page');
+
+function _wpsc_reset_taxonomy_title() {
+	global $wp_query;
+
+	$term = null;
+	if ( is_tax( 'wpsc_product_category' ) ) {
+		$term = get_term_by( 'slug', get_query_var( 'wpsc_product_category' ),'wpsc_product_category' );
+	} elseif ( is_tax( 'product-tag' ) ) {
+		$term = get_term_by( 'slug', get_query_var( 'term' ),'product-tag' );
+	}
+
+	if ( $term )
+		$wp_query->post->post_title = $term->name;
+}
 
 /**
  * wpsc_count_themes_in_uploads_directory, does exactly what the name says
@@ -1254,7 +1262,7 @@ function wpsc_get_the_post_id_by_shortcode( $shortcode ) {
 	// For back compat
 	$post_id = apply_filters( 'wpec_get_the_post_id_by_shortcode', $post_id );
 
-	return apply_filters( 'wpsc_get_the_post_id_by_shortcode', $post_id );
+	return apply_filters( 'wpsc_get_the_post_id_by_shortcode', $post_id, $shortcode );
 
 }
 

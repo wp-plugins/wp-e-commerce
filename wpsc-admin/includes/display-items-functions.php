@@ -129,7 +129,7 @@ function wpsc_price_control_forms() {
     	<?php /* Check product if a product has variations */ ?>
     	<?php if ( wpsc_product_has_children( $post->ID ) ) : ?>
     		<?php $price = wpsc_product_variation_price_available( $post->ID ); ?>
-			<p><?php esc_html_e( 'This Product has variations, to edit the price please use the <a href="#variation_control">Variation Controls</a>.' , 'wpsc'  ); ?></p>
+			<p><?php echo sprintf( __( 'This Product has variations, to edit the price please use the <a href="%s">Variation Controls</a>.' , 'wpsc'  ), '#wpsc_product_variation_forms' ); ?></p>
 			<p><?php printf( __( 'Price: %s and above.' , 'wpsc' ) , $price ); ?></p>
 		<?php else: ?>
 
@@ -365,7 +365,8 @@ function wpsc_product_taxes_forms() {
 		$taxable_amount_input_settings = array(
 			'id' => 'wpec_taxes_taxable_amount',
 			'name' => 'meta[_wpsc_product_metadata][wpec_taxes_taxable_amount]',
-			'label' => __( 'Taxable Amount', 'wpsc' )
+			'label' => __( 'Taxable Amount', 'wpsc' ),
+			'description' => __( 'Taxable amount in your currency, not percentage of price.', 'wpsc' ),
 		);
 
 		if ( isset( $product_meta['wpec_taxes_taxable_amount'] ) ) {
@@ -407,6 +408,9 @@ function wpsc_product_shipping_forms( $product = false, $field_name_prefix = 'me
 		$product_id = $product->ID;
 
 	$meta = get_post_meta( $product_id, '_wpsc_product_metadata', true );
+	if ( ! is_array( $meta ) )
+		$meta = array();
+
 	$defaults = array(
 		'weight' => '',
 		'weight_unit' => '',
@@ -486,22 +490,18 @@ function wpsc_product_shipping_forms( $product = false, $field_name_prefix = 'me
 			'units'  => $dimension_units,
 		),
 	);
-	$tabindex = 106;
-	if ( isset( $product->index ) )
-		$tabindex += $product->index * 20;
 ?>
 	<div class="wpsc-stock-editor<?php if ( $bulk ) echo ' wpsc-bulk-edit' ?>">
 		<p class="wpsc-form-field">
 				<label><?php esc_html_e( 'Disregard Shipping for this Product', 'wpsc' ); ?></label>&nbsp;&nbsp;
-				<label><input tabindex="<?php echo $tabindex; ?>" type="radio" name="<?php echo $field_name_prefix ?>[no_shipping]" value="1" <?php checked( $no_shipping && ! $bulk ); ?> /> <?php echo esc_html_x( 'Yes', 'disregard shipping', 'wpsc' ); ?></label>&nbsp;&nbsp;
-				<label><input tabindex="<?php echo $tabindex + 1; ?>" type="radio" name="<?php echo $field_name_prefix ?>[no_shipping]" value="0" <?php checked( ! $no_shipping && ! $bulk ); ?> /> <?php echo esc_html_x( 'No', 'disregard shipping', 'wpsc' ); ?></label>&nbsp;&nbsp;
+				<label><input type="radio" name="<?php echo $field_name_prefix ?>[no_shipping]" value="1" <?php checked( $no_shipping && ! $bulk ); ?> /> <?php echo esc_html_x( 'Yes', 'disregard shipping', 'wpsc' ); ?></label>&nbsp;&nbsp;
+				<label><input type="radio" name="<?php echo $field_name_prefix ?>[no_shipping]" value="0" <?php checked( ! $no_shipping && ! $bulk ); ?> /> <?php echo esc_html_x( 'No', 'disregard shipping', 'wpsc' ); ?></label>&nbsp;&nbsp;
 		</p>
 
 		<div class="wpsc-product-shipping-section wpsc-product-shipping-weight-dimensions">
 			<p><strong><?php esc_html_e( 'Weight and Dimensions', 'wpsc' ); ?></strong></p>
 			<?php
 				foreach ( $measurement_fields as $field ):
-					$tabindex += 2;
 			?>
 				<p class="wpsc-form-field">
 					<?php if ( $bulk ): ?>
@@ -509,8 +509,8 @@ function wpsc_product_shipping_forms( $product = false, $field_name_prefix = 'me
 					<?php endif ?>
 					<label for="wpsc-product-shipping-<?php echo $field['name']; ?>"><?php echo esc_html( $field['label'] ); ?></label>
 					<span class="wpsc-product-shipping-input">
-						<input tabindex="<?php echo $tabindex; ?>" type="text" id="wpsc-product-shipping-<?php echo $field['name']; ?>" name="<?php echo $field_name_prefix . $field['prefix'] . '[' . $field['name'] . ']'; ?>" value="<?php if ( ! $bulk ) echo esc_attr( $field['value'] ); ?>" />
-						<select tabindex="<?php echo $tabindex + 1; ?>" name="<?php echo $field_name_prefix . $field['prefix'] . '[' . $field['name'] . '_unit]'; ?>">
+						<input type="text" id="wpsc-product-shipping-<?php echo $field['name']; ?>" name="<?php echo $field_name_prefix . $field['prefix'] . '[' . $field['name'] . ']'; ?>" value="<?php if ( ! $bulk ) echo esc_attr( $field['value'] ); ?>" />
+						<select name="<?php echo $field_name_prefix . $field['prefix'] . '[' . $field['name'] . '_unit]'; ?>">
 							<?php foreach ( $field['units'] as $unit => $unit_label ): ?>
 								<option value="<?php echo $unit; ?>" <?php if ( ! $bulk ) selected( $unit, $measurements[$field['name'] . '_unit'] ); ?>><?php echo esc_html( $unit_label ); ?></option>
 							<?php endforeach; ?>
@@ -519,7 +519,6 @@ function wpsc_product_shipping_forms( $product = false, $field_name_prefix = 'me
 				</p>
 			<?php
 				endforeach;
-				$tabindex += 2;
 				 ?>
 		</div>
 
@@ -530,14 +529,14 @@ function wpsc_product_shipping_forms( $product = false, $field_name_prefix = 'me
 					<input class="wpsc-bulk-edit-fields" type="checkbox" name="wpsc_bulk_edit[fields][shipping][local]" value="1" />
 				<?php endif; ?>
 				<label for="wpsc-product-shipping-flatrate-local"><?php esc_html_e( 'Local Shipping Fee', 'wpsc' ); ?></label>
-				<input tabindex="<?php echo $tabindex; ?>" type="text" id="wpsc-product-shipping-flatrate-local" name="<?php echo $field_name_prefix; ?>[shipping][local]" value="<?php if ( ! $bulk ) echo $shipping['local']; ?>"  />
+				<input type="text" id="wpsc-product-shipping-flatrate-local" name="<?php echo $field_name_prefix; ?>[shipping][local]" value="<?php if ( ! $bulk ) echo $shipping['local']; ?>"  />
 			</p>
 			<p class="wpsc-form-field">
 				<?php if ( $bulk ): ?>
 					<input class="wpsc-bulk-edit-fields" type="checkbox" name="wpsc_bulk_edit[fields][shipping][international]" value="1" />
 				<?php endif; ?>
 				<label for="wpsc-product-shipping-flatrate-international"><?php esc_html_e( 'International Shipping Fee', 'wpsc' ); ?></label>
-				<input tabindex="<?php echo $tabindex + 1; ?>" type="text" id="wpsc-product-shipping-flatrate-international" name="<?php echo $field_name_prefix; ?>[shipping][international]" value="<?php if ( ! $bulk ) echo $shipping['international']; ?>"  />
+				<input type="text" id="wpsc-product-shipping-flatrate-international" name="<?php echo $field_name_prefix; ?>[shipping][international]" value="<?php if ( ! $bulk ) echo $shipping['international']; ?>"  />
 			</p>
 		</div>
 	</div>
@@ -716,9 +715,8 @@ function wpsc_product_image_forms() {
 <?php
 }
 function wpsc_additional_desc() {
-	global $post;
 ?>
-    <textarea name='additional_description' id='additional_description' cols='40' rows='5' ><?php echo esc_textarea( $post->post_excerpt ); ?></textarea>
+    <textarea name='additional_description' id='additional_description' cols='40' rows='5' ><?php echo esc_textarea( get_post_field( 'post_excerpt', get_the_ID() ) ); ?></textarea>
 <?php
 
 }
@@ -1118,6 +1116,8 @@ function wpsc_save_quickedit_box( $post_id ) {
 			switch ( $post_key ) {
 				case 'weight':
 					$product_meta = get_post_meta( $post_id, '_wpsc_product_metadata', true );
+					if ( ! is_array( $product_meta ) )
+						$product_meta = array();
 					// draft products don't have product metadata set yet
 					$weight_unit = isset( $product_meta["weight_unit"] ) ? $product_meta["weight_unit"] : 'pound';
 					$weight = wpsc_convert_weight( $value, $weight_unit, "pound", true );
@@ -1329,7 +1329,7 @@ function variation_price_field_check( $variation ) {
 	<tr class="form-field">
 		<th scope="row" valign="top"><label for="apply_to_current"><?php esc_html_e( 'Apply to current variations?', 'wpsc' ) ?></label></th>
 		<td>
-			<span class="description"><input type="checkbox" name="apply_to_current" id="apply_to_current" style="width:2%;" <?php echo $checked; ?> /><?php esc_html_e( 'By checking this box, the price rule you implement above will be applied to all variations that currently exist.  If you leave it unchecked, it will only apply to products that use this variation created or edited from now on.  Take note, this will apply this rule to <strong>every</strong> product using this variation.  If you need to override it for any reason on a specific product, simply go to that product and change the price.', 'wpsc' ); ?></span>
+			<span class="description"><input type="checkbox" name="apply_to_current" id="apply_to_current" style="width:2%;" <?php echo $checked; ?> /><?php _e( 'By checking this box, the price rule you implement above will be applied to all variations that currently exist.  If you leave it unchecked, it will only apply to products that use this variation created or edited from now on.  Take note, this will apply this rule to <strong>every</strong> product using this variation.  If you need to override it for any reason on a specific product, simply go to that product and change the price.', 'wpsc' ); ?></span>
 		</td>
 	</tr>
 <?php

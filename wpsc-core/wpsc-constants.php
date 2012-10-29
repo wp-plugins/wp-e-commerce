@@ -1,5 +1,4 @@
 <?php
-
 // Left Overs
 $wpsc_currency_data = array();
 $wpsc_title_data    = array();
@@ -31,10 +30,10 @@ function wpsc_core_constants() {
 	if(!defined('WPSC_URL'))
 		define( 'WPSC_URL',       plugins_url( '', __FILE__ ) );
 	// Define Plugin version
-	define( 'WPSC_VERSION', '3.8.9-beta' );
+	define( 'WPSC_VERSION', '3.8.9-rc1' );
 	define( 'WPSC_MINOR_VERSION', '571548' );
-	define( 'WPSC_PRESENTABLE_VERSION', '3.8.9-beta' );
-	define( 'WPSC_DB_VERSION', 1 );
+	define( 'WPSC_PRESENTABLE_VERSION', '3.8.9-rc1' );
+	define( 'WPSC_DB_VERSION', 3 );
 
 	// Define Debug Variables for developers
 	define( 'WPSC_DEBUG', false );
@@ -281,15 +280,12 @@ function wpsc_core_setup_cart() {
 	if ( 2 == get_option( 'cart_location' ) )
 		add_filter( 'the_content', 'wpsc_shopping_cart', 14 );
 
-	$customer_id = wpsc_get_current_customer_id();
-	if ( $customer_id ) {
-		$GLOBALS['wpsc_cart'] = maybe_unserialize( get_transient( "wpsc_cart_{$customer_id}" ) );
+	$cart = maybe_unserialize( wpsc_get_customer_meta( 'cart' ) );
 
-		if ( ! is_object( $GLOBALS['wpsc_cart'] ) )
-			$GLOBALS['wpsc_cart'] = new wpsc_cart();
-	} else {
+	if ( is_object( $cart ) && ! is_wp_error( $cart ) )
+		$GLOBALS['wpsc_cart'] = $cart;
+	else
 		$GLOBALS['wpsc_cart'] = new wpsc_cart();
-	}
 }
 
 /***

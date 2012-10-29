@@ -45,6 +45,7 @@ function wpsc_cart_item_count() {
 */
 function wpsc_coupon_amount($forDisplay=true) {
    global $wpsc_cart;
+
    if($forDisplay == true) {
      $output = wpsc_currency_display($wpsc_cart->coupons_amount);
    } else {
@@ -253,8 +254,7 @@ function wpsc_the_cart_item_key() {
 */
 function wpsc_cart_item_name( $context = 'display' ) {
 	global $wpsc_cart;
-   $product_name = apply_filters( 'the_title', $wpsc_cart->cart_item->product_name );
-	$product_name = apply_filters( 'wpsc_cart_item_name', $product_name, $wpsc_cart->cart_item->product_id );
+	$product_name = apply_filters( 'wpsc_cart_item_name', $wpsc_cart->cart_item->get_title(), $wpsc_cart->cart_item->product_id );
 	return $product_name;
 }
  /**
@@ -403,7 +403,11 @@ function wpsc_the_shipping_method() {
 */
 function wpsc_shipping_method_name() {
    global $wpsc_cart, $wpsc_shipping_modules;
-   return apply_filters( 'wpsc_shipping_method_name', $wpsc_shipping_modules[$wpsc_cart->shipping_method]->name );
+   $name = '';
+   if ( ! empty( $wpsc_cart->shipping_method ) && isset( $wpsc_shipping_modules[$wpsc_cart->shipping_method] ) )
+      $name = $wpsc_shipping_modules[$wpsc_cart->shipping_method]->name;
+
+   return apply_filters( 'wpsc_shipping_method_name', $name );
 }
 
 
@@ -757,6 +761,13 @@ class wpsc_cart {
       }
       $this->clear_cache();
       $this->get_shipping_option();
+
+      // reapply coupon in case it's free shipping
+      if ( $this->coupons_name ) {
+         $coupon = new wpsc_coupons( $this->coupons_name );
+         if ( $coupon->is_free_shipping() )
+            $this->apply_coupons( $coupon->calculate_discount(), $this->coupons_name );
+      }
    }
 
    /**
@@ -1265,12 +1276,20 @@ class wpsc_cart {
     * @return float returns the shipping as a floating point value
    */
   function calculate_total_shipping() {
-   if( ! ( (get_option('shipping_discount')== 1) && (get_option('shipping_discount_value') <= $this->calculate_subtotal() ) ) && wpsc_uses_shipping()){
-         $total = $this->calculate_base_shipping();
-         $total += $this->calculate_per_item_shipping();
-    }else{
-         $total = 0;
-    }
+   $shipping_discount_value  = get_option( 'shipping_discount_value' );
+   $is_free_shipping_enabled = get_option( 'shipping_discount' );
+   $subtotal                 = $this->calculate_subtotal();
+
+   $has_free_shipping =    $is_free_shipping_enabled
+                        && $shipping_discount_value > 0
+                        && $shipping_discount_value <= $subtotal;
+
+   if ( ! wpsc_uses_shipping() || $has_free_shipping ) {
+      $total = 0;
+   } else {
+      $total = $this->calculate_base_shipping();
+      $total += $this->calculate_per_item_shipping();
+   }
 
     return apply_filters( 'wpsc_convert_total_shipping', $total );
 
@@ -1282,12 +1301,10 @@ class wpsc_cart {
    * @return float returns true or false depending on whether the cart subtotal is larger or equal to the shipping         * discount value.
    */
   function has_total_shipping_discount() {
-   if(get_option('shipping_discount')== 1) {
-      if(get_option('shipping_discount_value') <= $this->calculate_subtotal() ) {
-            return true;
-      }
-   }
-    return false;
+   $shipping_discount_value = get_option( 'shipping_discount_value' );
+   return get_option( 'shipping_discount' )
+          && $shipping_discount_value > 0
+          && $shipping_discount_value <= $this->calculate_subtotal();
   }
 
     /**
@@ -1551,6 +1568,7 @@ class wpsc_cart {
       $this->clear_cache();
       $this->coupons_name = $coupon_name;
       $this->coupons_amount = apply_filters( 'wpsc_coupons_amount', $coupons_amount, $coupon_name );
+
       $this->calculate_total_price();
          if ( $this->total_price < 0 ) {
             $this->coupons_amount += $this->total_price;
@@ -1707,7 +1725,7 @@ class wpsc_cart_item {
    	if ( isset( $special_price ) && $special_price > 0 && $special_price < $price )
    		$price = $special_price;
    	$priceandstock_id = 0;
-   	$this->weight = $product_meta[0]["weight"];
+   	$this->weight = isset( $product_meta[0]['weight'] ) ? $product_meta[0]["weight"] : 0;
    	// if we are using table rate price
    	if ( isset( $product_meta[0]['table_rate_price'] ) ) {
    		$levels = $product_meta[0]['table_rate_price'];
@@ -1725,9 +1743,7 @@ class wpsc_cart_item {
    	$price = apply_filters( 'wpsc_price', $price, $product_id );
 
    	// create the string containing the product name.
-      $product_name = apply_filters( 'wpsc_cart_product_title', $product->post_title, $product_id );
-
-   	$this->product_name = $product_name;
+   	$this->product_name = $this->get_title( 'raw' );
    	$this->priceandstock_id = $priceandstock_id;
    	$this->meta = $product_meta;
 
@@ -1813,7 +1829,7 @@ class wpsc_cart_item {
        do_action_ref_array( 'wpsc_refresh_item', array( &$this ) );
    }
 
-   public function get_title() {
+   public function get_title( $mode = 'display' ) {
 
       if ( ! get_post_field( 'post_parent', $this->product_id ) )
          return get_post_field( 'post_title', $this->product_id);
@@ -1830,8 +1846,12 @@ class wpsc_cart_item {
          $title .= ' (' . $vars . ')';
       }
 
-      return apply_filters( 'the_title', $title );
+      $title = apply_filters( 'wpsc_cart_product_title', $title, $this->product_id );
 
+      if ( $mode == 'display' )
+         $title = apply_filters( 'the_title', $title );
+
+      return $title;
    }
 
    /**
@@ -1931,8 +1951,9 @@ class wpsc_cart_item {
    */
    function update_claimed_stock() {
       global $wpdb;
+
       if($this->has_limited_stock == true) {
-         $current_datetime = date("Y-m-d H:i:s");
+         $current_datetime = date( "Y-m-d H:i:s" );
          $wpdb->query($wpdb->prepare("REPLACE INTO `".WPSC_TABLE_CLAIMED_STOCK."`
          ( `product_id` , `variation_stock_id` , `stock_claimed` , `last_activity` , `cart_id` )
          VALUES
@@ -1954,7 +1975,6 @@ class wpsc_cart_item {
    */
    function save_to_db($purchase_log_id) {
       global $wpdb, $wpsc_shipping_modules;
-
 
 	$method = $this->cart->selected_shipping_method;
 	$shipping = 0;
@@ -1984,7 +2004,7 @@ $wpdb->insert(
 		WPSC_TABLE_CART_CONTENTS,
 		array(
 		    'prodid' => $this->product_id,
-		    'name' => $this->product_name,
+		    'name' => $this->get_title(),
 		    'purchaseid' => $purchase_log_id,
 		    'price' => $this->unit_price,
 		    'pnp' => $shipping,

@@ -173,9 +173,9 @@ function wpsc_install() {
 	add_option( 'paypal_multiple_url', "https://www.paypal.com/cgi-bin/webscr" );
 
 	add_option( 'product_ratings', '0', '', 'yes' );
-	add_option( 'wpsc_email_receipt', __( 'Thank you for purchasing with %shop_name%, any items to be shipped will be processed as soon as possible, any items that can be downloaded can be downloaded using the links on this page.All prices include tax and postage and packaging where applicable.
-	You ordered these items:
-	%product_list%%total_shipping%%total_price%', 'wpsc' ), '', 'yes' );
+	add_option( 'wpsc_email_receipt', __( 'Thank you for purchasing with %shop_name%, any items to be shipped will be processed as soon as possible, any items that can be downloaded can be downloaded using the links on this page. All prices include tax and postage and packaging where applicable.
+You ordered these items:
+%product_list%%total_shipping%%total_price%', 'wpsc' ), '', 'yes' );
 
 	add_option( 'wpsc_email_admin', __( '%product_list%%total_shipping%%total_price%', 'wpsc' ), '','yes' );
 
@@ -303,6 +303,7 @@ function wpsc_install() {
 	// Product categories, temporarily register them to create first default category if none exist
 	// @todo: investigate those require once lines and move them to right place (not from here, but from their original location, which seems to be wrong, since i cant access wpsc_register_post_types and wpsc_update_categorymeta here) - Vales <v.bakaitis@gmail.com>
 	require_once( WPSC_FILE_PATH . '/wpsc-core/wpsc-functions.php' );
+	wpsc_core_load_page_titles();
 	wpsc_register_post_types();
 	$category_list = get_terms( 'wpsc_product_category', 'hide_empty=0&parent=0' );
 	if ( count( $category_list ) == 0 ) {
@@ -321,6 +322,7 @@ function wpsc_install() {
 		wpsc_update_categorymeta( $category_id, 'active', '1' );
 		wpsc_update_categorymeta( $category_id, 'order', '0' );
 	}
+	flush_rewrite_rules( false );
 }
 
 function wpsc_product_files_htaccess() {

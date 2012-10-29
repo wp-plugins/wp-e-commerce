@@ -36,13 +36,17 @@ class WPSC_Product_Variation_List_Table extends WP_List_Table
 		if ( ! empty( $this->items ) )
 			return;
 
+		$per_page = $this->get_items_per_page( 'edit_wpsc-product-variations_per_page' );
+		$per_page = apply_filters( 'edit_wpsc_product_variations_per_page', $per_page );
+
 		$this->args = array(
-			'post_type'   => 'wpsc-product',
-			'orderby'     => 'menu_order post_title',
-			'post_parent' => $this->product_id,
-			'post_status' => 'publish, inherit',
-			'numberposts' => -1,
-			'order'       => "ASC",
+			'post_type'      => 'wpsc-product',
+			'orderby'        => 'menu_order post_title',
+			'post_parent'    => $this->product_id,
+			'post_status'    => 'publish, inherit',
+			'numberposts'    => -1,
+			'order'          => "ASC",
+			'posts_per_page' => $per_page,
 		);
 
 		if ( isset( $_REQUEST['post_status'] ) )
@@ -51,13 +55,24 @@ class WPSC_Product_Variation_List_Table extends WP_List_Table
 		if ( isset( $_REQUEST['s'] ) )
 			$this->args['s'] = $_REQUEST['s'];
 
-		$this->items = get_posts( $this->args );
+		$query = new WP_Query( $this->args );
+
+		$this->items = $query->posts;
+		$total_items = $query->found_posts;
+		$total_pages = $query->max_num_pages;
+
+		$this->set_pagination_args( array(
+			'total_items' => $total_items,
+			'total_pages' => $total_pages,
+			'per_page' => $per_page
+		) );
 
 		if ( empty( $this->items ) )
 			return;
 
 		$ids = wp_list_pluck( $this->items, 'ID' );
 		$object_terms = wp_get_object_terms( $ids, 'wpsc-variation', array( 'fields' => 'all_with_object_id' ) );
+
 		foreach ( $object_terms as $term ) {
 			if ( ! array_key_exists( $term->object_id, $this->object_terms_cache ) )
 				$this->object_terms_cache[$term->object_id] = array();
@@ -106,15 +121,19 @@ class WPSC_Product_Variation_List_Table extends WP_List_Table
 	}
 
 	public function get_columns() {
-		return array(
+		$columns = array(
 			'cb'         => '<input type="checkbox" />',
 			'title'      => __( 'Title', 'wpsc' ),
-			'stock'      => __( 'Stock', 'wpsc' ),
-			'tax'        => __( 'Tax', 'wpsc' ),
+			'sku'        => __( 'SKU', 'wpsc' ),
 			'price'      => __( 'Price', 'wpsc' ),
 			'sale_price' => __( 'Sale Price', 'wpsc' ),
-			'sku'        => __( 'SKU', 'wpsc' ),
+			'stock'      => __( 'Stock', 'wpsc' ),
 		);
+
+		if ( get_option( 'wpec_taxes_enabled' ) )
+			$columns['tax'] = __( 'Taxable Amount', 'wpsc' );
+
+		return apply_filters( 'wpsc_variation_column_headers', $columns );
 	}
 
 	public function get_sortable_columns() {
@@ -123,13 +142,11 @@ class WPSC_Product_Variation_List_Table extends WP_List_Table
 
 	public function column_cb( $item ) {
 		$checked = isset( $_REQUEST['variations'] ) ? checked( in_array( $item->ID, $_REQUEST['variations'] ), true, false ) : '';
-		$tabindex = 1000 + $item->index;
 		return sprintf(
-			'<input tabindex="%1$s" type="checkbox" %2$s name="%3$s[]" value="%4$s" />',
-			/*$1%s*/ $tabindex,
-			/*$2%s*/ $checked,
-			/*$3%s*/ 'post',
-			/*$4%s*/ $item->ID
+			'<input type="checkbox" %1$s name="%2$s[]" value="%3$s" />',
+			/*$1%s*/ $checked,
+			/*$2%s*/ 'post',
+			/*$3%s*/ $item->ID
 		);
 	}
 
@@ -138,8 +155,8 @@ class WPSC_Product_Variation_List_Table extends WP_List_Table
 		$can_edit_post = current_user_can( $post_type_object->cap->edit_post, $item->ID );
 
 		$actions = array();
-		if ( apply_filters( 'wpsc_product_variations_edit_action', false, $item ) && $can_edit_post && 'trash' != $item->post_status )
-			$actions['edit'] = '<a href="' . get_edit_post_link( $item->ID, true ) . '" title="' . esc_attr( __( 'Edit this item' ), 'wpsc' ) . '">' . __( 'Edit' ) . '</a>';
+		if ( apply_filters( 'wpsc_show_product_variations_edit_action', true, $item ) && $can_edit_post && 'trash' != $item->post_status )
+			$actions['edit'] = '<a target="_blank" href="' . get_edit_post_link( $item->ID, true ) . '" title="' . esc_attr( __( 'Edit this item' ), 'wpsc' ) . '">' . __( 'Edit' ) . '</a>';
 
 		$actions['stock hide-if-no-js'] = '<a class="wpsc-variation-stock-editor-link" href="#" title="' . __( 'Show shipping editor', 'wpsc' ) . '">' . __( 'Edit Shipping', 'wpsc' ) . '</a>';
 
@@ -173,7 +190,7 @@ class WPSC_Product_Variation_List_Table extends WP_List_Table
 					),
 					$restore_url
 				);
-				$restore_url = wp_nonce_url( $restore_url, 'untrash-' . $item->post_type . '_' . $item->ID );
+				$restore_url = wp_nonce_url( $restore_url, 'untrash-post_' . $item->ID );
 				$actions['untrash'] = "<a title='" . esc_attr( __( 'Restore this item from the Trash' ) ) . "' href='" . $restore_url . "'>" . __( 'Restore' ) . "</a>";
 			} elseif ( EMPTY_TRASH_DAYS ) {
 				$actions['trash'] = "<a class='submitdelete' title='" . esc_attr( __( 'Move this item to the Trash' ) ) . "' href='" . $delete_link . "'>" . __( 'Trash' ) . "</a>";
@@ -189,17 +206,25 @@ class WPSC_Product_Variation_List_Table extends WP_List_Table
 	public function column_title( $item ) {
 		$title = implode( ', ', $this->object_terms_cache[$item->ID] );
 		$thumbnail = wpsc_the_product_thumbnail( 50, 50, $item->ID, '' );
+		$show_edit_link = apply_filters( 'wpsc_show_product_variations_edit_action', true, $item );
+
 		if ( ! $thumbnail )
 			$thumbnail = WPSC_CORE_IMAGES_URL . '/no-image-uploaded.gif';
 		?>
 			<div class="wpsc-product-variation-thumbnail">
-				<a data-title="<?php echo $title; ?>" href="<?php echo esc_url( admin_url( 'media-upload.php?post_id=' . $item->ID . '&TB_iframe=1&width=640&height=566&product_variation=1' ) ) ?>">
-					<img id="wpsc-variation-thumbnail-<?php echo $item->ID; ?>" src="<?php echo $thumbnail; ?>" alt="" />
+				<a data-title="<?php echo esc_attr( $title ); ?>" href="<?php echo esc_url( admin_url( 'media-upload.php?post_id=' . $item->ID . '&TB_iframe=1&width=640&height=566&product_variation=1' ) ) ?>">
+					<img id="wpsc-variation-thumbnail-<?php echo $item->ID; ?>" src="<?php echo esc_url( $thumbnail ); ?>" alt="" />
 				</a>
 			</div>
 			<div class="wpsc-product-variation-title">
-				<strong>
-					<a class="row-title" href="<?php echo get_edit_post_link( $item->ID ); ?>" title="<?php esc_attr_e( 'Edit this variation', 'wpsc' ) ?>"><?php echo esc_html( $title ); ?></a>
+				<strong class="row-title">
+					<?php if ( $show_edit_link ): ?>
+						<a target="_blank" href="<?php echo esc_url( get_edit_post_link( $item->ID, true ) ); ?>" title="<?php esc_attr_e( __( 'Edit this item' ), 'wpsc' ); ?>">
+					<?php endif; ?>
+					<?php echo esc_html( $title ); ?>
+					<?php if ( $show_edit_link ): ?>
+						</a>
+					<?php endif; ?>
 				</strong>
 				<?php echo $this->row_actions( $this->get_row_actions( $item ) ); ?>
 			</div>
@@ -208,48 +233,53 @@ class WPSC_Product_Variation_List_Table extends WP_List_Table
 
 	public function column_stock( $item ) {
 		$stock = get_product_meta( $item->ID, 'stock', true );
-		$tabindex = 100 + $item->index * 20 + 1;
 		?>
-			<input tabindex="<?php echo $tabindex; ?>" type="text" name="wpsc_variations[<?php echo $item->ID; ?>][stock]" value="<?php echo esc_attr( $stock ); ?>" />
+			<input type="text" name="wpsc_variations[<?php echo $item->ID; ?>][stock]" value="<?php echo esc_attr( $stock ); ?>" />
 		<?php
 	}
 
 	public function column_price( $item ) {
 		$price = get_product_meta( $item->ID, 'price', true );
-		$tabindex = 100 + $item->index * 20 + 3;
 		?>
-			<input tabindex="<?php echo $tabindex; ?>" type="text" name="wpsc_variations[<?php echo $item->ID; ?>][price]" value="<?php echo esc_attr( $price ); ?>" />
+			<input type="text" name="wpsc_variations[<?php echo $item->ID; ?>][price]" value="<?php echo esc_attr( $price ); ?>" />
 		<?php
 	}
 
 	public function column_sale_price( $item ) {
 		$sale_price = get_product_meta( $item->ID, 'special_price', true );
-		$tabindex = 100 + $item->index * 20 + 4;
 		?>
-			<input tabindex="<?php echo $tabindex; ?>" type="text" name="wpsc_variations[<?php echo $item->ID; ?>][sale_price]" value="<?php echo esc_attr( $sale_price ); ?>">
+			<input type="text" name="wpsc_variations[<?php echo $item->ID; ?>][sale_price]" value="<?php echo esc_attr( $sale_price ); ?>">
 		<?php
 	}
 
 	public function column_sku( $item ) {
 		$sku = get_product_meta( $item->ID, 'sku', true );
-		$tabindex = 100 + $item->index * 20 + 5;
 		?>
-			<input tabindex="<?php echo $tabindex; ?>" type="text" name="wpsc_variations[<?php echo $item->ID; ?>][sku]" value="<?php echo esc_attr( $sku ); ?>" />
+			<input type="text" name="wpsc_variations[<?php echo $item->ID; ?>][sku]" value="<?php echo esc_attr( $sku ); ?>" />
 		<?php
 	}
 
 	public function column_tax( $item ) {
 		$meta = get_post_meta( $item->ID, '_wpsc_product_metadata', true );
-		$tax = (float) $meta['wpec_taxes_taxable_amount'];
-		$tabindex = 100 + $item->index * 20 + 2;
+		if ( ! $meta || ! isset( $meta['wpec_taxes_taxable_amount'] ) )
+			$tax = '';
+		else
+			$tax = (float) $meta['wpec_taxes_taxable_amount'];
 		?>
-			<input tabindex="<?php echo $tabindex; ?>" type="text" name="wpsc_variations[<?php echo $item->ID; ?>][product_metadata][wpec_taxes_taxable_amount]" value="<?php echo esc_attr( $tax ); ?>" />
+			<input type="text" name="wpsc_variations[<?php echo $item->ID; ?>][product_metadata][wpec_taxes_taxable_amount]" value="<?php echo esc_attr( $tax ); ?>" />
 		<?php
 	}
 
 	private function shipping_editor( $item = false ) {
-		static $row_class = '';
-		$row_class = ( $row_class == '' && $item ) ? ' alternate' : '';
+		static $alternate = '';
+
+		if ( ! $item )
+			$alternate = '';
+		else
+			$alternate = ( $alternate == '' ) ? ' alternate' : '';
+
+		$row_class = $alternate;
+
 		$style = '';
 		$bulk = false;
 		if ( ! $item ) {
@@ -258,14 +288,17 @@ class WPSC_Product_Variation_List_Table extends WP_List_Table
 			$row_class .= " wpsc_bulk_edit_shipping";
 			if ( $this->is_bulk_edit )
 				$style = ' style="display:table-row;"';
+			else
+				$style = ' style="display:none;"';
 			$bulk = true;
 		} else {
 			$field_name = "wpsc_variations[{$item->ID}][product_metadata]";
 		}
+		$colspan = count( $this->get_columns() ) - 1;
 		?>
 		<tr class="wpsc-stock-editor-row inline-edit-row<?php echo $row_class; ?>"<?php echo $style; ?> id="wpsc-stock-editor-row-<?php echo $item->ID; ?>">
 			<td></td>
-			<td colspan="6" class="colspanchange">
+			<td colspan="<?php echo $colspan; ?>" class="colspanchange">
 				<h4><?php esc_html_e( 'Variation Stock Editor', 'wpsc' ); ?></h4>
 				<?php wpsc_product_shipping_forms( $item, $field_name, $bulk ); ?>
 			</td>
@@ -401,7 +434,7 @@ class WPSC_Product_Variation_List_Table extends WP_List_Table
 
 		echo "</select>\n";
 
-		submit_button( __( 'Apply' ), 'button-secondary action', false, false, array( 'id' => "doaction$two" ) );
+		submit_button( __( 'Apply' ), 'button-small action', false, false, array( 'id' => "doaction$two" ) );
 		echo "\n";
 	}
 
@@ -600,10 +633,6 @@ class WPSC_Product_Variation_List_Table extends WP_List_Table
 		if ( $this->is_trash && current_user_can( $post_type_object->cap->edit_others_posts ) ) {
 			submit_button( __( 'Empty Trash' ), 'button-secondary apply', 'delete_all', false );
 		}
-		?></div>
-		<div class="alignright">
-			<?php submit_button( __( 'Save Variations', 'wpsc' ) ); ?>
-		</div>
-		<?php
+		?></div><?php
 	}
 }

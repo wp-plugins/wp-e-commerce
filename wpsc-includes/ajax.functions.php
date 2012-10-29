@@ -199,7 +199,7 @@ function wpsc_empty_cart() {
 	global $wpsc_cart;
 	$wpsc_cart->empty_cart( false );
 
-	if ( $_REQUEST['ajax'] == 'true' ) {
+	if ( isset( $_REQUEST['ajax'] ) && $_REQUEST['ajax'] == 'true' ) {
 		ob_start();
 
 		include_once( wpsc_get_template_file_path( 'wpsc-cart_widget.php' ) );
@@ -222,7 +222,7 @@ function wpsc_empty_cart() {
 	}
 
 	// this if statement is needed, as this function also runs on returning from the gateway
-	if ( $_REQUEST['wpsc_ajax_action'] == 'empty_cart' ) {
+	if ( isset( $_REQUEST['wpsc_ajax_action'] ) && $_REQUEST['wpsc_ajax_action'] == 'empty_cart' ) {
 		wp_redirect( remove_query_arg( array( 'wpsc_ajax_action', 'ajax' ) ) );
 		exit();
 	}
@@ -252,6 +252,7 @@ function wpsc_coupon_price( $currCoupon = '' ) {
 			$wpsc_coupons->errormsg = true;
 			$wpsc_cart->coupons_amount = 0;
 			$wpsc_cart->coupons_name = '';
+			wpsc_delete_customer_meta( 'coupon' );
 		}
 	} else if ( (!isset( $_POST['coupon_num'] ) || $_POST['coupon_num'] == '') && $currCoupon == '' ) {
 		$wpsc_cart->coupons_amount = 0;
@@ -262,7 +263,6 @@ function wpsc_coupon_price( $currCoupon = '' ) {
 		$wpsc_coupons = new wpsc_coupons( $coupon );
 
 		if ( $wpsc_coupons->validate_coupon() ) {
-
 			$discountAmount = $wpsc_coupons->calculate_discount();
 			$wpsc_cart->apply_coupons( $discountAmount, $coupon );
 			$wpsc_coupons->errormsg = false;
@@ -365,14 +365,23 @@ function wpsc_update_shipping_price() {
 	global $wpsc_cart;
 	$quote_shipping_method = $_POST['method'];
 	$quote_shipping_option = $_POST['option'];
+
 	if(!empty($quote_shipping_option) && !empty($quote_shipping_method)){
 		$wpsc_cart->update_shipping( $quote_shipping_method, $quote_shipping_option );
+
 		echo "
 		if(jQuery('.pricedisplay.checkout-shipping .pricedisplay')){
 			jQuery('.pricedisplay.checkout-shipping > .pricedisplay:first').html(\"" . wpsc_cart_shipping() . "\");
 			jQuery('.shoppingcart .pricedisplay.checkout-shipping > .pricedisplay:first').html(\"" . wpsc_cart_shipping() . "\");
 		} else {
 			jQuery('.pricedisplay.checkout-shipping').html(\"" . wpsc_cart_shipping() . "\");}";
+		echo "
+		if (jQuery('#coupons_amount .pricedisplay').size() > 0) {
+			jQuery('#coupons_amount .pricedisplay').html(\"" . wpsc_coupon_amount() . "\");
+		} else {
+			jQuery('#coupons_amount').html(\"" . wpsc_coupon_amount() . "\");
+		}
+		";
 		echo "jQuery('.pricedisplay.checkout-total').html(\"" . wpsc_cart_total() . "\");\n\r";
 	}
 	exit();
@@ -473,7 +482,7 @@ function wpsc_update_location() {
 
 	$delivery_country = '';
 	$billing_country = '';
-	if ( $_POST['country'] != null ) {
+	if ( ! empty( $_POST['country'] ) ) {
 		$delivery_country = $_POST['country'];
 		$billing_country  = wpsc_get_customer_meta( 'billing_country'  );
 		$delivery_region  = wpsc_get_customer_meta( 'shipping_region'  );
@@ -519,8 +528,8 @@ function wpsc_update_location() {
 		$wpsc_cart->update_shipping( $wpsc_cart->selected_shipping_method, $wpsc_cart->selected_shipping_option );
 	}
 
-	if ( ! empty( $_SESSION['shippingSameBilling'] ) && ( $_SESSION['wpsc_delivery_country'] != $_SESSION['wpsc_selected_country'] || $_SESSION['wpsc_delivery_region'] != $_SESSION['wpsc_selected_region'] ) )
-		$_SESSION['shippingSameBilling'] = false;
+	if ( wpsc_get_customer_meta( 'shipping_same_as_billing' ) && ( $delivery_country != $billing_country || $delivery_region != $billing_region ) )
+		wpsc_update_customer_meta( 'shipping_same_as_billing', false );
 
 	if ( isset( $_GET['ajax'] ) && $_GET['ajax'] == 'true' )
 		exit;
@@ -545,7 +554,7 @@ if ( isset( $_REQUEST['wpsc_action'] ) && ($_REQUEST['wpsc_action'] == 'cart_htm
  * submit checkout function, used through ajax and in normal page loading.
  * No parameters, returns nothing
  */
-function wpsc_submit_checkout() {
+function wpsc_submit_checkout( $collected_data = true ) {
 	global $wpdb, $wpsc_cart, $user_ID, $nzshpcrt_gateways, $wpsc_shipping_modules, $wpsc_gateways;
 
 	$num_items = 0;
@@ -559,15 +568,21 @@ function wpsc_submit_checkout() {
 		$error_messages = array();
 	$wpsc_checkout = new wpsc_checkout();
 	$selected_gateways = get_option( 'custom_gateway_options' );
-	$submitted_gateway = $_POST['custom_gateway'];
+	$submitted_gateway = isset( $_POST['custom_gateway'] ) ? $_POST['custom_gateway'] : '';
 	$options = get_option( 'custom_shipping_options' );
-	$form_validity = $wpsc_checkout->validate_forms();
-	extract( $form_validity ); // extracts $is_valid and $error_messages
+	if ( $collected_data ) {
+		$form_validity = $wpsc_checkout->validate_forms();
+		extract( $form_validity ); // extracts $is_valid and $error_messages
 
-	if ( isset( $_POST['agree'] ) && $_POST['agree'] != 'yes' ) {
-		$error_messages[] = __( 'Please agree to the terms and conditions, otherwise we cannot process your order.', 'wpsc' );
-		$is_valid = false;
+		if ( wpsc_has_tnc() && ( ! isset( $_POST['agree'] ) || $_POST['agree'] != 'yes' ) ) {
+			$error_messages[] = __( 'Please agree to the terms and conditions, otherwise we cannot process your order.', 'wpsc' );
+			$is_valid = false;
+		}
+	} else {
+		$is_valid = true;
+		$error_messages = array();
 	}
+
 	$selectedCountry = $wpdb->get_results( $wpdb->prepare( "SELECT id, country FROM `" . WPSC_TABLE_CURRENCY_LIST . "` WHERE isocode = '%s' ", wpsc_get_customer_meta( 'shipping_country' ) ), ARRAY_A );
 	foreach ( $wpsc_cart->cart_items as $cartitem ) {
 		if( ! empty( $cartitem->meta[0]['no_shipping'] ) ) continue;
@@ -579,7 +594,7 @@ function wpsc_submit_checkout() {
 				$countries = wpsc_get_meta( $catid, 'target_market', 'wpsc_category' );
 
 			if ( !empty($countries) && !in_array( $selectedCountry[0]['id'], (array)$countries ) ) {
-				$errormessage = sprintf( __( '%s cannot be shipped to %s. To continue with your transaction please remove this product from the list below.', 'wpsc' ), $cartitem->product_name, $selectedCountry[0]['country'] );
+				$errormessage = sprintf( __( '%s cannot be shipped to %s. To continue with your transaction please remove this product from the list below.', 'wpsc' ), $cartitem->get_title(), $selectedCountry[0]['country'] );
 				wpsc_update_customer_meta( 'category_shipping_conflict', $errormessage );
 				$is_valid = false;
 			}
@@ -597,13 +612,15 @@ function wpsc_submit_checkout() {
 	else
 		$is_valid = false;
 
-	if ( get_option( 'do_not_use_shipping' ) == 0 && ($wpsc_cart->selected_shipping_method == null || $wpsc_cart->selected_shipping_option == null) && ( $num_items != $disregard_shipping ) ) {
-		$error_messages[] = __( 'You must select a shipping method, otherwise we cannot process your order.', 'wpsc' );
-		$is_valid = false;
-	}
-	if ( (get_option( 'do_not_use_shipping' ) != 1) && (in_array( 'ups', (array)$options )) && ! wpsc_get_customer_meta( 'shipping_zip' ) && ( $num_items != $disregard_shipping ) ) {
-			wpsc_update_customer_meta( 'category_shipping_conflict', __( 'Please enter a Zipcode and click calculate to proceed', 'wpsc' ) );
+	if ( $collected_data ) {
+		if ( get_option( 'do_not_use_shipping' ) == 0 && ($wpsc_cart->selected_shipping_method == null || $wpsc_cart->selected_shipping_option == null) && ( $num_items != $disregard_shipping ) ) {
+			$error_messages[] = __( 'You must select a shipping method, otherwise we cannot process your order.', 'wpsc' );
 			$is_valid = false;
+		}
+		if ( (get_option( 'do_not_use_shipping' ) != 1) && (in_array( 'ups', (array)$options )) && ! wpsc_get_customer_meta( 'shipping_zip' ) && ( $num_items != $disregard_shipping ) ) {
+				wpsc_update_customer_meta( 'category_shipping_conflict', __( 'Please enter a Zipcode and click calculate to proceed', 'wpsc' ) );
+				$is_valid = false;
+		}
 	}
 
 	wpsc_update_customer_meta( 'checkout_misc_error_messages', $error_messages );
@@ -668,7 +685,8 @@ function wpsc_submit_checkout() {
 		$purchase_log = new WPSC_Purchase_Log( $args );
 		$purchase_log->save();
 		$purchase_log_id = $purchase_log->get( 'id' );
-		$wpsc_checkout->save_forms_to_db( $purchase_log_id );
+		if ( $collected_data )
+			$wpsc_checkout->save_forms_to_db( $purchase_log_id );
 		$wpsc_cart->save_to_db( $purchase_log_id );
 		$wpsc_cart->submit_stock_claims( $purchase_log_id );
 		if ( get_option( 'wpsc_also_bought' ) == 1 )
@@ -706,7 +724,7 @@ function wpsc_submit_checkout() {
 
 // execute on POST and GET
 if ( isset( $_REQUEST['wpsc_action'] ) && ($_REQUEST['wpsc_action'] == 'submit_checkout') ) {
-	add_action( 'init', 'wpsc_submit_checkout' );
+	add_action( 'init', 'wpsc_submit_checkout', 10, 0 );
 }
 
 function wpsc_product_rss() {
@@ -1148,6 +1166,9 @@ function wpsc_update_shipping_quotes_on_shipping_same_as_billing() {
 	global $wpsc_cart;
 
 	wpsc_update_location();
+
+	if ( get_option( 'do_not_use_shipping' ) )
+		die( '-1' );
 
 	if ( ! wpsc_have_shipping_quotes() ) {
 		die( '0' );

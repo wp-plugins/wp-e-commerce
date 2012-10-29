@@ -41,7 +41,7 @@ class wpsc_merchant_paypal_pro extends wpsc_merchant {
 
 	function __construct( $purchase_id = null, $is_receiving = false ) {
 		$this->name = __( 'PayPal Pro 2.0', 'wpsc' );
-		parent::wpsc_merchant( $purchase_id, $is_receiving );
+		parent::__construct( $purchase_id, $is_receiving );
 	}
 
 	function get_local_currency_code() {
@@ -312,6 +312,7 @@ class wpsc_merchant_paypal_pro extends wpsc_merchant {
 					foreach ( $this->cart_items as $cart_row ) {
 						if ( $cart_row['is_recurring'] == true ) {
 							do_action( 'wpsc_activate_subscription', $cart_row['cart_item_id'], $this->paypal_ipn_values['subscr_id'] );
+							do_action('wpsc_activated_subscription', $cart_row['cart_item_id'], $this );
 						}
 					}
 					break;
@@ -483,7 +484,7 @@ function form_paypal_pro() {
 		$output .="<tr>
 			<td colspan='2'>
 			<span class='wpscsmall description'>
-			" . sprintf( __( "For more help configuring Paypal Pro, please read our documentation <a href='%s'>here</a>", 'wpsc' ), esc_ur( 'http://docs.getshopped.org/wiki/documentation/payments/paypal-payments-pro' ) ) . "</span>
+			" . sprintf( __( "For more help configuring Paypal Pro, please read our documentation <a href='%s'>here</a>", 'wpsc' ), esc_url( 'http://docs.getshopped.org/wiki/documentation/payments/paypal-payments-pro' ) ) . "</span>
 			</td>
 		</tr>";
 	return $output;
@@ -547,7 +548,7 @@ if ( in_array( 'wpsc_merchant_paypal_pro', (array)get_option( 'custom_gateway_op
 		'Discover' => __( 'Discover', 'wpsc' ),
 		'Amex' => __( 'Amex', 'wpsc' ),
 	);
-	$card_types = apply_filters( 'wpsc_paypal_pro_accepted_cart_types', $card_types );
+	$card_types = apply_filters( 'wpsc_paypal_pro_accepted_card_types', $card_types );
 	foreach ( $card_types as $type => $title ) {
 		$output .= sprintf( '<option value="%1$s">%2$s</option>', $type, esc_html( $title ) );
 	}

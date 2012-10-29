@@ -181,7 +181,7 @@ function wpsc_display_coupons_page() {
 				);
 
 		}
-	} 
+	}
 
 	$currency_data = $wpdb->get_row( "SELECT `symbol`,`symbol_html`,`code` FROM `" . WPSC_TABLE_CURRENCY_LIST . "` WHERE `id`='" . esc_attr( get_option( 'currency_type' ) ) . "' LIMIT 1", ARRAY_A );
 	$currency_sign = ! empty( $currency_data['symbol'] ) ? $currency_data['symbol_html'] : $currency_data['code'];
@@ -295,40 +295,37 @@ function wpsc_display_coupons_page() {
 											</select>
 
 											<span><input type="text" name="rules[value][]"/></span>
+											<script>
+												var coupon_number=1;
+												function add_another_property(this_button){
+													var new_property='<div class="coupon_condition">\n'+
+														'<div> \n'+
+														'<select class="ruleprops" name="rules[property][]"> \n'+
+														'<option value="item_name" rel="order"><?php echo esc_js( __( 'Item name', 'wpsc' ) ); ?></option> \n'+
+														'<option value="item_quantity" rel="order"><?php echo esc_js( __( 'Item quantity', 'wpsc' ) ); ?></option>\n'+
+														'<option value="total_quantity" rel="order"><?php echo esc_js( __( 'Total quantity', 'wpsc' ) ); ?></option>\n'+
+														'<option value="subtotal_amount" rel="order"><?php echo esc_js( __( 'Subtotal amount', 'wpsc' ) ); ?></option>\n'+
+														'<?php echo apply_filters( 'wpsc_coupon_rule_property_options', '' ); ?>'+
+														'</select> \n'+
+														'<select name="rules[logic][]"> \n'+
+														'<option value="equal"><?php echo esc_js( __( 'Is equal to', 'wpsc' ) ); ?></option> \n'+
+														'<option value="greater"><?php echo esc_js( __( 'Is greater than', 'wpsc' ) ); ?></option> \n'+
+														'<option value="less"><?php echo esc_js( __( 'Is less than', 'wpsc' ) ); ?></option> \n'+
+														'<option value="contains"><?php echo esc_js( __( 'Contains', 'wpsc' ) ); ?></option> \n'+
+														'<option value="not_contain"><?php echo esc_js( __( 'Does not contain', 'wpsc' ) ); ?></option> \n'+
+														'<option value="begins"><?php echo esc_js( __( 'Begins with', 'wpsc' ) ); ?></option> \n'+
+														'<option value="ends"><?php echo esc_js( __( 'Ends with', 'wpsc' ) ); ?></option> \n'+
+														'</select> \n'+
+														'<span> \n'+
+														'<input type="text" name="rules[value][]"/> \n'+
+														'</span>  \n'+
+														'<img height="16" width="16" class="delete" alt="<?php esc_attr_e( 'Delete', 'wpsc' ); ?>" src="<?php echo WPSC_CORE_IMAGES_URL; ?>/cross.png" onclick="jQuery(this).parent().remove();"/></div> \n'+
+														'</div> ';
 
-											<span>
-												<script>
-													var coupon_number=1;
-													function add_another_property(this_button){
-														var new_property='<div class="coupon_condition">\n'+
-															'<div> \n'+
-															'<select class="ruleprops" name="rules[property][]"> \n'+
-															'<option value="item_name" rel="order"><?php echo esc_js( __( 'Item name', 'wpsc' ) ); ?></option> \n'+
-															'<option value="item_quantity" rel="order"><?php echo esc_js( __( 'Item quantity', 'wpsc' ) ); ?></option>\n'+
-															'<option value="total_quantity" rel="order"><?php echo esc_js( __( 'Total quantity', 'wpsc' ) ); ?></option>\n'+
-															'<option value="subtotal_amount" rel="order"><?php echo esc_js( __( 'Subtotal amount', 'wpsc' ) ); ?></option>\n'+
-															'<?php echo apply_filters( 'wpsc_coupon_rule_property_options', '' ); ?>'+
-															'</select> \n'+
-															'<select name="rules[logic][]"> \n'+
-															'<option value="equal"><?php echo esc_js( __( 'Is equal to', 'wpsc' ) ); ?></option> \n'+
-															'<option value="greater"><?php echo esc_js( __( 'Is greater than', 'wpsc' ) ); ?></option> \n'+
-															'<option value="less"><?php echo esc_js( __( 'Is less than', 'wpsc' ) ); ?></option> \n'+
-															'<option value="contains"><?php echo esc_js( __( 'Contains', 'wpsc' ) ); ?></option> \n'+
-															'<option value="not_contain"><?php echo esc_js( __( 'Does not contain', 'wpsc' ) ); ?></option> \n'+
-															'<option value="begins"><?php echo esc_js( __( 'Begins with', 'wpsc' ) ); ?></option> \n'+
-															'<option value="ends"><?php echo esc_js( __( 'Ends with', 'wpsc' ) ); ?></option> \n'+
-															'</select> \n'+
-															'<span> \n'+
-															'<input type="text" name="rules[value][]"/> \n'+
-															'</span>  \n'+
-															'<img height="16" width="16" class="delete" alt="<?php esc_attr_e( 'Delete', 'wpsc' ); ?>" src="<?php echo WPSC_CORE_IMAGES_URL; ?>/cross.png" onclick="jQuery(this).parent().remove();"/></div> \n'+
-															'</div> ';
-
-														jQuery('.coupon_condition :first').after(new_property);
-														coupon_number++;
-													}
-												</script>
-											</span>
+													jQuery('#coupon_data .coupon_condition :last').after(new_property);
+													coupon_number++;
+												}
+											</script>
 										</div>
 									</div>
 								</tr>
@@ -455,7 +452,7 @@ function wpsc_display_coupons_page() {
 		</table>
 
 		<p style='margin: 10px 0px 5px 0px;'>
-			<?php esc_html_e( '<strong>Note:</strong> Due to a current PayPal limitation, when a purchase is made using a coupon we cannot send a detailed list of items through for processing. Instead we send the total amount of the purchase so the customer will see your shop name and the total within PayPal.', 'wpsc' ); ?>
+			<?php _e( '<strong>Note:</strong> Due to a current PayPal limitation, when a purchase is made using a coupon we cannot send a detailed list of items through for processing. Instead we send the total amount of the purchase so the customer will see your shop name and the total within PayPal.', 'wpsc' ); ?>
 		</p>
 
 	</div>

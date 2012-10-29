@@ -70,7 +70,7 @@ function nzshpcrt_shopping_basket( $input = null, $override_state = null ) {
  *
  */
 function show_cats_brands($category_group = null , $display_method = null, $order_by = 'name', $image = null) {
-	_deprecated_function( __FUNCTION__, '3.8', 'wpsc_shopping_cart'); 
+	_deprecated_function( __FUNCTION__, '3.8', 'wpsc_shopping_cart');
 }
 /**
  * Filter: wpsc-purchlogitem-links-start
@@ -80,7 +80,7 @@ function show_cats_brands($category_group = null , $display_method = null, $orde
  *
  * @since 3.7.6rc2
  */
-function wpsc_purchlogitem_links_start_deprecated() {	
+function wpsc_purchlogitem_links_start_deprecated() {
 	do_action( 'wpsc-purchlogitem-links-start' );
 }
 add_action( 'wpsc_purchlogitem_links_start', 'wpsc_purchlogitem_links_start_deprecated' );
@@ -119,7 +119,7 @@ function nzshpcrt_latest_product( $args = null, $instance ) {
  * @access public
  * @param mixed $price_in
  * @param mixed $tax_status
- * @param bool $nohtml deprecated 
+ * @param bool $nohtml deprecated
  * @param bool $id. deprecated
  * @param bool $no_dollar_sign. (default: false)
  * @return void
@@ -128,7 +128,7 @@ function nzshpcrt_currency_display($price_in, $tax_status, $nohtml = false, $id 
 	//_deprecated_function( __FUNCTION__, '3.8', 'wpsc_currency_display' );
 	$output = wpsc_currency_display($price_in, array(
 		'display_currency_symbol' => !(bool)$no_dollar_sign,
-		'display_as_html' => (bool)$nohtml,
+		'display_as_html' => ! (bool)$nohtml,
 		'display_decimal_point' => true,
 		'display_currency_code' => false
 	));
@@ -174,17 +174,17 @@ if(!function_exists('wpsc_is_noca_gateway')){
  * @return (int) The current page number
  */
 function wpsc_current_page() {
-	
+
 	global $wpsc_query;
-	
+
 	$current_page = 1;
-	
+
 	if ( $wpsc_query->query_vars['page'] > 1) {
 		$current_page = $wpsc_query->query_vars['page'];
 	}
-	
+
 	return $current_page;
-	
+
 }
 
 /**
@@ -194,9 +194,9 @@ function wpsc_current_page() {
  * @return (string) Number of products showing
  */
 function wpsc_showing_products() {
-	
+
 	global $wpsc_query;
-				
+
 	// If we are using pages...
 	if ( ( get_option( 'use_pagination' ) == 1 ) ) {
 		$products_per_page = $wpsc_query->query_vars['number_per_page'];
@@ -207,9 +207,9 @@ function wpsc_showing_products() {
 		}
 		return ( $startnum + 1 ) . ' to ' . ( $startnum + wpsc_product_count() );
 	}
-	
+
 	return wpsc_total_product_count();
-	
+
 }
 
 /**
@@ -218,14 +218,14 @@ function wpsc_showing_products() {
  * @return (string) Number of pages showing.
  */
 function wpsc_showing_products_page() {
-	
+
 	global $wpsc_query;
-	
+
 	$output = $wpsc_query->page_count;
 	$current_page = wpsc_current_page();
-	
+
 	return $current_page . ' of ' . $output;
-	
+
 }
 
 
@@ -237,7 +237,7 @@ function wpsc_showing_products_page() {
  * @return (string) URL.
  */
 function wpsc_product_search_url( $url ) {
-			
+
 	if ( isset( $_GET['product_search'] ) ) {
 		if ( strrpos( $url, '?') ) {
 			$url .= '&product_search=' . $_GET['product_search'];
@@ -245,7 +245,7 @@ function wpsc_product_search_url( $url ) {
 			$url .= '?product_search=' . $_GET['product_search'];
 		}
 	}
-	
+
 	return $url;
 
 }
@@ -257,10 +257,10 @@ function wpsc_product_search_url( $url ) {
  * @return (string) URL for the adjacent products page link.
  */
 function wpsc_adjacent_products_url( $n ) {
-	
+
 	_deprecated_function( __FUNCTION__, '3.8', 'wpsc_pagination');
 	return false;
-	
+
 }
 
 /**
@@ -271,10 +271,10 @@ function wpsc_adjacent_products_url( $n ) {
  * @return (string) Next page link or text.
  */
 function wpsc_next_products_link( $text = 'Next', $show_disabled = false ) {
-	
+
 	_deprecated_function( __FUNCTION__, '3.8', 'wpsc_pagination');
 	return false;
-	
+
 }
 
 /**
@@ -285,10 +285,10 @@ function wpsc_next_products_link( $text = 'Next', $show_disabled = false ) {
  * @return (string) Previous page link or text.
  */
 function wpsc_previous_products_link( $text = 'Previous', $show_disabled = false ) {
-	
+
 	_deprecated_function( __FUNCTION__, '3.8', 'wpsc_pagination');
 	return false;;
-	
+
 }
 
 /**
@@ -299,10 +299,10 @@ function wpsc_previous_products_link( $text = 'Previous', $show_disabled = false
  * @return (string) First page link or text.
  */
 function wpsc_first_products_link( $text = 'First', $show_disabled = false ) {
-	
+
 	_deprecated_function( __FUNCTION__, '3.8', 'wpsc_pagination');
 	return false;
-	
+
 }
 
 /**
@@ -313,10 +313,10 @@ function wpsc_first_products_link( $text = 'First', $show_disabled = false ) {
  * @return (string) Last page link or text.
  */
 function wpsc_last_products_link( $text = 'Last', $show_disabled = false ) {
-	
+
 	_deprecated_function( __FUNCTION__, '3.8', 'wpsc_pagination');
 	return false;
-	
+
 }
 
 /**
@@ -437,7 +437,7 @@ function wpsc_is_admin() {
         if( 'post.php' == $pagenow && 'wpsc-product' == $current_screen->post_type ) return true;
 
     return false;
-    
+
 }
 
 /**
@@ -480,4 +480,257 @@ class WPSC_Query extends WP_Query
 function wpec_get_the_post_id_by_shortcode( $shortcode ) {
 	_deprecated_function( __FUNCTION__, '3.8.9', 'wpsc_get_the_post_id_by_shortcode' );
 	return wpsc_get_the_post_id_by_shortcode( $shortcode );
+}
+
+/**
+ * wpsc_update_permalinks update the product pages permalinks when WordPress permalinks are changed
+ *
+ * @public
+ *
+ * @deprecated Use _wpsc_action_permalink_structure_changed() instead.
+ * @3.8
+ * @returns nothing
+ */
+function wpsc_update_permalinks(  $return = '' ) {
+	_wpsc_action_permalink_structure_changed();
+}
+
+/**
+ * @deprecated Use _wpsc_display_permalink_refresh_notice() instead;
+ */
+function wpsc_check_permalink_notice() {
+	_wpsc_display_permalink_refresh_notice();
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_display_tracking_id(){
+   $value = wpsc_trackingid_value();
+   if(!empty($value))
+	  return $value;
+   else
+	  return __('Add New','wpsc');
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_the_purch_item_price() {
+   global $purchlogs;
+   if ( $purchlogs->purchitem->processed > 1 && $purchlogs->purchitem->processed != 6 ) {
+	  $purchlogs->totalAmount += $purchlogs->purchitem->totalprice;
+   }
+   return $purchlogs->purchitem->totalprice;
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_the_purch_item_date() {
+   global $purchlogs;
+   return date( 'M d Y,g:i a', $purchlogs->purchitem->date );
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_the_purch_item_name() {
+   global $purchlogs;
+   if ( wpsc_purchlogs_has_customfields( wpsc_the_purch_item_id() ) ) {
+      return $purchlogs->the_purch_item_name() . '<img src="' . WPSC_CORE_IMAGES_URL . '/info_icon.jpg" title="' . esc_attr__( 'This Purchase has custom user content', 'wpsc' ) . '" alt="' . esc_attr__( 'exclamation icon', 'wpsc' ) . '" />';
+   } else {
+	  return $purchlogs->the_purch_item_name();
+   }
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_the_purch_item_id() {
+   global $purchlogs;
+   return $purchlogs->purchitem->id;
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_the_purch_item_details() {
+   global $purchlogs;
+   return $purchlogs->the_purch_item_details();
+}
+
+//status loop functions
+/**
+ * status loop functions
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_have_purch_items_statuses() {
+   global $purchlogs;
+   return $purchlogs->have_purch_status();
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_the_purch_status() {
+   global $purchlogs;
+
+   return $purchlogs->the_purch_status();
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_purchlogs_is_google_checkout() {
+   global $purchlogs;
+   if ( $purchlogs->purchitem->gateway == 'google' ) {
+	  return true;
+   } else {
+	  return false;
+   }
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_the_purch_total() {
+   global $purchlogs;
+   return $purchlogs->totalAmount;
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_the_purch_item() {
+   global $purchlogs;
+   if ( isset( $_SESSION['newlogs'] ) ) {
+	  $purchlogs->allpurchaselogs = $_SESSION['newlogs'];
+	  $purchlogs->purch_item_count = count( $_SESSION['newlogs'] );
+   }
+   return $purchlogs->the_purch_item();
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_the_purch_item_statuses() {
+   global $purchlogs;
+   return $purchlogs->the_purch_item_statuses();
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_the_purch_item_status() {
+   global $purchlogs;
+   return $purchlogs->the_purch_item_status();
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_the_purch_status_id() {
+   global $purchlogs;
+   return $purchlogs->purchstatus['order'];
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_purchlog_filter_by() {
+	wpsc_change_purchlog_view( $_POST['view_purchlogs_by'], $_POST['view_purchlogs_by_status'] );
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_the_purch_status_name() {
+   global $purchlogs;
+   if ( isset( $purchlogs->purchstatus['label'] ) ) {
+	  return $purchlogs->purchstatus['label'];
+   }
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_purchlogs_getfirstdates() {
+   global $purchlogs;
+   $dates = $purchlogs->getdates();
+   $fDate = '';
+   foreach ( $dates as $date ) {
+	  $is_selected = '';
+	  $cleanDate = date( 'M Y', $date['start'] );
+	  $value = $date["start"] . "_" . $date["end"];
+	  if ( $value == $_GET['view_purchlogs_by'] ) {
+		 $is_selected = 'selected="selected"';
+	  }
+	  $fDate .= "<option value='{$value}' {$is_selected}>" . $cleanDate . "</option>";
+   }
+   return $fDate;
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_change_purchlog_view( $viewby, $status='' ) {
+   global $purchlogs;
+   if ( $viewby == 'all' ) {
+	  $dates = $purchlogs->getdates();
+	  $purchaselogs = $purchlogs->get_purchlogs( $dates, $status );
+	  $_SESSION['newlogs'] = $purchaselogs;
+	  $purchlogs->allpurchaselogs = $purchaselogs;
+   } elseif ( $viewby == '3mnths' ) {
+	  $dates = $purchlogs->getdates();
+	  $dates = array_slice( $dates, 0, 3 );
+	  $purchlogs->current_start_timestamp = $dates[count($dates)-1]['start'];
+	  $purchlogs->current_end_timestamp = $dates[0]['end'];
+	  $newlogs = $purchlogs->get_purchlogs( $dates, $status );
+	  $_SESSION['newlogs'] = $newlogs;
+	  $purchlogs->allpurchaselogs = $newlogs;
+   } else {
+
+	  $dates = explode( '_', $viewby );
+	  $date[0]['start'] = $dates[0];
+	  $date[0]['end'] = $dates[1];
+	  $purchlogs->current_start_timestamp = $dates[0];
+	  $purchlogs->current_end_timestamp = $dates[1];
+	  $newlogs = $purchlogs->get_purchlogs( $date, $status );
+	  $_SESSION['newlogs'] = $newlogs;
+	  $purchlogs->allpurchaselogs = $newlogs;
+   }
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_search_purchlog_view( $search ) {
+   global $purchlogs;
+   $newlogs = $purchlogs->search_purchlog_view( $search );
+   $purchlogs->getDates();
+   $purchlogs->purch_item_count = count( $newlogs );
+   $purchlogs->allpurchaselogs = $newlogs;
+}
+
+/**
+ * @deprecated since 3.8.8. Not used in core any more.
+ */
+function wpsc_purchlog_is_checked_status() {
+   global $purchlogitem, $purchlogs;
+
+   if ( $purchlogs->purchstatus['order'] == $purchlogitem->extrainfo->processed ) {
+	  return 'selected="selected"';
+   } else {
+	  return '';
+   }
+}
+
+/**
+ * @deprecated since 3.8.9. Use _wpsc_country_dropdown_options instead.
+ * @param  string $selected_country ISO code of selected country
+ * @return string                   output
+ */
+function country_list( $selected_country = null ) {
+	return _wpsc_country_dropdown_options( array( 'selected' => $selected_country ) );
 }
