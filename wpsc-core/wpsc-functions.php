@@ -562,8 +562,12 @@ function wpsc_filter_query_request( $args ) {
 	if ( is_admin() )
 		return $args;
 
+	$is_sub_page =    ! empty( $args['wpsc_product_category'] )
+	               &&   'page' != $args['wpsc_product_category']
+	               && ! term_exists( $args['wpsc_product_category'], 'wpsc_product_category' );
+
 	// Make sure no 404 error is thrown for any sub pages of products-page
-	if ( ! empty( $args['wpsc_product_category'] ) && 'page' != $args['wpsc_product_category'] && ! term_exists($args['wpsc_product_category'], 'wpsc_product_category') ) {
+	if ( $is_sub_page ) {
 		// Probably requesting a page that is a sub page of products page
 		$pagename = "{$wpsc_page_titles['products']}/{$args['wpsc_product_category']}";
 		if ( isset($args['name']) ) {
@@ -575,7 +579,12 @@ function wpsc_filter_query_request( $args ) {
 
 	// When product page is set to display all products or a category, and pagination is enabled, $wp_query is messed up
 	// and is_home() is true. This fixes that.
-	if ( isset( $args['post_type'] ) && 'wpsc-product' == $args['post_type'] && ! empty( $args['wpsc-product'] ) && 'page' == $args['wpsc_product_category'] ) {
+	$needs_pagination_fix =      isset( $args['post_type'] )
+	                        && ! empty( $args['wpsc_product_category'] )
+	                        &&   'wpsc-product' == $args['post_type']
+	                        && ! empty( $args['wpsc-product'] )
+	                        &&   'page' == $args['wpsc_product_category'];
+	if ( $needs_pagination_fix ) {
 		$default_category = get_option( 'wpsc_default_category' );
 		if ( $default_category == 'all' || $default_category != 'list' ) {
 			$page = $args['wpsc-product'];
@@ -643,11 +652,35 @@ function wpsc_switch_the_query( $args ) {
 // switch $wp_query and $wpsc_query at the beginning and the end of wp_nav_menu()
 add_filter( 'wp_nav_menu_args', 'wpsc_switch_the_query', 99 );
 
+function _wpsc_pre_get_posts_reset_taxonomy_globals( $query ) {
+	global $wp_the_query;
+
+	if ( $query !== $wp_the_query )
+		return;
+
+	if ( ! $query->get( 'page' ) && ! $query->get( 'paged' ) )
+		return;
+
+	if ( ! get_option( 'use_pagination' ) )
+		return;
+
+	$query->set( 'posts_per_page', get_option( 'wpsc_products_per_page' ) );
+
+	$post_type_object = get_post_type_object( 'wpsc-product' );
+
+	if ( current_user_can( $post_type_object->cap->edit_posts ) )
+		$query->set( 'post_status', 'private,draft,pending,publish' );
+	else
+		$query->set( 'post_status', 'publish' );
+}
+add_action( 'pre_get_posts', '_wpsc_pre_get_posts_reset_taxonomy_globals', 1 );
+
 /**
  * wpsc_start_the_query
  */
 function wpsc_start_the_query() {
 	global $wpsc_page_titles, $wp_query, $wpsc_query, $wpsc_query_vars;
+
 	$is_404 = false;
 	if ( null == $wpsc_query ) {
 		if( ( $wp_query->is_404 && !empty($wp_query->query_vars['paged']) ) || (isset( $wp_query->query['pagename']) && strpos( $wp_query->query['pagename'] , $wpsc_page_titles['products'] ) !== false ) && !isset($wp_query->post)){
@@ -664,7 +697,7 @@ function wpsc_start_the_query() {
 		if ( count( $wpsc_query_vars ) <= 1 ) {
 			$post_type_object = get_post_type_object( 'wpsc-product' );
 			$wpsc_query_vars = array(
-				'post_status' => current_user_can( $post_type_object->cap->edit_posts ) ? 'private, draft, pending, publish' : 'publish',
+				'post_status' => current_user_can( $post_type_object->cap->edit_posts ) ? 'private,draft,pending,publish' : 'publish',
 				'post_parent' => 0,
 				'order'       => apply_filters( 'wpsc_product_order', get_option( 'wpsc_product_order', 'ASC' ) )
 			);
@@ -678,8 +711,6 @@ function wpsc_start_the_query() {
 				$wpsc_query_vars['product_tag'] = $wp_query->query_vars['product_tag'];
 				$wpsc_query_vars['taxonomy'] = get_query_var( 'taxonomy' );
 				$wpsc_query_vars['term'] = get_query_var( 'term' );
-
-
 			}elseif( isset($wp_query->query_vars['wpsc_product_category']) ){
 				$wpsc_query_vars['wpsc_product_category'] = $wp_query->query_vars['wpsc_product_category'];
 				$wpsc_query_vars['taxonomy'] = get_query_var( 'taxonomy' );
@@ -743,7 +774,6 @@ function wpsc_start_the_query() {
 		$_SESSION['wpsc_has_been_to_checkout'] = true;
 }
 add_action( 'template_redirect', 'wpsc_start_the_query', 8 );
-
 
 /**
  * Obtain the necessary product sort order query variables based on the specified product sort order.
@@ -1127,6 +1157,7 @@ class wpsc_products_by_category {
 			$post_type_object = get_post_type_object( 'wpsc-product' );
 			$permitted_post_statuses = current_user_can( $post_type_object->cap->edit_posts ) ? "'private', 'draft', 'pending', 'publish'" : "'publish'";
 
+
 			$whichcat .= " AND $wpdb->posts.post_status IN ($permitted_post_statuses) ";
 			$groupby = "{$wpdb->posts}.ID";
 
@@ -1259,7 +1290,7 @@ function wpsc_is_checkout() {
  * @return void
  */
 function wpsc_product_link( $permalink, $post, $leavename ) {
-	global $wp_query, $wpsc_page_titles;
+	global $wp_query, $wpsc_page_titles, $wpsc_query, $wp_current_filter;
 	$term_url = '';
 	$rewritecode = array(
 		'%wpsc_product_category%',
@@ -1298,10 +1329,12 @@ function wpsc_product_link( $permalink, $post, $leavename ) {
 			if ( (isset( $wp_query->query_vars['products'] ) && $wp_query->query_vars['products'] != null) && in_array( $wp_query->query_vars['products'], $product_category_slugs ) ) {
 				$product_category = $wp_query->query_vars['products'];
 			} else {
-				if ( ( $current_cat = get_query_var( 'wpsc_product_category' ) ) && in_array( $current_cat, $product_category_slugs ) )
-					$link = $current_cat;
-				else
-					$link = $product_categories[0]->slug;
+				$link = $product_categories[0]->slug;
+				if ( ! in_array( 'wp_head', $wp_current_filter) && isset( $wpsc_query->query_vars['wpsc_product_category'] ) ) {
+					$current_cat = $wpsc_query->query_vars['wpsc_product_category'];
+					if ( in_array( $current_cat, $product_category_slugs ) )
+						$link = $current_cat;
+				}
 
 				$product_category = $link;
 			}
@@ -1533,6 +1566,7 @@ function wpsc_create_customer_id() {
 	$cookie = $id . '|' . $expire . '|' . $hash;
 
 	setcookie( WPSC_CUSTOMER_COOKIE, $cookie, $expire, WPSC_CUSTOMER_COOKIE_PATH, COOKIE_DOMAIN, $secure, true );
+	$_COOKIE[WPSC_CUSTOMER_COOKIE] = $cookie;
 	return $id;
 }
 

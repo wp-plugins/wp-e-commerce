@@ -45,6 +45,7 @@ function wpsc_cart_item_count() {
 */
 function wpsc_coupon_amount($forDisplay=true) {
    global $wpsc_cart;
+
    if($forDisplay == true) {
      $output = wpsc_currency_display($wpsc_cart->coupons_amount);
    } else {
@@ -760,6 +761,13 @@ class wpsc_cart {
       }
       $this->clear_cache();
       $this->get_shipping_option();
+
+      // reapply coupon in case it's free shipping
+      if ( $this->coupons_name ) {
+         $coupon = new wpsc_coupons( $this->coupons_name );
+         if ( $coupon->is_free_shipping() )
+            $this->apply_coupons( $coupon->calculate_discount(), $this->coupons_name );
+      }
    }
 
    /**
@@ -1268,12 +1276,20 @@ class wpsc_cart {
     * @return float returns the shipping as a floating point value
    */
   function calculate_total_shipping() {
-   if( ! ( (get_option('shipping_discount')== 1) && (get_option('shipping_discount_value') <= $this->calculate_subtotal() ) ) && wpsc_uses_shipping()){
-         $total = $this->calculate_base_shipping();
-         $total += $this->calculate_per_item_shipping();
-    }else{
-         $total = 0;
-    }
+   $shipping_discount_value  = get_option( 'shipping_discount_value' );
+   $is_free_shipping_enabled = get_option( 'shipping_discount' );
+   $subtotal                 = $this->calculate_subtotal();
+
+   $has_free_shipping =    $is_free_shipping_enabled
+                        && $shipping_discount_value > 0
+                        && $shipping_discount_value <= $subtotal;
+
+   if ( ! wpsc_uses_shipping() || $has_free_shipping ) {
+      $total = 0;
+   } else {
+      $total = $this->calculate_base_shipping();
+      $total += $this->calculate_per_item_shipping();
+   }
 
     return apply_filters( 'wpsc_convert_total_shipping', $total );
 
@@ -1285,12 +1301,10 @@ class wpsc_cart {
    * @return float returns true or false depending on whether the cart subtotal is larger or equal to the shipping         * discount value.
    */
   function has_total_shipping_discount() {
-   if(get_option('shipping_discount')== 1) {
-      if(get_option('shipping_discount_value') <= $this->calculate_subtotal() ) {
-            return true;
-      }
-   }
-    return false;
+   $shipping_discount_value = get_option( 'shipping_discount_value' );
+   return get_option( 'shipping_discount' )
+          && $shipping_discount_value > 0
+          && $shipping_discount_value <= $this->calculate_subtotal();
   }
 
     /**
@@ -1554,6 +1568,7 @@ class wpsc_cart {
       $this->clear_cache();
       $this->coupons_name = $coupon_name;
       $this->coupons_amount = apply_filters( 'wpsc_coupons_amount', $coupons_amount, $coupon_name );
+
       $this->calculate_total_price();
          if ( $this->total_price < 0 ) {
             $this->coupons_amount += $this->total_price;
@@ -1710,7 +1725,7 @@ class wpsc_cart_item {
    	if ( isset( $special_price ) && $special_price > 0 && $special_price < $price )
    		$price = $special_price;
    	$priceandstock_id = 0;
-   	$this->weight = $product_meta[0]["weight"];
+   	$this->weight = isset( $product_meta[0]['weight'] ) ? $product_meta[0]["weight"] : 0;
    	// if we are using table rate price
    	if ( isset( $product_meta[0]['table_rate_price'] ) ) {
    		$levels = $product_meta[0]['table_rate_price'];
@@ -1960,7 +1975,6 @@ class wpsc_cart_item {
    */
    function save_to_db($purchase_log_id) {
       global $wpdb, $wpsc_shipping_modules;
-
 
 	$method = $this->cart->selected_shipping_method;
 	$shipping = 0;

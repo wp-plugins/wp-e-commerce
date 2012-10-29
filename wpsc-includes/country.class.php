@@ -50,7 +50,7 @@ class WPSC_Country
 		return self::$outdated_isocodes;
 	}
 
-	public static function get_all() {
+	public static function get_all( $include_invisible = false ) {
 		global $wpdb;
 
 		$cache = wp_cache_get( 'all', 'wpsc_countries' );
@@ -58,7 +58,13 @@ class WPSC_Country
 		if ( $cache )
 			return $cache;
 
-		$sql = "SELECT * FROM " . WPSC_TABLE_CURRENCY_LIST . " ORDER BY country";
+		$sql = "SELECT * FROM " . WPSC_TABLE_CURRENCY_LIST;
+
+		if ( ! $include_invisible )
+			$sql .= " WHERE visible = '1'";
+
+		$sql .= ' ORDER BY country';
+
 		$db_results = $wpdb->get_results( $sql, ARRAY_A );
 		$list = array();
 
@@ -168,8 +174,7 @@ class WPSC_Country
 	}
 
 	public function get( $key ) {
-		if ( ! $this->fetched )
-			$this->fetch();
+		$this->fetch();
 
 		if ( array_key_exists( $key, $this->data ) )
 			return $this->data[$key];
@@ -201,10 +206,15 @@ class WPSC_Country
 		}
 		$where_format = in_array( $this->args['col'], self::$string_cols ) ? '%s' : '%d';
 
-		if ( $where_col ) {
+		if ( $where_col && $this->exists() ) {
 			$result = $wpdb->update( WPSC_TABLE_CURRENCY_LIST, $this->data, array( $this->args['col'] => $this->args['value'] ), $format, $where_format );
 			self::delete_cache( $this->args['value'], $this->args['col'] );
 		} else {
+			if ( $where_col ) {
+				$this->set( $this->args['col'], $this->args['value'] );
+				$format[] = '%s';
+			}
+
 			$result = $wpdb->insert( WPSC_TABLE_CURRENCY_LIST, $this->data, $format );
 
 			if ( $result ) {
@@ -223,6 +233,7 @@ class WPSC_Country
 	}
 
 	public function exists() {
+		$this->fetch();
 		return $this->exists;
 	}
 }
@@ -250,12 +261,13 @@ function _wpsc_is_country_disabled( $country, $args ) {
 
 function _wpsc_country_dropdown_options( $args = '' ) {
 	$defaults = array(
-		'acceptable'     => null,
-		'acceptable_ids' => null,
-		'selected'       => '',
-		'disabled'       => null,
-		'disabled_ids'   => null,
-		'placeholder'   => __( 'Please select', 'wpsc' ),
+		'acceptable'        => null,
+		'acceptable_ids'    => null,
+		'selected'          => '',
+		'disabled'          => null,
+		'disabled_ids'      => null,
+		'placeholder'       => __( 'Please select', 'wpsc' ),
+		'include_invisible' => false,
 	);
 
 	$args = wp_parse_args( $args, $defaults );
@@ -265,7 +277,7 @@ function _wpsc_country_dropdown_options( $args = '' ) {
 	if ( $args['placeholder'] )
 		$output .= "<option value=''>" . esc_html( $args['placeholder'] ) . "</option>";
 
-	$countries = WPSC_Country::get_all();
+	$countries = WPSC_Country::get_all( $args['include_invisible'] );
 	$base_country = get_option( 'base_country' );
 
 	foreach ( $countries as $country ) {
@@ -276,7 +288,7 @@ function _wpsc_country_dropdown_options( $args = '' ) {
 		// base country, we should display both this and the more proper "GB" or "TL" options
 		// and distinguish these choices somehow
 		if ( is_admin() ) {
-			if ( in_array( $base_country, array( 'TP', 'UK' ) ) )
+			if ( in_array( $isocode, array( 'TP', 'UK' ) ) )
 				/* translators: This string will mark the legacy isocode "UK" and "TP" in the country selection dropdown as "legacy" */
 				$name = sprintf( __( '%s (legacy)', 'wpsc' ), $name );
 			elseif ( in_array( $isocode, array( 'GB', 'TL' ) ) )

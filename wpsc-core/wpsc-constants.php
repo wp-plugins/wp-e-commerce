@@ -33,7 +33,7 @@ function wpsc_core_constants() {
 	define( 'WPSC_VERSION', '3.8.9-rc1' );
 	define( 'WPSC_MINOR_VERSION', '571548' );
 	define( 'WPSC_PRESENTABLE_VERSION', '3.8.9-rc1' );
-	define( 'WPSC_DB_VERSION', 2 );
+	define( 'WPSC_DB_VERSION', 3 );
 
 	// Define Debug Variables for developers
 	define( 'WPSC_DEBUG', false );
@@ -282,7 +282,7 @@ function wpsc_core_setup_cart() {
 
 	$cart = maybe_unserialize( wpsc_get_customer_meta( 'cart' ) );
 
-	if ( is_object( $cart ) && is_wp_error( $cart ) )
+	if ( is_object( $cart ) && ! is_wp_error( $cart ) )
 		$GLOBALS['wpsc_cart'] = $cart;
 	else
 		$GLOBALS['wpsc_cart'] = new wpsc_cart();

@@ -365,7 +365,8 @@ function wpsc_product_taxes_forms() {
 		$taxable_amount_input_settings = array(
 			'id' => 'wpec_taxes_taxable_amount',
 			'name' => 'meta[_wpsc_product_metadata][wpec_taxes_taxable_amount]',
-			'label' => __( 'Taxable Amount', 'wpsc' )
+			'label' => __( 'Taxable Amount', 'wpsc' ),
+			'description' => __( 'Taxable amount in your currency, not percentage of price.', 'wpsc' ),
 		);
 
 		if ( isset( $product_meta['wpec_taxes_taxable_amount'] ) ) {
@@ -714,9 +715,8 @@ function wpsc_product_image_forms() {
 <?php
 }
 function wpsc_additional_desc() {
-	global $post;
 ?>
-    <textarea name='additional_description' id='additional_description' cols='40' rows='5' ><?php echo esc_textarea( $post->post_excerpt ); ?></textarea>
+    <textarea name='additional_description' id='additional_description' cols='40' rows='5' ><?php echo esc_textarea( get_post_field( 'post_excerpt', get_the_ID() ) ); ?></textarea>
 <?php
 
 }
