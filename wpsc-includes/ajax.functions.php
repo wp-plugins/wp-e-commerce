@@ -728,12 +728,14 @@ if ( isset( $_REQUEST['wpsc_action'] ) && ($_REQUEST['wpsc_action'] == 'submit_c
 }
 
 function wpsc_product_rss() {
-	global $wp_query, $wpsc_query;
+	global $wp_query, $wpsc_query, $_wpsc_is_in_custom_loop;
 	list($wp_query, $wpsc_query) = array( $wpsc_query, $wp_query ); // swap the wpsc_query object
+	$_wpsc_is_in_custom_loop = true;
 	header( "Content-Type: application/xml; charset=UTF-8" );
 	header( 'Content-Disposition: inline; filename="E-Commerce_Product_List.rss"' );
 	require_once(WPSC_FILE_PATH . '/wpsc-includes/rss_template.php');
 	list($wp_query, $wpsc_query) = array( $wpsc_query, $wp_query ); // swap the wpsc_query object
+	$_wpsc_is_in_custom_loop = false;
 	exit();
 }
 
@@ -1110,48 +1112,53 @@ function wpsc_download_file() {
 
 
 			do_action( 'wpsc_alter_download_action', $file_id );
-
-
-			$file_path = WPSC_FILE_DIR . basename( $file_data->post_title );
-			$file_name = basename( $file_data->post_title );
-
-			if ( is_file( $file_path ) ) {
-				if( !ini_get('safe_mode') ) set_time_limit(0);
-				header( 'Content-Type: ' . $file_data->post_mime_type );
-				header( 'Content-Length: ' . filesize( $file_path ) );
-				header( 'Content-Transfer-Encoding: binary' );
-				header( 'Content-Disposition: attachment; filename="' . $file_name . '"' );
-				if ( isset( $_SERVER["HTTPS"] ) && ($_SERVER["HTTPS"] != '') ) {
-					/*
-					  There is a bug in how IE handles downloads from servers using HTTPS, this is part of the fix, you may also need:
-					  session_cache_limiter('public');
-					  session_cache_expire(30);
-					  At the start of your index.php file or before the session is started
-					 */
-					header( "Pragma: public" );
-					header( "Expires: 0" );
-					header( "Cache-Control: must-revalidate, post-check=0, pre-check=0" );
-					header( "Cache-Control: public" );
-				} else {
-					header( 'Cache-Control: must-revalidate, post-check=0, pre-check=0' );
-				}
-				header( "Pragma: public" );
-                                header( "Expires: 0" );
-
-				// destroy the session to allow the file to be downloaded on some buggy browsers and webservers
-				session_destroy();
-				wpsc_readfile_chunked( $file_path );
-				exit();
-			}else{
-				wp_die(__('Sorry something has gone wrong with your download!', 'wpsc'));
-			}
+			_wpsc_force_download_file( $file_id );
 		} else {
 			exit( _e( 'This download is no longer valid, Please contact the site administrator for more information.', 'wpsc' ) );
 		}
 	}
 }
-
 add_action( 'init', 'wpsc_download_file' );
+
+function _wpsc_force_download_file( $file_id ) {
+	$file_data = get_post( $file_id );
+	if ( ! $file_data )
+		wp_die( __( 'Invalid file ID.', 'wpsc' ) );
+
+	$file_name = basename( $file_data->post_title );
+	$file_path = WPSC_FILE_DIR . $file_name;
+
+	if ( is_file( $file_path ) ) {
+		if( !ini_get('safe_mode') ) set_time_limit(0);
+		header( 'Content-Type: ' . $file_data->post_mime_type );
+		header( 'Content-Length: ' . filesize( $file_path ) );
+		header( 'Content-Transfer-Encoding: binary' );
+		header( 'Content-Disposition: attachment; filename="' . stripslashes( $file_name ) . '"' );
+		if ( isset( $_SERVER["HTTPS"] ) && ($_SERVER["HTTPS"] != '') ) {
+			/*
+			  There is a bug in how IE handles downloads from servers using HTTPS, this is part of the fix, you may also need:
+			  session_cache_limiter('public');
+			  session_cache_expire(30);
+			  At the start of your index.php file or before the session is started
+			 */
+			header( "Pragma: public" );
+			header( "Expires: 0" );
+			header( "Cache-Control: must-revalidate, post-check=0, pre-check=0" );
+			header( "Cache-Control: public" );
+		} else {
+			header( 'Cache-Control: must-revalidate, post-check=0, pre-check=0' );
+		}
+		header( "Pragma: public" );
+                        header( "Expires: 0" );
+
+		// destroy the session to allow the file to be downloaded on some buggy browsers and webservers
+		session_destroy();
+		wpsc_readfile_chunked( $file_path );
+		exit();
+	}else{
+		wp_die(__('Sorry something has gone wrong with your download!', 'wpsc'));
+	}
+}
 
 function wpsc_shipping_same_as_billing(){
 	wpsc_update_customer_meta( 'shipping_same_as_billing', $_POST['wpsc_shipping_same_as_billing'] );
