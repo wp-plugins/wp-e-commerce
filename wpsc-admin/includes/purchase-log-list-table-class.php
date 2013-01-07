@@ -19,10 +19,9 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table
 	private $where;
 	private $where_no_filter;
 
-	public function __construct() {
-		WP_List_Table::__construct( array(
-			'plural' => 'purchase-logs',
-		) );
+	public function __construct( $args = array() ) {
+		$args['plural'] = 'purchase-logs';
+		parent::__construct( $args );
 
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX )
 			$_SERVER['REQUEST_URI'] = wp_get_referer();
@@ -276,13 +275,15 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table
 		$views = array(
 			'all' => sprintf(
 				'<a href="%s" %s>%s</a>',
-				$all_href,
-				$all_class,
+				esc_url( $all_href ),
+				sanitize_html_class( $all_class ),
 				$all_text
 			),
 		);
 
 		foreach ( $statuses as $status => $count ) {
+			if ( ! isset( $view_labels[$status] ) )
+				continue;
 			$text = sprintf(
 				translate_nooped_plural( $view_labels[$status], $count, 'wpsc' ),
 				number_format_i18n( $count )
@@ -300,8 +301,8 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table
 			$class = ( $this->status == $status ) ? 'class="current"' : '';
 			$views[$status] = sprintf(
 				'<a href="%s" %s>%s</a>',
-				$href,
-				$class,
+				esc_url( $href ),
+				sanitize_html_class( $class ),
 				$text
 			);
 		}

@@ -107,7 +107,7 @@ function wpsc_purchlogs_custommessages() {
    $messages = array();
    foreach ( $purchlogitem->allcartcontent as $cartitem ) {
 	  if ( $cartitem->custom_message != '' ) {
-		 $messages[] = $cartitem->name . ' :<br />' . $cartitem->custom_message;
+		 $messages[] = apply_filters( 'the_title', $cartitem->name ) . ' :<br />' . $cartitem->custom_message;
 	  }
    }
    return $messages;
@@ -518,8 +518,8 @@ class wpsc_purchaselogs {
 	  } else {
 		 $this->getdates();
 		 if ( isset( $_GET['view_purchlogs_by'] ) && isset( $_GET['view_purchlogs_by_status'] ) ) {
-			$status = $_GET['view_purchlogs_by_status'];
-			$viewby = $_GET['view_purchlogs_by'];
+			$status = sanitize_text_field( $_GET['view_purchlogs_by_status'] );
+			$viewby = sanitize_text_field( $_GET['view_purchlogs_by'] );
 			if ( $viewby == 'all' ) {
 			   $dates = $this->getdates();
 			   $purchaselogs = $this->get_purchlogs( $dates, $status );

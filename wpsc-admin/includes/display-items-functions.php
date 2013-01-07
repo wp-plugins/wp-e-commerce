@@ -1070,8 +1070,9 @@ function edit_multiple_image_gallery( $post ) {
  */
 
 function wpsc_save_quickedit_box( $post_id ) {
-	global $current_screen, $doaction;
-	if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || empty( $current_screen ) || $current_screen->id != 'edit-wpsc-product' )
+	global $doaction;
+
+	if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! defined( 'DOING_AJAX' ) || ! DOING_AJAX || get_post_type( $post_id ) != 'wpsc-product' )
 		return;
 
 	$bulk = isset( $doaction ) && $doaction =='edit';
