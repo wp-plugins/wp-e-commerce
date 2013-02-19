@@ -1,7 +1,6 @@
 <?php
 
-class WPSC_Checkout_Form
-{
+class WPSC_Checkout_Form {
 	/**
 	 * Contains an array of created instances of type WPSC_Checkout_Form
 	 *
@@ -12,7 +11,7 @@ class WPSC_Checkout_Form
 	 * @var array
 	 */
 	private static $instances = array();
-	
+
 	/**
 	 * Contains an array of form id => form names
 	 *
@@ -23,7 +22,7 @@ class WPSC_Checkout_Form
 	 * @var array
 	 */
 	private static $form_titles = array();
-	
+
 	/**
 	 * ID of the form instance
 	 *
@@ -33,7 +32,7 @@ class WPSC_Checkout_Form
 	 * @var int
 	 */
 	private $id = 0;
-	
+
 	/**
 	 * Contains an array of form fields
 	 *
@@ -43,7 +42,7 @@ class WPSC_Checkout_Form
 	 * @var array
 	 */
 	private $fields;
-	
+
 	/**
 	 * Contains an array of field_id => field_unique_name
 	 *
@@ -53,7 +52,7 @@ class WPSC_Checkout_Form
 	 * @var array
 	 */
 	private $field_unique_name_id;
-	
+
 	/**
 	 * Returns an instance of the form with a particular ID
 	 *
@@ -67,25 +66,25 @@ class WPSC_Checkout_Form
 	public static function &get( $id = 0 ) {
 		if ( ! self::$instances )
 			self::$instances[$id] = new WPSC_Checkout_Form( $id );
-		
+
 		self::$form_titles = get_option( 'wpsc_checkout_form_sets' );
-			
+
 		return self::$instances[$id];
 	}
-	
+
 	/**
 	 * Constructor of an WPSC_Checkout_Form instance. Cannot be called publicly
 	 *
 	 * @access private
 	 * @since 3.9
 	 *
-	 * @param string $id Optional. Defaults to 0. 
+	 * @param string $id Optional. Defaults to 0.
 	 */
 	private function __construct( $id = 0 ) {
 		$this->id = $id;
 		$this->get_fields();
 	}
-	
+
 	/**
 	 * Outputs the list of form field options
 	 *
@@ -96,18 +95,18 @@ class WPSC_Checkout_Form
 	 *                            currently being selected
 	 * @return void
 	 */
-	public function field_drop_down_options( $selected_id = false ) {		
+	public function field_drop_down_options( $selected_id = false ) {
 		?>
 		<option value=""><?php _e( 'Please select', 'wpsc' ); ?></option>
 		<?php
-		
+
 		foreach ( $this->get_fields() as $field ) {
 			?>
 				<option <?php if ( $field->type == 'heading' ) echo 'disabled="disabled"'; ?> <?php selected( $field->id, $selected_id ) ?> value="<?php echo esc_attr( $field->id ) ?>"><?php echo esc_html( $field->name ); ?></option>
 			<?php
 		}
 	}
-	
+
 	/**
 	 * Returns the field ID based on unique name
 	 *
@@ -126,7 +125,7 @@ class WPSC_Checkout_Form
 		}
 		return isset( $this->field_unique_name_id[$unique_name] ) ? $this->field_unique_name_id[$unique_name] : false;
 	}
-	
+
 	/**
 	 * Returns an array containing the fields of the form
 	 *
@@ -146,7 +145,7 @@ class WPSC_Checkout_Form
 		}
 		return $this->fields;
 	}
-	
+
 	/**
 	 * Returns the title of the form
 	 *

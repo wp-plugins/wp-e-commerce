@@ -4,9 +4,19 @@
  *
  * This is the WPSC database template it is a multidimensional associative array used to create and update the database tables.
  * @package wp-e-commerce
- * @subpackage wpsc-updating-code 
+ * @subpackage wpsc-updating-code
  */
- 
+
+// code to create or update the {$wpdb->prefix}wpsc_also_bought table
+$table_name = WPSC_TABLE_ALSO_BOUGHT; /* !wpsc_also_bought */
+$wpsc_database_template[$table_name]['columns']['id'] = "bigint(20) unsigned NOT NULL auto_increment";
+$wpsc_database_template[$table_name]['columns']['selected_product'] = "bigint(20) unsigned NOT NULL DEFAULT '0' ";
+$wpsc_database_template[$table_name]['columns']['associated_product'] = "bigint(20) unsigned NOT NULL DEFAULT '0' ";
+$wpsc_database_template[$table_name]['columns']['quantity'] = "int(10) unsigned NOT NULL DEFAULT '0' ";
+$wpsc_database_template[$table_name]['indexes']['PRIMARY'] = "PRIMARY KEY  ( `id` )";
+$wpsc_database_template[$table_name]['previous_names'] = "{$wpdb->prefix}also_bought_product";
+
+
 // code to create or update the {$wpdb->prefix}wpsc_cart_contents table
 $table_name = WPSC_TABLE_CART_CONTENTS; /* !wpsc_cart_contents */
 $wpsc_database_template[$table_name]['columns']['id'] = "bigint(20) unsigned NOT NULL auto_increment";
@@ -51,7 +61,7 @@ $wpsc_database_template[$table_name]['columns']['default'] = "varchar(128) NOT N
 $wpsc_database_template[$table_name]['columns']['active'] = "varchar(1) NOT NULL DEFAULT '1' ";
 $wpsc_database_template[$table_name]['columns']['checkout_order'] = "int(10) unsigned NOT NULL DEFAULT '0' ";
 $wpsc_database_template[$table_name]['columns']['unique_name'] = "varchar(255) NOT NULL DEFAULT '' ";
-$wpsc_database_template[$table_name]['columns']['options'] = "varchar(255) NOT NULL DEFAULT '' ";
+$wpsc_database_template[$table_name]['columns']['options'] = "longtext NOT NULL DEFAULT '' ";
 $wpsc_database_template[$table_name]['columns']['checkout_set'] = "VARCHAR( 64 ) NOT NULL DEFAULT '0'";
 
 $wpsc_database_template[$table_name]['indexes']['PRIMARY'] = "PRIMARY KEY  ( `id` )";
@@ -158,7 +168,7 @@ $wpsc_database_template[$table_name]['previous_names'] = "{$wpdb->prefix}region_
 
 
 // code to create or update the {$wpdb->prefix}wpsc_submited_form_data table
-$table_name = WPSC_TABLE_SUBMITED_FORM_DATA; /* !wpsc_submitted_form_data */
+$table_name = WPSC_TABLE_SUBMITTED_FORM_DATA; /* !wpsc_submitted_form_data */
 $wpsc_database_template[$table_name]['columns']['id'] = "bigint(20) unsigned NOT NULL auto_increment";
 $wpsc_database_template[$table_name]['columns']['log_id'] = "bigint(20) unsigned NOT NULL DEFAULT '0' ";
 $wpsc_database_template[$table_name]['columns']['form_id'] = "bigint(20) unsigned NOT NULL DEFAULT '0' ";
@@ -174,8 +184,6 @@ $wpsc_database_template[$table_name]['columns']['coupon_code'] = "varchar(255) N
 $wpsc_database_template[$table_name]['columns']['value'] = "decimal(11,2) NOT NULL DEFAULT '0' ";
 $wpsc_database_template[$table_name]['columns']['is-percentage'] = "char(1) NOT NULL DEFAULT '0' ";
 $wpsc_database_template[$table_name]['columns']['use-once'] = "char(1) NOT NULL DEFAULT '0' ";
-$wpsc_database_template[$table_name]['columns']['use-x-times'] = "char(1) NOT NULL DEFAULT '0' ";
-$wpsc_database_template[$table_name]['columns']['free-shipping'] = "varchar(255) NULL DEFAULT '' ";
 $wpsc_database_template[$table_name]['columns']['is-used'] = "char(1) NOT NULL DEFAULT '0' ";
 $wpsc_database_template[$table_name]['columns']['active'] = "char(1) NOT NULL DEFAULT '1' ";
 $wpsc_database_template[$table_name]['columns']['every_product'] = "varchar(255) NOT NULL DEFAULT '' ";

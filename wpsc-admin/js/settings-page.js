@@ -131,8 +131,8 @@
 			var query = $.query.load(url);
 			var tab_id = query.get('tab');
 			var post_data = $.extend({}, query.get(), {
-				'action'      : 'wpsc_navigate_settings_tab',
-				'nonce'       : WPSC_Settings_Page.nonce,
+				'action'      : 'navigate_settings_tab',
+				'nonce'       : WPSC_Settings_Page.navigate_settings_tab_nonce,
 				'current_url' : location.href,
 				'tab'         : tab_id
 			});
@@ -153,10 +153,14 @@
 			 * @since 3.8.8
 			 */
 			var ajax_callback = function(response) {
+				if (! response.is_successful) {
+					alert(response.error.messages.join("\n"));
+					return;
+				}
 				var t = WPSC_Settings_Page;
 				t.unsaved_settings = false;
 				t.toggle_ajax_state(tab_id);
-				$('#options_' + WPSC_Settings_Page.current_tab).replaceWith(response);
+				$('#options_' + WPSC_Settings_Page.current_tab).replaceWith(response.obj.content);
 				WPSC_Settings_Page.current_tab = tab_id;
 				$('.settings-error').remove();
 				$('.nav-tab-active').removeClass('nav-tab-active');
@@ -165,9 +169,9 @@
 				$(t).trigger('wpsc_settings_tab_loaded');
 				$(t).trigger('wpsc_settings_tab_loaded_' + tab_id);
 				spinner.removeClass('ajax-feedback-active');
-			}
+			};
 
-			$.post(ajaxurl, post_data, ajax_callback, 'html');
+			$.wpsc_post(post_data, ajax_callback);
 		}
 	});
 
@@ -216,18 +220,20 @@
 			span.find('img').toggleClass('ajax-feedback-active');
 
 			var postdata = {
-				action  : 'wpsc_display_region_list',
+				action  : 'display_region_list',
 				country : $('#wpsc-base-country-drop-down').val(),
-				nonce   : WPSC_Settings_Page.nonce
+				nonce   : WPSC_Settings_Page.display_region_list_nonce
 			};
 
 			var ajax_callback = function(response) {
-				span.find('img').toggleClass('ajax-feedback-active');
-				if (response !== '') {
-					span.prepend(response);
+				if (! response.is_successful) {
+					alert(response.error.messages.join("\n"));
+					return;
 				}
+				span.find('img').toggleClass('ajax-feedback-active');
+				span.prepend(response.obj.content);
 			};
-			$.post(ajaxurl, postdata, ajax_callback, 'html');
+			$.wpsc_post(postdata, ajax_callback);
 		}
 	};
 	$(WPSC_Settings_Page).bind('wpsc_settings_tab_loaded_general', WPSC_Settings_Page.General.event_init);
@@ -294,12 +300,14 @@
 		event_init : function() {
 			var wrapper = $('#options_checkout');
 			wrapper.delegate('.add_new_form_set', 'click', WPSC_Settings_Page.Checkout.event_add_new_form_set).
-			        delegate('.actionscol a.add', 'click', WPSC_Settings_Page.Checkout.event_add_new_field).
-			        delegate('.actionscol a.delete', 'click', WPSC_Settings_Page.Checkout.event_delete_field).
+			        delegate('.actionscol a.wpsc-button-plus', 'click', WPSC_Settings_Page.Checkout.event_add_new_field).
+			        delegate('.actionscol a.wpsc-button-minus', 'click', WPSC_Settings_Page.Checkout.event_delete_field).
 			        delegate('a.edit-options', 'click', WPSC_Settings_Page.Checkout.event_edit_field_options).
 			        delegate('select[name^="form_type"], select[name^="new_field_type"]', 'change', WPSC_Settings_Page.Checkout.event_form_type_changed).
-			        delegate('.field-option-cell-wrapper .add', 'click', WPSC_Settings_Page.Checkout.event_add_field_option).
-			        delegate('.field-option-cell-wrapper .delete', 'click', WPSC_Settings_Page.Checkout.event_delete_field_option);
+			        delegate('.field-option-cell-wrapper .wpsc-button-plus', 'click', WPSC_Settings_Page.Checkout.event_add_field_option).
+			        delegate('.field-option-cell-wrapper .wpsc-button-minus', 'click', WPSC_Settings_Page.Checkout.event_delete_field_option).
+			        delegate('#wpsc-delete-checkout-set', 'click', WPSC_Settings_Page.Checkout.event_delete_checkout_set).
+			        delegate('#wpsc_form_set', 'change', WPSC_Settings_Page.Checkout.event_select_form_set);
 			$('#wpsc-settings-form').bind('submit', WPSC_Settings_Page.Checkout.event_form_submit);
 
 			wrapper.find('#wpsc_checkout_list').
@@ -313,7 +321,7 @@
 					helper      : WPSC_Settings_Page.Checkout.fix_sortable_helper,
 					start       : WPSC_Settings_Page.Checkout.event_sort_start,
 					stop        : WPSC_Settings_Page.Checkout.event_sort_stop,
-					update      : WPSC_Settings_Page.Checkout.event_sort_update,
+					update      : WPSC_Settings_Page.Checkout.event_sort_update
 				});
 
 			WPSC_Settings_Page.Checkout.new_field_count = $('.new-field').length;
@@ -459,7 +467,7 @@
 			});
 
 			prototype_option.hide();
-			if (label_inputs.size() == 0) {
+			if (label_inputs.size() === 0) {
 				prototype_option.clone().removeClass('new-option').show().appendTo(options_row.find('tbody'));
 			}
 
@@ -479,7 +487,8 @@
 		event_add_new_field : function() {
 			var target_row = $(this).closest('tr'),
 				new_row = $('#field-prototype').clone(),
-				id;
+				id,
+				next_row = target_row.next();
 
 			WPSC_Settings_Page.Checkout.new_field_count ++;
 			id = WPSC_Settings_Page.Checkout.new_field_count;
@@ -495,6 +504,10 @@
 
 				t.attr('name', new_name);
 			});
+
+			if (next_row && next_row.hasClass('form-field-options'))
+				target_row = next_row;
+
 			new_row.insertAfter(target_row).show().find('.cell-wrapper').slideDown(150);
 
 			WPSC_Settings_Page.unsaved_settings = true;
@@ -548,7 +561,7 @@
 			var row = tr.clone().width(tr.width());
 			row.find('td').each(function(index){
 				var td_class = $(this).attr('class'), original = tr.find('.' + td_class), old_html = $(this).html();
-				$(this).find('.cell-wrapper').width(original.width());
+				$(this).width(original.width());
 			});
 			return row;
 		},
@@ -609,20 +622,21 @@
 
 			var spinner = $(ui.item).find('.ajax-feedback');
 			var post_data = {
-				action     : 'wpsc_update_checkout_fields_order',
-				nonce      : WPSC_Settings_Page.nonce,
+				action     : 'update_checkout_fields_order',
+				nonce      : WPSC_Settings_Page.update_checkout_fields_order_nonce,
 				sort_order : $('table#wpsc_checkout_list').sortable('toArray')
 			};
 			var ajax_callback = function(response) {
 				spinner.toggleClass('ajax-feedback-active');
 				ui.item.find('.drag a').show();
-				if (response != 'success') {
-					alert(WPSC_Settings_Page.checkout_field_sort_error_dialog);
+				if (! response.is_successful) {
+					alert(response.error.messages.join("\n"));
+					return;
 				}
 			};
 			ui.item.find('.drag a').hide();
 			spinner.toggleClass('ajax-feedback-active');
-			$.post(ajaxurl, post_data, ajax_callback);
+			$.wpsc_post(post_data, ajax_callback);
 		},
 
 		/**
@@ -632,6 +646,36 @@
 		event_add_new_form_set : function() {
 			$(".add_new_form_set_forms").toggle();
 			return false;
+		},
+
+		/**
+		 * Display confirm dialog before deleting a form set
+		 * @since 3.8.9
+		 */
+		event_delete_checkout_set : function() {
+			var dropdown = $('#wpsc_form_set'),
+				form_id = dropdown.val(),
+				form_name = dropdown.find('option[value="' + form_id + '"]').text(),
+				message = WPSC_Settings_Page.delete_form_set_confirm.replace('%s', form_name);
+
+			if (! confirm(message)) {
+				return false;
+			}
+
+			return true;
+		},
+
+		/**
+		 * Hide delete button if default form set is being selected
+		 * @since 3.8.9
+		 */
+		event_select_form_set : function() {
+			var t = $(this), form_id = t.val() * 1;
+
+			if (form_id === 0)
+				$('#wpsc-delete-checkout-set').hide();
+			else
+				$('#wpsc-delete-checkout-set').show();
 		}
 	};
 	$(WPSC_Settings_Page).bind('wpsc_settings_tab_loaded_checkout', WPSC_Settings_Page.Checkout.event_init);
@@ -662,30 +706,30 @@
 		event_country_drop_down_changed : function() {
 			var c = $(this),
 			    post_data = {
-					action            : 'wpec_taxes_ajax',
+					action            : 'add_tax_rate',
 					wpec_taxes_action : 'wpec_taxes_get_regions',
 					current_key       : c.data('key'),
 					taxes_type        : c.data('type'),
 					country_code      : c.val(),
-					nonce             : WPSC_Settings_Page.nonce
+					nonce             : WPSC_Settings_Page.add_tax_rate_nonce
 				},
 				spinner = c.siblings('.ajax-feedback'),
 				ajax_callback = function(response) {
 					spinner.toggleClass('ajax-feedback-active');
-					if (response != '') {
-						c.after(response);
+					if (response.is_successful) {
+						c.after(response.obj.content);
 					}
 				};
 			spinner.toggleClass('ajax-feedback-active');
 			c.siblings('.wpsc-taxes-region-drop-down').remove();
 
-			$.post(ajaxurl, post_data, ajax_callback, 'html');
+			$.wpsc_post(post_data, ajax_callback);
 		},
 
 		/**
 		 * Add new tax rate field when "Add Tax Rate" is clicked
 		 * @since 3.8.8
-		 * TODO: rewrote the horrible code in class wpec_taxes_controller. There's really no need for AJAX here.
+		 * TODO: rewrite the horrible code in class wpec_taxes_controller. There's really no need for AJAX here.
 		 */
 		event_add_tax_rate : function() {
 			WPSC_Settings_Page.Taxes.add_field('rates');
@@ -725,22 +769,26 @@
 		 * @since 3.8.8
 		 */
 		add_field : function(type) {
-			var button_wrapper = $('#wpsc-add-tax-' + type);
+			var button_wrapper = $('#wpsc-add-tax-' + type),
 			    count = $('.wpsc-tax-' + type + '-row').size(),
 			    post_data = {
-			    	action            : 'wpec_taxes_ajax',
+			    	action            : 'add_tax_rate',
 			    	wpec_taxes_action : 'wpec_taxes_build_' + type + '_form',
 			    	current_key       : count,
-			    	nonce             : WPSC_Settings_Page.nonce,
+			    	nonce             : WPSC_Settings_Page.add_tax_rate_nonce
 			    },
 			    ajax_callback = function(response) {
-			    	button_wrapper.before(response).find('img').toggleClass('ajax-feedback-active');
+			    	if (! response.is_successful) {
+			    		alert(response.error.messages.join("\n"));
+			    		return;
+			    	}
+			    	button_wrapper.before(response.obj.content).find('img').toggleClass('ajax-feedback-active');
 			    };
 
 			button_wrapper.find('img').toggleClass('ajax-feedback-active');
-			$.post(ajaxurl, post_data, ajax_callback, 'html');
+			$.wpsc_post(post_data, ajax_callback);
 		}
-	}
+	};
 	$(WPSC_Settings_Page).bind('wpsc_settings_tab_loaded_taxes', WPSC_Settings_Page.Taxes.event_init);
 
 	/**
@@ -758,9 +806,10 @@
 			WPSC_Settings_Page.Shipping.table_rate = WPSC_Settings_Page.Shipping.wrapper.find('.table-rate');
 			WPSC_Settings_Page.Shipping.wrapper.
 				delegate('.edit-shipping-module'         , 'click'   , WPSC_Settings_Page.Shipping.event_edit_shipping_module).
-				delegate('.table-rate .add'              , 'click'   , WPSC_Settings_Page.Shipping.event_add_table_rate_layer).
-				delegate('.table-rate .delete'           , 'click'   , WPSC_Settings_Page.Shipping.event_delete_table_rate_layer).
-				delegate('.table-rate input[type="text"]', 'keypress', WPSC_Settings_Page.Shipping.event_enter_key_pressed);
+				delegate('.table-rate .wpsc-button-plus' , 'click'   , WPSC_Settings_Page.Shipping.event_add_table_rate_layer).
+				delegate('.table-rate .wpsc-button-minus', 'click'   , WPSC_Settings_Page.Shipping.event_delete_table_rate_layer).
+				delegate('.table-rate input[type="text"]', 'keypress', WPSC_Settings_Page.Shipping.event_enter_key_pressed).
+				delegate('a.shipwire_sync'               , 'click'   , WPSC_Settings_Page.Shipping.event_sync_shipwire);
 		},
 
 		/**
@@ -837,21 +886,50 @@
 			    shipping_module_id = element.data('module-id'),
 			    spinner = element.siblings('.ajax-feedback'),
 			    post_data = {
-			    	action : 'wpsc_shipping_module_settings_form',
+			    	action : 'shipping_module_settings_form',
 			    	'shipping_module_id' : shipping_module_id,
-			    	nonce  : WPSC_Settings_Page.nonce
+			    	nonce  : WPSC_Settings_Page.shipping_module_settings_form_nonce
 			    },
 			    ajax_callback = function(response) {
+			    	if (! response.is_successful) {
+			    		alert(response.error.messages.join("\n"));
+			    		return;
+			    	}
+
 			    	if (history.pushState) {
 			    		var new_url = '?page=wpsc-settings&tab=' + WPSC_Settings_Page.current_tab + '&shipping_module_id=' + shipping_module_id;
 			    		history.pushState({url : new_url}, '', new_url);
 			    	}
 			    	spinner.toggleClass('ajax-feedback-active');
-			    	$('#wpsc-shipping-module-settings').replaceWith(response);
+			    	$('#wpsc-shipping-module-settings').replaceWith(response.obj.content);
 			    };
 
 			spinner.toggleClass('ajax-feedback-active');
-			$.post(ajaxurl, post_data, ajax_callback, 'html');
+			$.wpsc_post(post_data, ajax_callback);
+			return false;
+		},
+
+		/**
+		 * Syncs with Shipwire's Inventory and Tracking APIs
+		 * @since 3.8.9
+		 */
+		event_sync_shipwire : function() {
+			var element = $(this),
+			    spinner = element.siblings('.ajax-feedback'),
+			    post_data = {
+			    	action : 'sync_shipwire_products',
+			    	nonce  : WPSC_Settings_Page.shipping_module_settings_form_nonce
+			    },
+			    ajax_callback = function(response) {
+			    	$('<div class="updated shipwire-update"><p><strong>' + response.tracking + '<br />' + response.inventory + '</strong></p></div>').
+			    	insertBefore(element).
+			    	fadeIn('slow').
+			    	delay(5500).
+			    	fadeOut('slow');
+			    	spinner.toggleClass('ajax-feedback-active');
+			    };
+			spinner.toggleClass('ajax-feedback-active');
+			$.post(ajaxurl, post_data, ajax_callback, 'json');
 			return false;
 		},
 
@@ -882,25 +960,64 @@
 			    payment_gateway_id = element.data('gateway-id'),
 			    spinner = element.siblings('.ajax-feedback'),
 			    post_data = {
-			    	action : 'wpsc_payment_gateway_settings_form',
-			    	'payment_gateway_id' : payment_gateway_id,
-			    	nonce  : WPSC_Settings_Page.nonce
+					action               : 'payment_gateway_settings_form',
+					'payment_gateway_id' : payment_gateway_id,
+					nonce                : WPSC_Settings_Page.payment_gateway_settings_form_nonce
 			    },
 			    ajax_callback = function(response) {
+			    	if (! response.is_successful) {
+			    		alert(response.error.messages.join("\n"));
+			    		return;
+			    	}
+
 			    	if (history.pushState) {
 			    		var new_url = '?page=wpsc-settings&tab=' + WPSC_Settings_Page.current_tab + '&payment_gateway_id=' + payment_gateway_id;
 			    		history.pushState({url : new_url}, '', new_url);
 			    	}
 			    	spinner.toggleClass('ajax-feedback-active');
-			    	$('#wpsc-payment-gateway-settings-panel').replaceWith(response);
+			    	$('#wpsc-payment-gateway-settings-panel').replaceWith(response.obj.content);
 			    };
 
 			spinner.toggleClass('ajax-feedback-active');
-			$.post(ajaxurl, post_data, ajax_callback, 'html');
+			$.wpsc_post(post_data, ajax_callback);
 			return false;
 		}
 	};
 	$(WPSC_Settings_Page).bind('wpsc_settings_tab_loaded_gateway', WPSC_Settings_Page.Gateway.event_init);
+
+	/**
+	 * Marketing Tab
+	 * @namespace
+	 * @since 3.8.9
+	 */
+	WPSC_Settings_Page.Marketing = {
+		event_init : function() {
+
+			var wrapper = $('div#wpsc_google_analytics_integration');
+
+			wrapper.delegate('input[type="checkbox"]', 'click', WPSC_Settings_Page.Marketing.event_show_hide_dependencies);
+
+			var checkbox = $( 'div#wpsc_google_analytics_integration input[type="checkbox"]' );
+
+			$.each( checkbox, function( i, e ) {
+				if ( $(this).is( ':checked' ) )
+					$(this).parent('p').nextAll('p').hide();
+			})
+		},
+
+		event_show_hide_dependencies : function () {
+			var e = $(this);
+
+			if ( e.is( ':checked' ) )
+				e.parent('p').nextAll('p').hide();
+			else
+				e.parent('p').nextAll('p').show();
+		}
+
+	};
+
+	$(WPSC_Settings_Page).bind('wpsc_settings_tab_loaded_marketing', WPSC_Settings_Page.Marketing.event_init);
+
 })(jQuery);
 
 WPSC_Settings_Page.init();

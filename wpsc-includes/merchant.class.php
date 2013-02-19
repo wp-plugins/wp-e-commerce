@@ -4,7 +4,7 @@
  * WP eCommerce Base Merchant Class
  *
  * This is the base merchant class, all merchant files that use the new API extend this class.
- * 
+ *
  *
  * @package wp-e-commerce
  * @since 3.7.6
@@ -29,7 +29,7 @@ if ( !function_exists( 'wpsc_merchant_sort' ) ) {
 }
 
 /**
- * This is the Merchant Gateway Class that all gateways should extend. It handles everything from collating user data, 
+ * This is the Merchant Gateway Class that all gateways should extend. It handles everything from collating user data,
  * cart data so all gateways have consistent data between them.
  *
  *
@@ -48,7 +48,7 @@ class wpsc_merchant {
 	var $cart_data = array( );
 	/**
 	 * This is where the cart items are stored
-	  @var array
+	 * @var array
 	 */
 	var $cart_items = array( );
 	/**
@@ -61,7 +61,7 @@ class wpsc_merchant {
 	 * collate_data method, collate purchase data, like addresses, like country
 	 * @access public
 	 */
-	
+
 	protected $address_keys = array (
 		'billing' => array (
 			'first_name' => 'billingfirstname',
@@ -71,6 +71,7 @@ class wpsc_merchant {
 			'state'      => 'billingstate',
 			'country'    => 'billingcountry',
 			'post_code'  => 'billingpostcode',
+			'phone'      => 'billingphone',
 		),
 		'shipping' => array (
 			'first_name' => 'shippingfirstname',
@@ -82,13 +83,15 @@ class wpsc_merchant {
 			'post_code'  => 'shippingpostcode',
 		)
 	);
-	
+
 	function __construct( $purchase_id = null, $is_receiving = false ) {
 		global $wpdb;
+
 		if ( ($purchase_id == null) && ($is_receiving == true) ) {
 			$this->is_receiving = true;
 			$this->parse_gateway_notification();
 		}
+
 		if ( $purchase_id > 0 ) {
 			$this->purchase_id = $purchase_id;
 		}
@@ -97,9 +100,7 @@ class wpsc_merchant {
 	}
 
 	function wpsc_merchant( $purchase_id = null, $is_receiving = false ) {
-		if ( version_compare( PHP_VERSION, "5.0.0", "<" ) ) {
-			$this->__construct( $purchase_id, $is_receiving );
-		}
+		$this->__construct( $purchase_id, $is_receiving );
 	}
 
 	/**
@@ -119,9 +120,9 @@ class wpsc_merchant {
 			$purchase_id = & $this->purchase_id;
 		}
 
-		$email_address       = $wpdb->get_var( "SELECT `value` FROM `" . WPSC_TABLE_CHECKOUT_FORMS . "` AS `form_field` INNER JOIN `" . WPSC_TABLE_SUBMITED_FORM_DATA . "` AS `collected_data` ON `form_field`.`id` = `collected_data`.`form_id` WHERE `form_field`.`type` IN ( 'email' ) AND `collected_data`.`log_id` IN ( '{$purchase_id}' )" );
+		$email_address       = $wpdb->get_var( "SELECT `value` FROM `" . WPSC_TABLE_CHECKOUT_FORMS . "` AS `form_field` INNER JOIN `" . WPSC_TABLE_SUBMITTED_FORM_DATA . "` AS `collected_data` ON `form_field`.`id` = `collected_data`.`form_id` WHERE `form_field`.`type` IN ( 'email' ) AND `collected_data`.`log_id` IN ( '{$purchase_id}' )" );
 		$currency_code       = $wpdb->get_var( "SELECT `code` FROM `" . WPSC_TABLE_CURRENCY_LIST . "` WHERE `id`='" . get_option( 'currency_type' ) . "' LIMIT 1" );
-		$collected_form_data = $wpdb->get_results( "SELECT `data_names`.`id`, `data_names`.`unique_name`, `collected_data`.`value` FROM `" . WPSC_TABLE_SUBMITED_FORM_DATA . "` AS `collected_data` JOIN `" . WPSC_TABLE_CHECKOUT_FORMS . "` AS `data_names` ON `collected_data`.`form_id` = `data_names`.`id` WHERE `log_id` = '" . $purchase_id . "'", ARRAY_A );
+		$collected_form_data = $wpdb->get_results( "SELECT `data_names`.`id`, `data_names`.`unique_name`, `collected_data`.`value` FROM `" . WPSC_TABLE_SUBMITTED_FORM_DATA . "` AS `collected_data` JOIN `" . WPSC_TABLE_CHECKOUT_FORMS . "` AS `data_names` ON `collected_data`.`form_id` = `data_names`.`id` WHERE `log_id` = '" . $purchase_id . "'", ARRAY_A );
 
 		$address_data = array(
 			'billing'  => array(),
@@ -144,15 +145,15 @@ class wpsc_merchant {
 				case 'billingcountry':
 				case 'shippingcountry':
 					$country = maybe_unserialize( $collected_form_row['value'] );
-					
+
 					if ( is_array( $country ) ) {
 						$address_data[$address_data_set]['state'] = wpsc_get_state_by_id( $country[1], 'code' );
 						$country = $country[0];
 					}
-					
+
 					$address_data[$address_data_set][$address_key] = $country;
 					break;
-				
+
 				case 'billingstate':
 				case 'shippingstate':
 					if ( empty( $address_data[$address_data_set]['state'] ) )
@@ -193,7 +194,7 @@ class wpsc_merchant {
 			'shipping_address'        => $address_data['shipping'],
 		);
 
-	} 
+	}
 
 	/**
 	 * collate_cart method, collate cart data
@@ -207,19 +208,19 @@ class wpsc_merchant {
 
 		foreach ( $original_cart_data as $cart_row ) {
 			$is_downloadable = false;
-			
+
 			if ( $wpdb->get_var( "SELECT `id` FROM `" . WPSC_TABLE_DOWNLOAD_STATUS . "` WHERE `cartid` = {$cart_row['id']}" ) )
 				$is_downloadable = true;
 
 			$is_recurring = (bool)get_post_meta( $cart_row['prodid'], '_wpsc_is_recurring', true );
-	
+
 			if ( $is_recurring == true )
 				$this->cart_data['is_subscription'] = true;
-					
+
 
 			if ( ! $rebill_interval = get_post_meta( $cart_row['prodid'], '_wpsc_rebill_interval', true ) )
 				$rebill_interval = array();
-			
+
 
 			$new_cart_item = array(
 				"cart_item_id"         => $cart_row['id'],
@@ -254,7 +255,12 @@ class wpsc_merchant {
 	function set_error_message( $error_message ) {
 		global $wpdb;
 
-		$_SESSION['wpsc_checkout_misc_error_messages'][] = $error_message;
+		$messages = wpsc_get_customer_meta( 'checkout_misc_error_messages' );
+		if ( ! is_array( $messages ) )
+			$messages = array();
+
+		$messages[] = $error_message;
+		wpsc_update_customer_meta( 'checkout_misc_error_messages', $messages );
 	}
 
 	/**
@@ -275,7 +281,7 @@ class wpsc_merchant {
 	 */
 	function go_to_transaction_results( $session_id ) {
 		global $wpdb, $purchase_log;
-		
+
 		//Now to do actions once the payment has been attempted
 		switch ($purchase_log['processed']) {
 			case 3:
@@ -302,63 +308,23 @@ class wpsc_merchant {
 	 * set_purchase_processed_by_purchid, this helps change the purchase log status
 	 * $status = integer status order
 	 */
-	function set_purchase_processed_by_purchid( $status=1 ) {
-		global $wpdb;
-		
-		$wpdb->update(
-			    WPSC_TABLE_PURCHASE_LOGS,
-			    array(
-				'processed' => $status
-			    ),
-			    array(
-				'id' => $this->purchase_id
-			    ),
-			    '%d',
-			    '%d'
-			);
-		}
+	function set_purchase_processed_by_purchid( $status = 1 ) {
+		wpsc_update_purchase_log_status( $this->purchase_id, $status );
+	}
 
 	/**
 	 * set_purchase_processed_by_sessionid, this helps change the purchase log status
 	 * $status = integer status order
 	 */
-	function set_purchase_processed_by_sessionid( $status=1 ) {
-		global $wpdb;
-
-		$wpdb->update(
-			    WPSC_TABLE_PURCHASE_LOGS,
-			    array(
-				'processed' => $status
-			    ),
-			    array(
-				'sessionid' => $this->session_id
-			    ),
-			    '%d',
-			    '%d'
-			);
+	function set_purchase_processed_by_sessionid( $status = 1 ) {
+		wpsc_update_purchase_log_status( $this->session_id, $status, 'sessionid' );
 	}
 
 	/**
 	 * set_transaction_details, maybe extended in merchant files
 	 */
 	function set_transaction_details( $transaction_id, $status = 1 ) {
-		global $wpdb;
-
-		$wpdb->update(
-			    WPSC_TABLE_PURCHASE_LOGS,
-			    array(
-				'processed' => $status,
-				'transactid' => $transaction_id
-			    ),
-			    array(
-				'id' => $this->purchase_id
-			    ),
-			    array(
-				'%d',
-				'%s'
-			    ),
-			    '%d'
-			);
+		wpsc_update_purchase_log_details( $this->purchase_id, array( 'processed' => $status, 'transactid' => $transaction_id ) );
 	}
 
 	/**
@@ -382,7 +348,7 @@ class wpsc_merchant {
 			return $wpdb->update(WPSC_TABLE_PURCHASE_LOGS,array('authcode'=>$new_authcode), array('id'=>absint($this->purchase_id)),array('%s'), array('%d'));
 		}
 	}
-		
+
 	/**
 	 * construct_value_array gateway specific data array, extended in merchant files
 	 * @abstract

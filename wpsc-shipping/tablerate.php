@@ -17,7 +17,7 @@ class tablerate {
 	 */
 	function tablerate() {
 		$this->internal_name = "tablerate";
-		$this->name="Table Rate";
+		$this->name = __( "Table Rate", 'wpsc' );
 		$this->is_external=false;
 		return true;
 	}
@@ -58,8 +58,8 @@ class tablerate {
 						<small><?php echo esc_html( $currency ); ?></small>
 						<input type="text" name="wpsc_shipping_tablerate_shipping[]" value="<?php echo esc_attr( $shipping ); ?>" size="4" />
 						<div class="actions">
-							<a tabindex="-1" title="<?php _e( 'Add Layer', 'wpsc' ); ?>" class="action add" href="#">Add</a>
-							<a tabindex="-1" title="<?php _e( 'Delete Layer', 'wpsc' ); ?>" class="action delete" href="#">Delete</a>
+							<a tabindex="-1" title="<?php _e( 'Delete Layer', 'wpsc' ); ?>" class="button-secondary wpsc-button-round wpsc-button-minus" href="#"><?php echo _x( '&ndash;', 'delete item', 'wpsc' ); ?></a>
+														<a tabindex="-1" title="<?php _e( 'Add Layer', 'wpsc' ); ?>" class="button-secondary wpsc-button-round wpsc-button-plus" href="#"><?php echo _x( '+', 'add item', 'wpsc' ); ?></a>
 						</div>
 					</div>
 				</td>
@@ -86,7 +86,7 @@ class tablerate {
 			<tbody class="table-rate">
 				<tr class="js-warning">
 					<td colspan="2">
-						<small><?php echo sprintf( __( 'To remove a rate layer, simply leave the values on that row blank. By the way, <a href="%s">enable JavaScript</a> for a better user experience.'), 'http://www.google.com/support/bin/answer.py?answer=23852' ); ?></small>
+						<small><?php echo sprintf( __( 'To remove a rate layer, simply leave the values on that row blank. By the way, <a href="%s">enable JavaScript</a> for a better user experience.', 'wpsc'), 'http://www.google.com/support/bin/answer.py?answer=23852' ); ?></small>
 					</td>
 				</tr>
 				<?php if ( ! empty( $layers ) ): ?>
@@ -117,12 +117,13 @@ class tablerate {
 		$new_layer = array();
 		if ($shippings != '') {
 			foreach ($shippings as $key => $price) {
-				if ( empty( $price ) || empty( $layers[$key] ) )
+				if ( ! is_numeric( $key ) || ! is_numeric( $price ) )
 					continue;
 
 				$new_layer[$layers[$key]] = $price;
 			}
 		}
+
 		// Sort the data before it goes into the database. Makes the UI make more sense
 		krsort( $new_layer );
 		update_option('table_rate_layers', $new_layer);
@@ -137,8 +138,8 @@ class tablerate {
 	function getQuote() {
 
 		global $wpdb, $wpsc_cart;
-		if (isset($_SESSION['nzshpcrt_cart'])) {
-			$shopping_cart = $_SESSION['nzshpcrt_cart'];
+		if ( wpsc_get_customer_meta( 'nzshpcart' ) ) {
+			$shopping_cart = wpsc_get_customer_meta( 'nzshpcart' );
 		}
 		if (is_object($wpsc_cart)) {
 			$price = $wpsc_cart->calculate_subtotal(true);
@@ -170,7 +171,7 @@ class tablerate {
 
 					}
 
-					return array("Table Rate"=>$shipping_amount);
+					return array( __( "Table Rate", 'wpsc' ) => $shipping_amount );
 
 				}
 
@@ -185,7 +186,7 @@ class tablerate {
 				$shipping_amount = $shipping;
 			}
 
-			return array("Table Rate"=>$shipping_amount);
+			return array( __( "Table Rate", 'wpsc' ) => $shipping_amount );
 
 		}
 	}

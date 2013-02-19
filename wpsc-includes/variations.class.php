@@ -26,7 +26,9 @@ class wpsc_variations {
 	function wpsc_variations($product_id) {
 		global $wpdb;
 
-		$product_terms = wp_get_object_terms($product_id, 'wpsc-variation');
+		$product_terms = wpsc_get_product_terms( $product_id, 'wpsc-variation' );
+		$product_terms = wpsc_get_terms_variation_sort_filter( $product_terms );
+
 		$this->variation_groups = array();
 		$this->first_variations = array();
 		$this->all_associated_variations = array();
@@ -44,7 +46,7 @@ class wpsc_variations {
 
 			array_unshift( $this->all_associated_variations[$variation_set], (object) array(
 				'term_id' => 0,
-				'name'    => __('-- Please Select --', 'wpsc'),
+				'name'    => __( '-- Please Select --', 'wpsc' ),
 			) );
 		}
 

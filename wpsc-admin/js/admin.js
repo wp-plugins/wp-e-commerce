@@ -1,4 +1,32 @@
 (function($){
+	/**
+	 * Wrapper for $.post. Takes care of the 'wpsc_action' and 'action' data arguments.
+	 *
+	 * @since  3.8.9
+	 * @param  {object} data      Data to pass to the AJAX destination
+	 * @param  {function} handler Response handler
+	 */
+	$.wpsc_post = function(data, handler) {
+		data['wpsc_action'] = data['action'];
+		data['action'] = 'wpsc_ajax';
+
+		$.post(ajaxurl, data, handler, 'json');
+	};
+
+	/**
+	 * Wrapper for $.get. Takes care of the 'wpsc_action' and 'action' data arguments.
+	 *
+	 * @since  3.8.9
+	 * @param  {object}   data      Data to pass to the AJAX destination
+	 * @param  {function} handler Response handler
+	 */
+	$.wpsc_get = function(data, handler) {
+		data['wpsc_action'] = data['action'];
+		data['action'] = 'wpsc_ajax';
+
+		$.get(ajaxurl, data, handler, 'json');
+	};
+
 	if( pagenow == 'edit-wpsc_product_category' ) {
 		function category_sort(e, ui){
 			var order = $(this).sortable('toArray'),
@@ -10,6 +38,31 @@
 
 			jQuery.post(ajaxurl, data);
 		}
+
+		var submit_handlers = [];
+
+		var disable_ajax_submit = function() {
+			var t = $('#submit');
+			console.log(t);
+			console.log(t.data('events'));
+			console.log(t.data('events').click);
+			if (t.data('events'))
+				submit_handlers = t.data('events').click;
+			t.unbind('click');
+			t.bind('click', function() {
+				var form = $(this).parents('form');
+				if (! validateForm( form ) )
+					return false;
+			});
+		};
+
+		var restore_ajax_submit = function() {
+			var t = $('#submit');
+			t.unbind('click');
+			$.each(submit_handlers, function(index, obj) {
+				t.bind('click', obj.handler);
+			});
+		};
 
 		$(function(){
 			var table = $('body.edit-tags-php .wp-list-table');
@@ -24,6 +77,15 @@
 			});
 
 			$('.edit-tags-php form').attr('enctype', 'multipart/form-data').attr('encoding', 'multipart/form-data');
+
+			$('[name="image"]').bind('change', function() {
+				var t = $(this);
+
+				if (t.val())
+					disable_ajax_submit();
+				else
+					restore_ajax_submit();
+			});
 		});
 
 		$(function() {
@@ -37,6 +99,62 @@
 			});
 		});
 	}
+
+	$(document).delegate('form input.prdfil', 'click', function(){
+		var t = $(this);
+		var post_data = {
+			'select_product_file[]' : [],
+			product_id : t.parent('form.product_upload').find('input#hidden_id').val(),
+			nonce : t.data('nonce'),
+			action : 'upload_product_file'
+		};
+		var products = jQuery(this).parent("form.product_upload").find('input').serializeArray();
+
+		for (var index in products) {
+			post_data['select_product_file[]'].push(products[index].value);
+		}
+
+		jQuery.wpsc_post(post_data, function(response){
+			tb_remove();
+			if (! response.is_successful) {
+				alert(response.error.messages.join("\n"));
+				return;
+			}
+			jQuery('#wpsc_product_download_forms .select_product_file tbody').append(response.obj.content).
+				find('p.no-item').hide().end().
+				find('p:even').removeClass('alt').end().
+				find('p:odd').addClass('alt');
+		});
+		event.preventDefault();
+	});
+
+	// delete upload
+	$(document).delegate('.file_delete_button', 'click', function(){
+		var t = $(this),
+			post_values = {
+				action     : 'delete_file',
+				file_name  : t.data('file-name'),
+				product_id : t.data('product-id'),
+				nonce      : t.data('nonce')
+			},
+			response_handler = function(response) {
+				if (! response.is_successful) {
+					alert(response.error.messages.join("\n"));
+					return;
+				}
+
+				t.closest('.wpsc_product_download_row').fadeOut('fast', function() {
+					$('div.select_product_file p:even').removeClass('alt');
+					$('div.select_product_file p:odd').addClass('alt');
+					$(this).remove();
+				});
+			};
+
+		$.wpsc_post( post_values, response_handler);
+
+		return false;
+	});
+
 })(jQuery);
 
 jQuery(document).ready(function(){
@@ -59,13 +177,14 @@ jQuery(document).ready(function(){
 		}
 
 	});
-	jQuery("form[name='add_coupon'] input[name='submit_coupon']").click(function() {
+	jQuery("form[name='add_coupon']").submit(function() {
 		var title = jQuery("form[name='add_coupon'] input[name='add_coupon_code']").val();
 		if ( title == '') {
-			alert('Please enter a coupon code.');
+			jQuery('<div id="notice" class="error"><p>' + wpsc_adminL10n.empty_coupon + '</p></div>').insertAfter('div.wrap > h2').delay(2500).hide(350);
 			return false;
 		}
 	});
+
 	//Animateedit products columns
 	jQuery('.wpsc-separator').livequery(function(){
 		jQuery(this).click(function(){
@@ -138,25 +257,6 @@ jQuery(document).ready(function(){
 		});
 	});
 
-	jQuery('form input.prdfil').livequery(function(){
-		jQuery(this).click(function(event){
-			var products = jQuery(this).parent("form.product_upload").find('input').serialize();
-			var product_id = jQuery(this).parent("form.product_upload").find('input#hidden_id').val();
-			post_values = products + '&product_id=' + product_id;
-			jQuery.post('admin.php?wpsc_admin_action=product_files_upload',post_values, function(returned_data){
-				tb_remove();
-				if (returned_data.length > 0) {
-					jQuery('#wpsc_product_download_forms .select_product_file tbody').append(returned_data).
-						find('p.no-item').hide().end().
-						find('p:even').removeClass('alt').end().
-				   		find('p:odd').addClass('alt');
-				}
-			});
-			event.preventDefault();
-		});
-	});
-
-
 	//delete currency layer in admin product page
 	jQuery('a.wpsc_mass_resize').livequery(function(){
 		jQuery(this).click(function(event){
@@ -215,25 +315,33 @@ jQuery(document).ready(function(){
 
     //As far as I can tell, WP provides no good way of unsetting elements in the bulk edit area...tricky jQuery action will do for now....not ideal whatsoever, nor eternally stable.
      if( pagenow == 'edit-wpsc-product' ) {
-        //jQuery('fieldset.inline-edit-col-left .inline-edit-date').css('display','none');
-        //jQuery('fieldset.inline-edit-col-center span.title:eq(1), ul.cat-checklist:eq(1)').css('display','none');
-        jQuery("label:contains('Date')").css('display', 'none');
-        jQuery(".inline-edit-group:contains('Password')").css('display', 'none');
-        jQuery('fieldset.inline-edit-col-left.wpsc-cols').css({'float': 'right', 'clear' : 'right'});
-        jQuery("label:contains('Parent')").css('display', 'none');
-        jQuery("label:contains('Status')").css('display', 'none');
-        jQuery("span:contains('Variations')").css('display', 'none');
-        jQuery("ul.wpsc-variation-checklist").css('display', 'none');
-        jQuery("div.inline-edit-date").css('display', 'none');
+		jQuery('.inline-edit-password-input').closest('.inline-edit-group').css('display', 'none');
+		var vcl = jQuery('.inline-edit-col input[name="tax_input[wpsc-variation][]"]').css('display', 'none');
+		vcl.each(function(){
+			jQuery(this).prev().css('display', 'none');
+			jQuery(this).next().css('display', 'none');
+			jQuery(this).css('display', 'none');
+		});
+		jQuery('#bulk-edit select[name=post_parent]').closest('fieldset').css('display', 'none');
+		jQuery('.inline-edit-col select[name=post_parent]').parent().css('display', 'none');
+		jQuery('.inline-edit-status').parent().css('display', 'none');
     }
         if( wpsc_adminL10n.dragndrop_set == "true" && typenow == "wpsc-product" && adminpage == "edit-php" ) {
             // this makes the product list table sortable
             jQuery('table.widefat:not(.tags)').sortable({
 		update: function(event, ui) {
-			category_id = jQuery('select#wpsc_product_category option:selected').val();
-			product_order = jQuery('table.widefat').sortable( 'serialize' );
-			post_values = "category_id="+category_id+"&"+product_order;
-			jQuery.post( 'index.php?wpsc_admin_action=save_product_order', post_values, function(returned_data) { });
+			var category_id = jQuery('select#wpsc_product_category option:selected').val(),
+				product_order = jQuery('table.widefat').sortable( 'toArray' ),
+				post_data = {
+					action : 'save_product_order',
+					'category_id' : category_id,
+					'post[]' : product_order,
+					nonce : wpsc_adminL10n.save_product_order_nonce
+				};
+			jQuery.wpsc_post(post_data, function(response) {
+				if (! response.is_successful)
+					alert(response.error.messages.join("\n"));
+			});
 		},
 		items: 'tbody tr',
 		axis: 'y',
@@ -253,49 +361,6 @@ jQuery(document).ready(function(){
 			jQuery(".wpsc-row-actions", this).css("visibility", "hidden");
 		}
 		);
-
-	jQuery('tr.wpsc_trackingid_row').hide();
-
-	jQuery('.wpsc_show_trackingid').click(function(event){
-		purchlog_id = jQuery(this).attr('title');
-		if(jQuery('tr.log'+purchlog_id).hasClass('wpsc_hastracking')){
-			jQuery('tr.log'+purchlog_id).removeClass('wpsc_hastracking');
-			jQuery('tr.log'+purchlog_id).hide();
-		}else{
-			jQuery('tr.log'+purchlog_id).addClass('wpsc_hastracking');
-			jQuery('tr.log'+purchlog_id).show();
-		}
-		event.preventDefault();
-	});
-	// this changes the purchase log item status
-	jQuery('.selector').change(function(){
-		purchlog_id = jQuery(this).attr('title');
-		purchlog_status = jQuery(this).val();
-		post_values = "action=purchlog_edit_status&purchlog_id="+purchlog_id+"&purchlog_status="+purchlog_status;
-		var ajax_loading = jQuery(this).prev('.ajax-loading');
-		ajax_loading.css('visibility', 'visible');
-		jQuery.post( ajaxurl, post_values, function(returned_data) {
-			ajax_loading.css('visibility', 'hidden');
-		});
-
-		if(purchlog_status == 4){
-			jQuery('tr.log'+purchlog_id).show();
-
-		}
-	});
-
-	jQuery('.sendTrackingEmail').click(function(event){
-		purchlog_id = jQuery(this).attr('title');
-		post_values = "purchlog_id="+purchlog_id;
-		var ajax_loader = jQuery(this).prev('.ajax-loading');
-		ajax_loader.css('visibility', 'visible');
-		jQuery.post( 'index.php?wpsc_admin_action=purchlog_email_trackid', post_values, function(returned_data) { ajax_loader.css('visibility', 'hidden'); });
-		event.preventDefault();
-	});
-
-	jQuery("a.thickbox").livequery(function(){
-		tb_init(this);
-	});
 
 	jQuery("div.admin_product_name a.shorttag_toggle").livequery(function(){
 		jQuery(this).toggle(
@@ -362,6 +427,8 @@ jQuery(document).ready(function(){
 			jQuery('.image_settings_box').hide();
 		});
 	});
+
+	setTimeout(bulkedit_edit_tags_hack, 1000);
 
 
 	jQuery("#gallery_list").livequery(function(){
@@ -486,19 +553,6 @@ jQuery(document).ready(function(){
 		});
 	});
 
-	// delete upload
-	jQuery(".file_delete_button").livequery(function(){
-		jQuery(this).click(function() {
-			url = jQuery(this).attr('href');
-			post_values = "ajax=true";
-			jQuery.post( url, post_values, function(returned_data) {
-				eval(returned_data);
-			});
-			jQuery(this).closest('tr').remove();
-			return false;
-		});
-	});
-
 	jQuery('.wpsc_featured_product_toggle').livequery(function(){
 		jQuery(this).click(function(event){
 			target_url = jQuery(this).attr('href');
@@ -531,6 +585,44 @@ jQuery(document).ready(function(){
 		jQuery(this).find('.wpsc_ie_sale_price').val(sale_price);
 		jQuery(this).find('.wpsc_ie_sku').val(sku);
 	});
+
+	jQuery('.coupon-conditions').on('click', '.wpsc-button-plus', function() {
+		var parent = jQuery(this).closest('.coupon-condition'),
+		    prototype = parent.clone();
+
+		prototype.find('select').val('');
+		prototype.find('input').val('');
+		prototype.hide();
+		prototype.insertAfter(parent).slideDown(150);
+
+		return false;
+	});
+
+	jQuery('.coupon-conditions').on('click', '.wpsc-button-minus', function() {
+		var parent = jQuery(this).closest('.coupon-condition'),
+		    conditions_count = jQuery('.coupon-condition').size(),
+		    prototype;
+
+		if (conditions_count == 1) {
+			prototype = parent.clone();
+			prototype.find('select').val('');
+			prototype.find('input').val('');
+			prototype.hide();
+			jQuery('.coupon-conditions').find('td').prepend(prototype);
+			parent.slideUp(150, function(){
+				prototype.slideDown(150);
+				parent.remove();
+			});
+
+			return false;
+		}
+
+		parent.slideUp(150, function(){
+			parent.remove();
+		});
+
+		return false;
+	});
 });
 
 // function for adding more custom meta
@@ -545,19 +637,22 @@ function add_more_meta(e) {
 
 // function for removing custom meta
 function remove_meta(e, meta_id) {
-	current_meta_form = jQuery(e).parent("div.product_custom_meta");  // grab the form container
-	//meta_name = jQuery("input#custom_meta_name_"+meta_id, current_meta_form).val();
-	//meta_value = jQuery("input#custom_meta_value_"+meta_id, current_meta_form).val();
-	returned_value = jQuery.ajax({
-		type: "POST",
-		url: "admin.php?ajax=true",
-		data: "admin=true&remove_meta=true&meta_id="+meta_id+"",
-		success: function(results) {
-			if(results > 0) {
-				jQuery("div#custom_meta_"+meta_id).remove();
+	var t = jQuery(e),
+		current_meta_form = t.parent("div.product_custom_meta"),  // grab the form container
+		post_data = {
+			action    : 'remove_product_meta',
+			'meta_id' : meta_id,
+			nonce     : t.data('nonce')
+		},
+		response_handler = function(response) {
+			if (! response.is_successful) {
+				alert(response.error.messages.join("\n"));
+				return;
 			}
-		}
-	});
+			jQuery("div#custom_meta_"+meta_id).remove();
+		};
+
+	jQuery.wpsc_post(post_data, response_handler);
 	return false;
 }
 
@@ -707,10 +802,10 @@ function show_status_box(id,image_id) {
 	state = document.getElementById(id).style.display;
 	if(state != 'block') {
 		document.getElementById(id).style.display = 'block';
-		document.getElementById(image_id).src =  WPSC_CORE_IMAGES_URL + '/icon_window_collapse.gif';
+		document.getElementById(image_id).src =  wpsc_adminL10n.wpsc_core_images_url + '/icon_window_collapse.gif';
 	} else {
 		document.getElementById(id).style.display = 'none';
-		document.getElementById(image_id).src =  WPSC_CORE_IMAGES_URL + '/icon_window_expand.gif';
+		document.getElementById(image_id).src =  wpsc_adminL10n.wpsc_core_images_url + '/icon_window_expand.gif';
 	}
 	return false;
 }
@@ -721,7 +816,7 @@ function editinline_get_id(){
 	has_var = jQuery('#inline_'+id+'_has_var').val();
 	if( has_var == '1'){
    		jQuery(".wpsc-cols").css('display', 'none');
-		jQuery(".wpsc-cols:first").text('Quick Edit options are limited when editing products that have variations. You will need to edit the variations themselves.')
+		jQuery(".wpsc-cols:first").text(wpsc_adminL10n.bulk_edit_no_vars)
 		.addClass('wpsc_var_description')
 		.css('display','block');
 	}else{
@@ -729,4 +824,9 @@ function editinline_get_id(){
 	}
 
 
+}
+
+// inline-edit-post.dev.js prepend tag edit textarea into the last fieldset. We need to undo that
+function bulkedit_edit_tags_hack() {
+	jQuery('<fieldset class="inline-edit-col-right"><div class="inline-edit-col"></div></fieldset>').insertBefore('#bulk-edit .wpsc-cols:first').find('.inline-edit-col').append(jQuery('#bulk-edit .inline-edit-tags'));
 }

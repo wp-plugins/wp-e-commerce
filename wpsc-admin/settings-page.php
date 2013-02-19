@@ -11,10 +11,10 @@
  * function my_plugin_settings_tabs( $settings_page ) {
  * 	$settings_page->register_tab( 'recommendation_system', 'Recommendation System' );
  * }
- * add_action( 'wpsc_load_settings_tab_class', 'my_plugin_settings_tabs', 10, 1 );
+ * add_action( 'wpsc_register_settings_tabs', 'my_plugin_settings_tabs', 10, 1 );
  * </code>
  *
- * Note that you need to hook into 'wpsc_load_settings_tab_class' to do this.
+ * Note that you need to hook into 'wpsc_register_settings_tabs' to do this.
  *
  * The next step is to create a class for your tab which inherits from the base 'WPSC_Settings_Tab'.
  * The name of the class needs to follow this convention: all the words have to be capitalized and
@@ -47,8 +47,7 @@
  * 'callback_submit_options()'. Then process your submitted fields there.
  *
  * <code>
- * class WPSC_Settings_Tab_Recommendation_System extends WPSC_Settings_Tab
- * {
+ * class WPSC_Settings_Tab_Recommendation_System extends WPSC_Settings_Tab {
  * 	// ...
  * 	public function callback_submit_options() {
  * 		if ( isset( $_POST['my_option'] ) )
@@ -70,8 +69,7 @@
  * @package wp-e-commerce
  * @subpackage settings-api
  */
-abstract class WPSC_Settings_Tab
-{
+abstract class WPSC_Settings_Tab {
 	/**
 	 * Display the content of the tab. This function has to be overridden.
 	 *
@@ -174,8 +172,7 @@ abstract class WPSC_Settings_Tab
  * @subpackage settings-api
  * @final
  */
-final class WPSC_Settings_Page
-{
+final class WPSC_Settings_Page {
 	/**
 	 * @staticvar object The active object instance
 	 * @since 3.8.8
@@ -485,7 +482,7 @@ final class WPSC_Settings_Page
 					<input type='hidden' name='wpsc_admin_action' value='submit_options' />
 					<?php wp_nonce_field( 'update-options', 'wpsc-update-options' ); ?>
 					<?php if ( $this->current_tab->is_submit_button_displayed() ): ?>
-						<input type="submit" class="button-primary" value="<?php _e( 'Save Changes', 'wpsc' ); ?>" name="updateoption" />
+						<?php submit_button( __( 'Save Changes' ) ); ?>
 					<?php endif ?>
 				</div>
 			</div>
@@ -535,7 +532,10 @@ final class WPSC_Settings_Page
 
 		//This is to change the Overall target market selection
 		check_admin_referer( 'update-options', 'wpsc-update-options' );
+
+		//Should be refactored along with the Marketing tab
 		if ( isset( $_POST['change-settings'] ) ) {
+
 			if ( isset( $_POST['wpsc_also_bought'] ) && $_POST['wpsc_also_bought'] == 'on' )
 				update_option( 'wpsc_also_bought', 1 );
 			else
@@ -551,7 +551,30 @@ final class WPSC_Settings_Page
 			else
 				update_option( 'wpsc_share_this', 0 );
 
+			if ( isset( $_POST['wpsc_ga_disable_tracking'] ) && $_POST['wpsc_ga_disable_tracking'] == '1' )
+				update_option( 'wpsc_ga_disable_tracking', 1 );
+			else
+				update_option( 'wpsc_ga_disable_tracking', 0 );
+
+			if ( isset( $_POST['wpsc_ga_currently_tracking'] ) && $_POST['wpsc_ga_currently_tracking'] == '1' )
+				update_option( 'wpsc_ga_currently_tracking', 1 );
+			else
+				update_option( 'wpsc_ga_currently_tracking', 0 );
+
+			if ( isset( $_POST['wpsc_ga_advanced'] ) && $_POST['wpsc_ga_advanced'] == '1' ) {
+				update_option( 'wpsc_ga_advanced', 1 );
+				update_option( 'wpsc_ga_currently_tracking', 1 );
+			} else  {
+				update_option( 'wpsc_ga_advanced', 0 );
+			}
+
+			if ( isset( $_POST['wpsc_ga_tracking_id'] ) && ! empty( $_POST['wpsc_ga_tracking_id'] ) )
+				update_option( 'wpsc_ga_tracking_id', esc_attr( $_POST['wpsc_ga_tracking_id'] ) );
+			else
+				update_option( 'wpsc_ga_tracking_id', '' );
+
 		}
+
 		if (empty($_POST['countrylist2']) && !empty($_POST['wpsc_options']['currency_sign_location']))
 			$selected = 'none';
 
@@ -611,6 +634,7 @@ final class WPSC_Settings_Page
 
 		//To update options
 		if ( isset( $_POST['wpsc_options'] ) ) {
+			$_POST['wpsc_options'] = stripslashes_deep( $_POST['wpsc_options'] );
 			// make sure stock keeping time is a number
 			if ( isset( $_POST['wpsc_options']['wpsc_stock_keeping_time'] ) ) {
 				$skt =& $_POST['wpsc_options']['wpsc_stock_keeping_time']; // I hate repeating myself
@@ -641,7 +665,7 @@ final class WPSC_Settings_Page
 
 						$option_name = $wpsc_gateways[$selected_gateway]['supported_currencies']['option_name'];
 
-						if ( !in_array( $option_name, $already_changed ) ) {
+						if ( ! in_array( $option_name, $already_changed ) ) {
 							update_option( $option_name, $currency_code );
 							$already_changed[] = $option_name;
 						}
@@ -655,14 +679,13 @@ final class WPSC_Settings_Page
 				$shipping->submit_form();
 		}
 
-
 		//This is for submitting shipping details to the shipping module
 		if ( !isset( $_POST['update_gateways'] ) )
 			$_POST['update_gateways'] = '';
 
 		if ( !isset( $_POST['custom_shipping_options'] ) )
 			$_POST['custom_shipping_options'] = null;
-		
+
 		if ( $_POST['update_gateways'] == 'true' ) {
 
 			update_option( 'custom_shipping_options', $_POST['custom_shipping_options'] );

@@ -13,7 +13,7 @@ class ash_ups {
     function ash_ups() {
         global $wpec_ash;
         $this->internal_name = "ups";
-        $this->name="UPS";
+        $this->name = _x( "UPS", 'Shipping Module', 'wpsc' );
         $this->is_external=true;
         $this->requires_curl=true;
         $this->requires_weight=true;
@@ -58,39 +58,39 @@ class ash_ups {
 
     private function _includeUPSData(){
         $this->drop_types = array(
-                            "01"=>"Daily Pickup",
-                            "03"=>"Customer Counter",
-                            "06"=>"One Time Pickup",
-                            "07"=>"On Call Air",
-                            "19"=>"Letter Center",
-                            "20"=>"Air Service Center",
-                            "11"=>"Suggested Retail Rates (Advanced Config)"
+                            "01" => __( "Daily Pickup", 'wpsc' ),
+                            "03" => __( "Customer Counter", 'wpsc' ),
+                            "06" => __( "One Time Pickup", 'wpsc' ),
+                            "07" => __( "On Call Air", 'wpsc' ),
+                            "19" => __( "Letter Center", 'wpsc' ),
+                            "20" => __( "Air Service Center", 'wpsc' ),
+                            "11" => __( "Suggested Retail Rates (Advanced Config)", 'wpsc' ),
                             );
 
         $this->cust_types = array(
-                            "01" => "Daily Pickup, with UPS Account",
-                            "03" => "No Daily Pickup, with No or Other Account",
-                            "04" => "Retail Outlet (Only US origin shipments)"
+                            "01" => __( "Daily Pickup, with UPS Account", 'wpsc' ),
+                            "03" => __( "No Daily Pickup, with No or Other Account", 'wpsc' ),
+                            "04" => __( "Retail Outlet (Only US origin shipments)", 'wpsc' )
                             );
 
         $this->Services = array(
-            "14" => "Next Day Air Early AM",
-            "01" => "Next Day Air",
-            "13" => "Next Day Air Saver",
-            "59" => "2nd Day Air AM",
-            "02" => "2nd Day Air",
-            "12" => "3 Day Select",
-            "03" => "Ground",
-            "11" => "Standard",
-            "07" => "Worldwide Express",
-            "54" => "Worldwide Express Plus",
-            "08" => "Worldwide Expedited",
-            "65" => "Saver",
-            "82" => "UPS Today Standard",
-            "83" => "UPS Today Dedicated Courier",
-            "84" => "UPS Today Intercity",
-            "85" => "UPS Today Express",
-            "86" => "UPS Today Express Saver"
+            "14" => __( "Next Day Air Early AM", 'wpsc' ),
+            "01" => __( "Next Day Air", 'wpsc' ),
+            "13" => __( "Next Day Air Saver", 'wpsc' ),
+            "59" => __( "2nd Day Air AM", 'wpsc' ),
+            "02" => __( "2nd Day Air", 'wpsc' ),
+            "12" => __( "3 Day Select", 'wpsc' ),
+            "03" => __( "Ground", 'wpsc' ),
+            "11" => __( "Standard", 'wpsc' ),
+            "07" => __( "Worldwide Express", 'wpsc' ),
+            "54" => __( "Worldwide Express Plus", 'wpsc' ),
+            "08" => __( "Worldwide Expedited", 'wpsc' ),
+            "65" => __( "Saver", 'wpsc' ),
+            "82" => __( "UPS Today Standard", 'wpsc' ),
+            "83" => __( "UPS Today Dedicated Courier", 'wpsc' ),
+            "84" => __( "UPS Today Intercity", 'wpsc' ),
+            "85" => __( "UPS Today Express", 'wpsc' ),
+            "86" => __( "UPS Today Express Saver", 'wpsc' )
         );
     }
 
@@ -265,37 +265,37 @@ class ash_ups {
                     }
                 }
                 $output .= ("<input type=\"checkbox\" id=\"wps_ups_srv_$service\" name=\"wpsc_ups_services[]\" value=\"$service\" $checked />
-                             <label for=\"wps_ups_srv_$service\">".$this->Services[$service]."</label>
+                             <label for=\"wps_ups_srv_$service\">". esc_html( $this->Services[$service] )."</label>
                              <br />");
             }
 
             $output .= ("       </div>
                                 <br />
-                                -Note: ".__('All services used if no services selected','wpsc')."
+                                ".__('Note: All services used if no services selected','wpsc')."
                             </td>
                         </tr>");
             $output .= ("<tr>
                              <td>".__('UPS Account #', 'wpsc')." *:</td>
                              <td>
-                                 <input type=\"text\" name='wpsc_ups_settings[upsaccount]' value=\"".$wpsc_ups_settings['upsaccount']."\" />
+                                 <input type=\"text\" name='wpsc_ups_settings[upsaccount]' value=\"". esc_attr( $wpsc_ups_settings['upsaccount'] )."\" />
                              </td>
                          </tr>");
             $output .= ("<tr>
                              <td>".__('UPS Username', 'wpsc')." :</td>
                              <td>
-                                 <input type=\"text\" name='wpsc_ups_settings[upsusername]' value=\"".base64_decode($wpsc_ups_settings['upsusername'])."\" />
+                                 <input type=\"text\" name='wpsc_ups_settings[upsusername]' value=\"". esc_attr( base64_decode( $wpsc_ups_settings['upsusername'] ) )."\" />
                              </td>
                          </tr>");
             $output .= ("<tr>
                             <td>".__('UPS Password', 'wpsc')." :</td>
                             <td>
-                                <input type=\"password\" name='wpsc_ups_settings[upspassword]' value=\"".base64_decode($wpsc_ups_settings['upspassword'])."\" />
+                                <input type=\"password\" name='wpsc_ups_settings[upspassword]' value=\"".esc_attr( base64_decode($wpsc_ups_settings['upspassword'] ) )."\" />
                             </td>
                         </tr>");
             $output .= ("<tr>
                             <td>".__('UPS XML API Key', 'wpsc')." :</td>
                             <td>
-                                <input type=\"text\" name='wpsc_ups_settings[upsid]' value=\"".base64_decode($wpsc_ups_settings['upsid'])."\" />
+                                <input type=\"text\" name='wpsc_ups_settings[upsid]' value=\"" . esc_attr( base64_decode( $wpsc_ups_settings['upsid'] ) ) . "\" />
                                 <br />
                                 ".__('Don\'t have an API login/ID ?', 'wpsc')."
                                     <a href=\"https://www.ups.com/upsdeveloperkit?loc=en_US\" target=\"_blank\">".__('Click Here','wpsc')."</a>.
@@ -304,7 +304,7 @@ class ash_ups {
                             </td>
                         </tr>
                            <tr>
-           <td colspan='2'>For more help configuring UPS, please read our documentation <a href='http://docs.getshopped.org/wiki/documentation/shipping/ups'>here </a></td>
+           <td colspan='2'>" . sprintf( __( "For more help configuring UPS, please read our documentation <a href='%s'>here", 'wpsc' ), esc_url( 'http://docs.getshopped.org/wiki/documentation/shipping/ups' ) ) . "</a></td>
        </tr>");
 
 
@@ -317,15 +317,17 @@ class ash_ups {
          * UPS settings area under Shipping to update the setttings.
          */
         if (isset( $_POST['wpsc_ups_settings'] ) && !empty( $_POST['wpsc_ups_settings'] ) ) {
-            $wpsc_ups_services = $_POST['wpsc_ups_services'];
-            update_option('wpsc_ups_services',$wpsc_ups_services);
-            $temp = $_POST['wpsc_ups_settings'];
+            if ( isset( $_POST['wpsc_ups_services'] ) ) {
+                $wpsc_ups_services = $_POST['wpsc_ups_services'];
+                update_option('wpsc_ups_services',$wpsc_ups_services);
+            }
+            $temp = stripslashes_deep( $_POST['wpsc_ups_settings'] );
             // base64_encode the information so it isnt stored as plaintext.
             // base64 is by no means secure but without knowing if the server
             // has mcrypt installed what can you do really?
-            $temp['upsusername'] = base64_encode($temp['upsusername']);
-            $temp['upspassword'] = base64_encode($temp['upspassword']);
-            $temp['upsid'] = base64_encode($temp['upsid']);
+            $temp['upsusername'] = base64_encode( $temp['upsusername'] );
+            $temp['upspassword'] = base64_encode( $temp['upspassword'] );
+            $temp['upsid'] = base64_encode( $temp['upsid'] );
 
             update_option('wpsc_ups_settings', $temp);
         }
@@ -801,21 +803,22 @@ class ash_ups {
         $args['units'] = "LBS";
         $args['weight'] = wpsc_cart_weight_total();
         // Destination zip code
-        $args['dest_ccode'] = $_SESSION['wpsc_delivery_country'];
+        $args['dest_ccode'] = wpsc_get_customer_meta( 'shipping_country' );
         if ($args['dest_ccode'] == "UK"){
             // So, UPS is a little off the times
             $args['dest_ccode'] = "GB";
         }
 
         // If ths zip code is provided via a form post use it!
-		$args['dest_pcode'] = '';
-        if(isset($_POST['zipcode']) && ($_POST['zipcode'] != "Your Zipcode" && $_POST['zipcode'] != "YOURZIPCODE")) {
+		$args['dest_pcode'] = (string) wpsc_get_customer_meta( 'shipping_zip' );
+        if( isset($_POST['zipcode']) && ($_POST['zipcode'] != __( "Your Zipcode", 'wpsc' ) && $_POST['zipcode'] != "YOURZIPCODE" ) )
           $args['dest_pcode'] = esc_attr( $_POST['zipcode'] );
-          $_SESSION['wpsc_zipcode'] = esc_attr( $_POST['zipcode'] );
-        } else if(isset($_SESSION['wpsc_zipcode']) && ($_POST['zipcode'] != "Your Zipcode" && $_POST['zipcode'] != "YOURZIPCODE")) {
-          // Well, we have a zip code in the session and no new one provided
-          $args['dest_pcode'] = $_SESSION['wpsc_zipcode'];
-        }
+
+        if ( in_array( $args['dest_pcode'], array( __( 'Your Zipcode', 'wpsc' ), 'YOURZIPCODE' ) ) )
+            $args['dest_pcode'] = '';
+
+        wpsc_update_customer_meta( 'shipping_zip', $args['dest_pcode'] );
+
 		if ( empty ( $args['dest_pcode'] ) ) {
             // We cannot get a quote without a zip code so might as well return!
             return array();
@@ -825,12 +828,12 @@ class ash_ups {
         if(isset($_POST['region']) && !empty($_POST['region'])) {
             $query = $wpdb->prepare( "SELECT `".WPSC_TABLE_REGION_TAX."`.* FROM `".WPSC_TABLE_REGION_TAX."`
                                 WHERE `".WPSC_TABLE_REGION_TAX."`.`id` = %d", $_POST['region'] );
-            $dest_region_data = $wpdb->get_results( $query, ARRAY_A );
+            $dest_region_data = $wpdb->get_results($query, ARRAY_A);
             $args['dest_state'] = (is_array($dest_region_data)) ? $dest_region_data[0]['code'] : "";
-            $_SESSION['wpsc_state'] = $args['dest_state'];
-        } else if(isset($_SESSION['wpsc_state'])) {
+            wpsc_update_customer_meta( 'ups_state', $args['dest_state'] );
+        } else if( $dest_state = wpsc_get_customer_meta( 'ups_state' ) ) {
             // Well, we have a zip code in the session and no new one provided
-            $args['dest_state'] = $_SESSION['wpsc_state'];
+            $args['dest_state'] = $dest_state;
         } else{
             $args['dest_state'] = "";
         }
@@ -838,23 +841,32 @@ class ash_ups {
         $shipping_cache_check['state'] = $args['dest_state'];
         $shipping_cache_check['zipcode'] = $args['dest_pcode'];
         $shipping_cache_check['weight'] = $args['weight'];
+        $session_cache_check = wpsc_get_customer_meta( 'ups_shipping_cache_check' );
+        if ( ! is_array( $session_cache_check ) )
+            $session_cache_check = array();
+        $session_cache = wpsc_get_customer_meta( 'ups_shipping_cache' );
+        if ( ! is_array( $session_cache ) )
+            $session_cache = array();
+
         if (!(boolean)$args["singular_shipping"]){
             // This is where shipping breaks out of UPS if weight is higher than 150 LBS
             if($weight > 150){
-                    unset($_SESSION['quote_shipping_method']);
+                    wpsc_delete_customer_meta( 'quote_shipping_method' );
                     $shipping_quotes[TXT_WPSC_OVER_UPS_WEIGHT] = 0;
-                    $_SESSION['wpsc_shipping_cache_check']['weight'] = $args['weight'];
-                    $_SESSION['wpsc_shipping_cache'][$this->internal_name] = $shipping_quotes;
-                    $_SESSION['quote_shipping_method'] = $this->internal_name;
+                    $session_cache_check['weight'] = $args['weight'];
+                    $session_cache[$this->internal_name] = $shipping_quotes;
+                    wpsc_update_customer_meta( 'quote_shipping_method', $this->internal_name );
+                    wpsc_update_customer_meta( 'ups_shipping_cache_check', $session_cache_check );
+                    wpsc_update_customer_meta( 'ups_shipping_cache', $session_cache );
                     return array($shipping_quotes);
             }
         }
         // We do not want to spam UPS (and slow down our process) if we already
         // have a shipping quote!
-        if(($_SESSION['wpsc_shipping_cache_check'] === $shipping_cache_check)
-                && ($_SESSION['wpsc_shipping_cache'][$this->internal_name] != null)) {
+        if ( ( $session_cache_check === $shipping_cache_check )
+                && ( ! empty( $session_cache[$this->internal_name] ) ) ) {
 
-            $rate_table = $_SESSION['wpsc_shipping_cache'][$this->internal_name];
+            $rate_table = $session_cache[$this->internal_name];
             return $rate_table;
         }else{
             global $wpsc_cart;

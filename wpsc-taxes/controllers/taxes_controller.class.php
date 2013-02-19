@@ -81,8 +81,9 @@ class wpec_taxes_controller {
 				}// foreach
 
 				$free_shipping = false;
-				if ( isset( $_SESSION['coupon_numbers'] ) ) {
-					$coupon = new wpsc_coupons( $_SESSION['coupon_numbers'] );
+        $coupon_num = wpsc_get_customer_meta( 'coupon' );
+				if ( $coupon_num ) {
+					$coupon = new wpsc_coupons( $coupon_num );
 					$free_shipping = $coupon->is_percentage == '2';
 				}
 
@@ -342,10 +343,10 @@ class wpec_taxes_controller {
             //echo select
             $returnable = $this->wpec_taxes_build_select_options( $tax_bands, 'index', 'name', $default_option, $band_select_settings );
          } else {
-            $returnable = '<p>' . __( 'No Tax Bands Setup. Set Tax Bands up in <a href="options-general.php?page=wpsc-settings&tab=taxes">Settings &gt; Taxes</a>', 'wpsc' ) . '</p>';
+            $returnable = '<p>' . sprintf( __( 'No Tax Bands Setup. Set Tax Bands up in <a href="%s">Settings &gt; Taxes</a>', 'wpsc' ), admin_url( 'options-general.php?page=wpsc-settings&tab=taxes' ) ) . '</p>';
          }// if
       } elseif(!$this->wpec_taxes->wpec_taxes_get_enabled()) {
-         $returnable = __( 'Taxes are not enabled. See <a href="options-general.php?page=wpsc-settings&tab=taxes">Settings &gt; Taxes</a>', 'wpsc' );
+         $returnable .= sprintf( __( 'Taxes are not enabled. See <a href="%s">Settings &gt; Taxes</a>', 'wpsc' ), admin_url( 'options-general.php?page=wpsc-settings&tab=taxes' ) );
       }// if
 
       return $returnable;
@@ -417,7 +418,7 @@ class wpec_taxes_controller {
       $defaults = array(
          'type' => 'text',
          'class' => 'wpec-taxes-input',
-         'label' => ''
+         'label' => '',
       );
       $settings = wp_parse_args( $input_settings, $defaults );
       //extract( $settings, EXTR_SKIP );
@@ -438,8 +439,14 @@ class wpec_taxes_controller {
 
       //wrap the input in the label if one was specified
       if ( !empty( $settings['label'] ) ) {
-         $returnable = '<label>' . $returnable . $settings['label'] . '</label>';
-      }// if
+        if ( $settings['type'] == 'checkbox' )
+          $returnable = '<label>' . $returnable . $settings['label'] . '</label>';
+        else
+          $returnable = '<label>' . $settings['label'] . '</label>' . $returnable;
+      }
+
+      if ( ! empty( $settings['description'] ) )
+        $returnable .= '<br /><small>' . $settings['description'] . '</small>';
 
       return $returnable;
    } // wpec_taxes_build_input
@@ -460,8 +467,16 @@ class wpec_taxes_controller {
    function wpec_taxes_build_select_options( $input_array, $option_value, $option_text, $option_selected=false, $select_settings='' ) {
       $returnable = '';
       $options = '';
-	if( empty($input_array)) return;
+      if( empty($input_array)) return;
+
       foreach ( $input_array as $value ) {
+
+        // As of 3.8.9, we deprecated Great Britain as a country in favor of the UK.
+        // See http://code.google.com/p/wp-e-commerce/issues/detail?id=1079
+
+        if ( ! is_array( $value ) && 'GB' != get_option( 'base_country' ) && ( 'GB' == $input_array[$value] || ( is_array( $value ) && 'GB' != get_option( 'base_country' ) && in_array( 'GB', $value ) ) ) )
+          continue;
+
          //if the selected value exists in the input array skip it and continue processing
          if ( is_array( $value ) ) {
 

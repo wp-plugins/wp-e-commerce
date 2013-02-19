@@ -1,8 +1,8 @@
 <?php
 
-class WPSC_Checkout_Form_Data
-{
+class WPSC_Checkout_Form_Data {
 	private $data = array();
+	private $raw_data = array();
 	private $gateway_data = array();
 	private $log_id;
 
@@ -11,25 +11,31 @@ class WPSC_Checkout_Form_Data
 
 		$this->log_id = $log_id;
 
-		if ( ! $this->data = wp_cache_get( $log_id, 'wpsc_checkout_form_data' ) ) {
+		if ( ! $this->raw_data = wp_cache_get( $log_id, 'wpsc_checkout_form_raw_data' ) ) {
 			$sql = "
-				SELECT c.unique_name, s.value
+				SELECT c.id, c.name, c.unique_name, s.value
 				FROM " . WPSC_TABLE_SUBMITTED_FORM_DATA . " AS s
 				INNER JOIN " . WPSC_TABLE_CHECKOUT_FORMS . " AS c
 					ON c.id = s.form_id
-				WHERE s.log_id = %d
+				WHERE s.log_id = %d AND active = '1'
 			";
 
 			$sql = $wpdb->prepare( $sql, $log_id );
-			$results = $wpdb->get_results( $sql, ARRAY_A );
+			$this->raw_data = $wpdb->get_results( $sql );
 
-			$address_types = array( 'shipping', 'billing' );
-			foreach ( $results as $field ) {
-				$this->data[$field['unique_name']] = $field['value'];
-			}
-
-			wp_cache_set( $log_id, $this->data, 'wpsc_checkout_form_data' );
+			wp_cache_set( $log_id, $this->raw_data, 'wpsc_checkout_form_raw_data' );
 		}
+
+		// At the moment, only core fields have unique_name. In the future, all fields will have
+		// a unique name rather than just IDs.
+		foreach ( $this->raw_data as $field ) {
+			if ( ! empty( $field->unique_name ) )
+			$this->data[$field->unique_name] = $field->value;
+		}
+	}
+
+	public function get_raw_data() {
+		return $this->raw_data;
 	}
 
 	public function get( $key ) {

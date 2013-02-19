@@ -21,6 +21,11 @@ function wpsc_generate_product_feed() {
 	global $wpdb, $wp_query, $post;
 
     set_time_limit(0);
+    
+    $xmlformat = '';
+    if ( isset( $_GET['xmlformat'] ) ) {
+    	$xmlformat = $_GET['xmlformat'];
+    }
 	
 	// Don't build up a huge posts cache for the whole store - http://code.google.com/p/wp-e-commerce/issues/detail?id=885
 	// WP 3.3+ only
@@ -44,7 +49,7 @@ function wpsc_generate_product_feed() {
 		);
 
 	$args = apply_filters( 'wpsc_productfeed_query_args', $args );
-	
+
 	$self = site_url( "/index.php?rss=true&amp;action=product_list$selected_category$selected_product" );
 
 	header("Content-Type: application/xml; charset=UTF-8");
@@ -55,7 +60,7 @@ function wpsc_generate_product_feed() {
 
 	$google_checkout_note = false;
 
-	if ($_GET['xmlformat'] == 'google') {
+	if ( $xmlformat == 'google' ) {
 		echo ' xmlns:g="http://base.google.com/ns/1.0"';
 		// Is Google Checkout available as a payment gateway
         	$selected_gateways = get_option('custom_gateway_options');
@@ -68,10 +73,10 @@ function wpsc_generate_product_feed() {
 
 	echo ">\n\r";
 	echo "  <channel>\n\r";
-	echo "    <title><![CDATA[".get_option('blogname')." Products]]></title>\n\r";
+	echo "    <title><![CDATA[" . sprintf( _x( '%s Products', 'XML Feed Title', 'wpsc' ), get_option( 'blogname' ) ) . "]]></title>\n\r";
 	echo "    <link>".get_option('siteurl')."/wp-admin/admin.php?page=".WPSC_DIR_NAME."/display-log.php</link>\n\r";
-	echo "    <description>This is the WP e-Commerce Product List RSS feed</description>\n\r";
-	echo "    <generator>WP e-Commerce Plugin</generator>\n\r";
+	echo "    <description>" . _x( 'This is the WP e-Commerce Product List RSS feed', 'XML Feed Description', 'wpsc' ) . "</description>\n\r";
+	echo "    <generator>" . _x( 'WP e-Commerce Plugin', 'XML Feed Generator', 'wpsc' ) . "</generator>\n\r";
 	echo "    <atom:link href='$self' rel='self' type='application/rss+xml' />\n\r";
 
 	$products = get_posts( $args );
@@ -86,7 +91,7 @@ function wpsc_generate_product_feed() {
 
 			echo "    <item>\n\r";
 			if ($google_checkout_note) {
-				echo "      <g:payment_notes>Google Checkout</g:payment_notes>\n\r";
+				echo "      <g:payment_notes>" . _x( 'Google Wallet', 'Google Checkout Payment Notes in XML Feed', 'wpsc' ) . "</g:payment_notes>\n\r";
 			}
 			echo "      <title><![CDATA[".get_the_title()."]]></title>\n\r";
 			echo "      <link>$purchase_link</link>\n\r";
@@ -98,10 +103,10 @@ function wpsc_generate_product_feed() {
 
 			if ($image_link !== FALSE) {
 
-				if ($_GET['xmlformat'] == 'google') {
-					echo "      <g:image_link>$image_link</g:image_link>\n\r";
+				if ( $xmlformat == 'google' ) {
+					echo "      <g:image_link><![CDATA[$image_link]]></g:image_link>\n\r";
 				} else {
-					echo "      <enclosure url='$image_link' />\n\r";
+					echo "      <enclosure url='" . esc_url( $image_link ) . "' />\n\r";
 				}
 
 			}
@@ -128,7 +133,7 @@ function wpsc_generate_product_feed() {
 				}
 			}
 
-			if ($_GET['xmlformat'] == 'google') {
+			if ( $xmlformat == 'google' ) {
 
 				echo "      <g:price>".$price."</g:price>\n\r";
 

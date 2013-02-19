@@ -16,7 +16,7 @@ class flatrate {
 	 */
 	function flatrate() {
 		$this->internal_name = "flatrate";
-		$this->name="Flat Rate";
+		$this->name= __( "Flat Rate", 'wpsc' );
 		$this->is_external=false;
 		return true;
 	}
@@ -45,33 +45,53 @@ class flatrate {
 	 * @return unknown
 	 */
 	function getForm() {
+		global $wpdb;
 
 		$shipping = get_option('flat_rates');
 		$output = "<tr><td colspan='2'>" . __('If you do not wish to ship to a particular region, leave the field blank. To offer free shipping to a region, enter 0.', 'wpsc') . "</td>";
-		$output .= "<tr><td colspan='1'><strong>Base Local</strong></td>";
+		$output .= "<tr><td colspan='1'><strong>" . __( 'Base Local', 'wpsc' ) . "</strong></td>";
+
+		$shipping = wp_parse_args(
+			$shipping,
+			array(
+				'southisland'  => '',
+				'northisland'  => '',
+				'continental'  => '',
+				'all'          => '',
+				'local'        => '',
+				'northamerica' => '',
+				'southamerica' => '',
+				'asiapacific'  => '',
+				'europe'       => '',
+				'africa'       => '',
+			)
+		);
+
+		$currency_data = $wpdb->get_row( "SELECT `symbol`,`symbol_html`,`code` FROM `" . WPSC_TABLE_CURRENCY_LIST . "` WHERE `id`='" . esc_attr( get_option( 'currency_type' ) ) . "' LIMIT 1", ARRAY_A );
+		$currency_sign = ! empty( $currency_data['symbol'] ) ? $currency_data['symbol_html'] : $currency_data['code'];
 
 		switch (get_option('base_country')) {
 		case 'NZ':
-			$output .= "<tr class='rate_row'><td>South Island</td><td>$<input type='text' size='4' name='shipping[southisland]' value='".esc_attr($shipping['southisland'])."'></td></tr>";
-			$output .= "<tr class='rate_row'><td>North Island</td><td>$<input type='text' size='4' name='shipping[northisland]'	value='".esc_attr($shipping['northisland'])."'></td></tr>";
+			$output .= "<tr class='rate_row'><td>" . __( 'South Island', 'wpsc' ) . "</td><td>" . esc_attr( $currency_sign ) . "<input type='text' size='4' name='shipping[southisland]' value='".esc_attr($shipping['southisland'])."'></td></tr>";
+			$output .= "<tr class='rate_row'><td>" . __( 'North Island', 'wpsc' ) . "</td><td>" . esc_attr( $currency_sign ) . "<input type='text' size='4' name='shipping[northisland]'	value='".esc_attr($shipping['northisland'])."'></td></tr>";
 			break;
 
 		case 'US':
-			$output .= "<tr class='rate_row'><td>Continental 48 States</td><td>$<input type='text' size='4' name='shipping[continental]' value='".esc_attr($shipping['continental'])."'></td></tr>";
-			$output .= "<tr class='rate_row'><td>All 50 States</td><td>$<input type='text' size='4' name='shipping[all]'	value='".esc_attr($shipping['all'])."'></td></tr>";
+			$output .= "<tr class='rate_row'><td>" . __( 'Continental 48 States', 'wpsc' ) . "</td><td>" . esc_attr( $currency_sign ) . "<input type='text' size='4' name='shipping[continental]' value='".esc_attr($shipping['continental'])."'></td></tr>";
+			$output .= "<tr class='rate_row'><td>" . __( 'All 50 States', 'wpsc' ) . "</td><td>" . esc_attr( $currency_sign ) . "<input type='text' size='4' name='shipping[all]'	value='".esc_attr($shipping['all'])."'></td></tr>";
 			break;
 
 		default:
-			$output .= "<td>$<input type='text' name='shipping[local]' size='4' value='".esc_attr($shipping['local'])."'></td></tr>";
+			$output .= "<td>" . esc_attr( $currency_sign ) . "<input type='text' name='shipping[local]' size='4' value='".esc_attr($shipping['local'])."'></td></tr>";
 			break;
 		}
 
-		$output.= "<tr ><td colspan='2'><strong>Base International</strong></td></tr>";
-		$output .= "<tr class='rate_row'><td>North America</td><td>$<input size='4' type='text' name='shipping[northamerica]'	value='".esc_attr($shipping['northamerica'])."'></td></tr>";
-		$output .= "<tr class='rate_row'><td>South America</td><td>$<input size='4' type='text' name='shipping[southamerica]'	value='".esc_attr($shipping['southamerica'])."'></td></tr>";
-		$output .= "<tr class='rate_row'><td>Asia and Pacific</td><td>$<input size='4' type='text' name='shipping[asiapacific]'	value='".esc_attr($shipping['asiapacific'])."'></td></tr>";
-		$output .= "<tr class='rate_row'><td>Europe</td><td>$<input type='text' size='4' name='shipping[europe]'	value='".esc_attr($shipping['europe'])."'></td></tr>";
-		$output .= "<tr class='rate_row'><td>Africa</td><td>$<input type='text' size='4' name='shipping[africa]'	value='".esc_attr($shipping['africa'])."'></td></tr>";
+		$output.= "<tr><td colspan='2'><strong>" . __( 'Base International', 'wpsc' ) . "</strong></td></tr>";
+		$output .= "<tr class='rate_row'><td>" . __( 'North America', 'wpsc' ) . "</td><td>" . esc_attr( $currency_sign ) . "<input size='4' type='text' name='shipping[northamerica]'	value='".esc_attr($shipping['northamerica'])."'></td></tr>";
+		$output .= "<tr class='rate_row'><td>" . __( 'South America', 'wpsc' ) . "</td><td>" . esc_attr( $currency_sign ) . "<input size='4' type='text' name='shipping[southamerica]'	value='".esc_attr($shipping['southamerica'])."'></td></tr>";
+		$output .= "<tr class='rate_row'><td>" . __( 'Asia and Pacific', 'wpsc' ) . "</td><td>" . esc_attr( $currency_sign ) . "<input size='4' type='text' name='shipping[asiapacific]'	value='".esc_attr($shipping['asiapacific'])."'></td></tr>";
+		$output .= "<tr class='rate_row'><td>" . __( 'Europe', 'wpsc' ) . "</td><td>" . esc_attr( $currency_sign ) . "<input type='text' size='4' name='shipping[europe]'	value='".esc_attr($shipping['europe'])."'></td></tr>";
+		$output .= "<tr class='rate_row'><td>" . __( 'Africa', 'wpsc' ) . "</td><td>" . esc_attr( $currency_sign ) . "<input type='text' size='4' name='shipping[africa]'	value='".esc_attr($shipping['africa'])."'></td></tr>";
 		return $output;
 	}
 
@@ -98,20 +118,17 @@ class flatrate {
 	 * @return unknown
 	 */
 	function getQuote($for_display = false) {
-
 		global $wpdb, $wpsc_cart;
+		$quote_shipping_method = wpsc_get_customer_meta( 'quote_shipping_method' );
+		$quote_shipping_option = wpsc_get_customer_meta( 'quote_shipping_option' );
 
 		$country = '';
 
 		if (isset($_POST['country'])) {
-
 			$country = $_POST['country'];
-			$_SESSION['wpsc_delivery_country'] = $country;
-
-		} elseif ( isset( $_SESSION['wpsc_delivery_country'] ) ) {
-
-			$country = $_SESSION['wpsc_delivery_country'];
-
+			wpsc_update_customer_meta( 'shipping_country', $country );
+		} else {
+			$country = (string) wpsc_get_customer_meta( 'shipping_country' );
 		}
 
 		if (is_object($wpsc_cart)) {
@@ -125,15 +142,9 @@ class flatrate {
 			$flatrates = get_option('flat_rates');
 
 			if ($flatrates != '') {
+				if ( $quote_shipping_method == $this->internal_name && $quote_shipping_option != __( "Flat Rate", 'wpsc' ) )
+					wpsc_delete_customer_meta( 'quote_shipping_option' );
 
-				if (isset($_SESSION['quote_shipping_method']) && $_SESSION['quote_shipping_method'] == $this->internal_name) {
-
-					if ($_SESSION['quote_shipping_option'] != "Flat Rate") {
-						$_SESSION['quote_shipping_option'] = null;
-					}
-
-				}
-				
 				if ( isset ( $flatrates[$results] ) ) {
 
 				    if (stristr($flatrates[$results],'%')) {
@@ -142,9 +153,9 @@ class flatrate {
 					    $shipping_amount = $cart_total * ( $shipping_percent / 100 );
 					    $flatrates[$results] = (float)$shipping_amount;
 
-				    } 
+				    }
 
-                    return array("Flat Rate"=>(float)$flatrates[$results]);
+                    return array( __( "Flat Rate", 'wpsc' ) => (float) $flatrates[$results] );
                 }
 			}
 
@@ -156,25 +167,25 @@ class flatrate {
 			switch ($country) {
 			case 'NZ':
 				if (strlen($flatrates['northisland']) > 0) {
-					$shipping_quotes["North Island"] = esc_attr($flatrates['northisland']);
+					$shipping_quotes[__( 'North Island', 'wpsc' )] = esc_attr($flatrates['northisland']);
 				}
 				if (strlen($flatrates['southisland']) > 0) {
-					$shipping_quotes["South Island"] = esc_attr($flatrates['southisland']);
+					$shipping_quotes[__( 'South Island', 'wpsc' )] = esc_attr($flatrates['southisland']);
 				}
 				break;
 
 			case 'US':
 				if (strlen($flatrates['continental']) > 0) {
-					$shipping_quotes["Continental 48 States"] = esc_attr($flatrates['continental']);
+					$shipping_quotes[__( 'Continental 48 States', 'wpsc' )] = esc_attr($flatrates['continental']);
 				}
 				if (strlen($flatrates['all']) > 0) {
-					$shipping_quotes["All 50 States"] = esc_attr($flatrates['all']);
+					$shipping_quotes[__( 'All 50 States', 'wpsc' )] = esc_attr($flatrates['all']);
 				}
 				break;
 
 			default:
 				if (strlen($flatrates['local']) > 0) {
-					$shipping_quotes["Local Shipping"] = esc_attr($flatrates['local']);
+					$shipping_quotes[__( 'Local Shipping', 'wpsc' )] = esc_attr($flatrates['local']);
 				}
 				break;
 			}
@@ -192,12 +203,12 @@ class flatrate {
 
 			}
 
-			if (isset($_SESSION['quote_shipping_method']) && $_SESSION['quote_shipping_method'] == $this->internal_name) {
+			if ( $quote_shipping_method == $this->internal_name ) {
 
 				$shipping_options = array_keys($shipping_quotes);
 
-				if (array_search($_SESSION['quote_shipping_option'], $shipping_options) === false) {
-					$_SESSION['quote_shipping_option'] = null;
+				if ( array_search( $quote_shipping_option, $shipping_options ) === false) {
+					wpsc_delete_customer_meta( 'quote_shipping_option' );
 				}
 
 			}

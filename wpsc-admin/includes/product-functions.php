@@ -7,28 +7,7 @@
  */
 
 function wpsc_get_max_upload_size(){
-
 	return wp_convert_bytes_to_hr( wp_max_upload_size() );
-}
-
-
-/**
-* wpsc_product_has_children function
-* Checks whether a product has variations or not
-*
-* @return boolean true if product does have variations, false otherwise
-*/
-function wpsc_product_has_children($id){
-	$args = array(
-			'post_parent' => $id,
-			'post_type' => 'wpsc-product',
-			'post_status' => 'inherit publish'
-			);
-	$children = get_children($args);
-	if( empty($children) )
-		return false;
-	else
-		return true;
 }
 
 /**
@@ -39,20 +18,22 @@ function wpsc_product_has_children($id){
 * @return nothing
 */
 function wpsc_admin_submit_product( $post_ID, $post ) {
-	global $current_screen, $wpdb;
+	global $wpdb;
+
+	$current_screen = get_current_screen();
 
 	if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || empty( $current_screen ) || $current_screen->id != 'wpsc-product' || $post->post_type != 'wpsc-product' || empty( $_POST['meta'] ) )
 		return $post_ID;
 
     //Type-casting ( not so much sanitization, which would be good to do )
-    $post_data = $_POST;
+    $post_data = stripslashes_deep( $_POST );
     $product_id = $post_ID;
 	$post_data['additional_description'] = isset($post_data['additional_description']) ? $post_data['additional_description'] : '';
     $post_meta['meta'] = (array)$_POST['meta'];
 	if ( isset( $post_data['meta']['_wpsc_price'] ) )
-		$post_data['meta']['_wpsc_price'] = abs( (float) str_replace( ',', '', $post_data['meta']['_wpsc_price'] ) );
+		$post_data['meta']['_wpsc_price'] = wpsc_string_to_float( $post_data['meta']['_wpsc_price'] );
 	if ( isset( $post_data['meta']['_wpsc_special_price'] ) )
-		$post_data['meta']['_wpsc_special_price'] = abs((float)str_replace( ',','',$post_data['meta']['_wpsc_special_price'] ));
+		$post_data['meta']['_wpsc_special_price'] = wpsc_string_to_float( $post_data['meta']['_wpsc_special_price'] );
 	if($post_data['meta']['_wpsc_sku'] == __('N/A', 'wpsc'))
 		$post_data['meta']['_wpsc_sku'] = '';
 	if( isset( $post_data['meta']['_wpsc_is_donation'] ) )
@@ -66,11 +47,13 @@ function wpsc_admin_submit_product( $post_ID, $post ) {
 	}
 
 	unset($post_data['meta']['_wpsc_limited_stock']);
+	if(!isset($post_data['meta']['_wpsc_product_metadata']['notify_when_none_left'])) $post_data['meta']['_wpsc_product_metadata']['notify_when_none_left'] = 0;
 	if(!isset($post_data['meta']['_wpsc_product_metadata']['unpublish_when_none_left'])) $post_data['meta']['_wpsc_product_metadata']['unpublish_when_none_left'] = '';
-        if(!isset($post_data['quantity_limited'])) $post_data['quantity_limited'] = '';
-        if(!isset($post_data['special'])) $post_data['special'] = '';
-        if(!isset($post_data['meta']['_wpsc_product_metadata']['no_shipping'])) $post_data['meta']['_wpsc_product_metadata']['no_shipping'] = '';
+    if(!isset($post_data['quantity_limited'])) $post_data['quantity_limited'] = '';
+    if(!isset($post_data['special'])) $post_data['special'] = '';
+    if(!isset($post_data['meta']['_wpsc_product_metadata']['no_shipping'])) $post_data['meta']['_wpsc_product_metadata']['no_shipping'] = '';
 
+	$post_data['meta']['_wpsc_product_metadata']['notify_when_none_left'] = (int)(bool)$post_data['meta']['_wpsc_product_metadata']['notify_when_none_left'];
 	$post_data['meta']['_wpsc_product_metadata']['unpublish_when_none_left'] = (int)(bool)$post_data['meta']['_wpsc_product_metadata']['unpublish_when_none_left'];
 	$post_data['meta']['_wpsc_product_metadata']['quantity_limited'] = (int)(bool)$post_data['quantity_limited'];
 	$post_data['meta']['_wpsc_product_metadata']['special'] = (int)(bool)$post_data['special'];
@@ -78,11 +61,23 @@ function wpsc_admin_submit_product( $post_ID, $post ) {
 
 	// Product Weight
 	if(!isset($post_data['meta']['_wpsc_product_metadata']['display_weight_as'])) $post_data['meta']['_wpsc_product_metadata']['display_weight_as'] = '';
-        if(!isset($post_data['meta']['_wpsc_product_metadata']['display_weight_as'])) $post_data['meta']['_wpsc_product_metadata']['display_weight_as'] = '';
 
-	$weight = wpsc_convert_weight($post_data['meta']['_wpsc_product_metadata']['weight'], $post_data['meta']['_wpsc_product_metadata']['weight_unit'], "pound", true);
-	$post_data['meta']['_wpsc_product_metadata']['weight'] = (float)$weight;
+	if ( isset( $post_data['meta']['_wpsc_product_metadata']['weight'] ) ) {
+		$weight = wpsc_string_to_float( $post_data['meta']['_wpsc_product_metadata']['weight'] );
+		$weight = wpsc_convert_weight( $weight, $post_data['meta']['_wpsc_product_metadata']['weight_unit'], "pound", true);
+		$post_data['meta']['_wpsc_product_metadata']['weight'] = $weight;
         $post_data['meta']['_wpsc_product_metadata']['display_weight_as'] = $post_data['meta']['_wpsc_product_metadata']['weight_unit'];
+	}
+
+	if ( isset( $post_data['meta']['_wpsc_product_metadata']['dimensions'] ) ) {
+		$dimensions =& $post_data['meta']['_wpsc_product_metadata']['dimensions'];
+		foreach ( $dimensions as $key => $value ) {
+			if ( ! in_array( $key, array( 'height', 'width', 'length' ) ) )
+				continue;
+
+			$dimensions[$key] = wpsc_string_to_float( $value );
+		}
+	}
 
 	// table rate price
 	$post_data['meta']['_wpsc_product_metadata']['table_rate_price'] = isset( $post_data['table_rate_price'] ) ? $post_data['table_rate_price'] : array();
@@ -102,10 +97,15 @@ function wpsc_admin_submit_product( $post_ID, $post ) {
 		}
 	}
 
+	if ( isset( $post_data['meta']['_wpsc_product_metadata']['shipping'] ) ) {
+		$post_data['meta']['_wpsc_product_metadata']['shipping']['local'] = wpsc_string_to_float( $post_data['meta']['_wpsc_product_metadata']['shipping']['local'] );
+		$post_data['meta']['_wpsc_product_metadata']['shipping']['international'] = wpsc_string_to_float( $post_data['meta']['_wpsc_product_metadata']['shipping']['international'] );
+	}
 
-	$post_data['meta']['_wpsc_product_metadata']['shipping']['local'] = (float)$post_data['meta']['_wpsc_product_metadata']['shipping']['local'];
-	$post_data['meta']['_wpsc_product_metadata']['shipping']['international'] = (float)$post_data['meta']['_wpsc_product_metadata']['shipping']['international'];
-
+	if ( ! empty( $post_data['meta']['_wpsc_product_metadata']['wpec_taxes_taxable_amount'] ) )
+		$post_data['meta']['_wpsc_product_metadata']['wpec_taxes_taxable_amount'] = wpsc_string_to_float(
+			$post_data['meta']['_wpsc_product_metadata']['wpec_taxes_taxable_amount']
+		);
 
 	// Advanced Options
 	$post_data['meta']['_wpsc_product_metadata']['engraved'] = (int)(bool)$post_data['meta']['_wpsc_product_metadata']['engraved'];
@@ -150,9 +150,9 @@ function wpsc_admin_submit_product( $post_ID, $post ) {
 		if (!isset($post_data[$column])) $post_data[$column] = '';
 
 		if($post_data[$column] !== null) {
-			$update_values[$column] = stripslashes($post_data[$column]);
+			$update_values[$column] = $post_data[$column];
 		} else if(($update != true) && ($default !== null)) {
-			$update_values[$column] = stripslashes($default);
+			$update_values[$column] = ($default);
 		}
 	}
 	// if we succeed, we can do further editing (todo - if_wp_error)
@@ -162,14 +162,12 @@ function wpsc_admin_submit_product( $post_ID, $post ) {
 		$post_data['tax_input']['wpsc_product_category'][1] = wpsc_add_product_category_default($product_id);
 
 	}
+
 	// and the meta
 	wpsc_update_product_meta($product_id, $post_data['meta']);
 
 	// and the custom meta
 	wpsc_update_custom_meta($product_id, $post_data);
-
-	// sort out the variations
-	wpsc_edit_product_variations( $product_id, $post_data );
 
 	//and the alt currency
 	if ( ! empty( $post_data['newCurrency'] ) ) {
@@ -189,7 +187,6 @@ function wpsc_admin_submit_product( $post_ID, $post ) {
  		wpsc_item_add_preview_file($product_id, $post_data['files']['preview_file']);
 	}
 	do_action('wpsc_edit_product', $product_id);
-	wpsc_ping();
 	}
 	return $product_id;
 }
@@ -205,7 +202,7 @@ function wpsc_pre_update( $data , $postarr ) {
         $data["post_parent"] = $postarr["parent_post"];
 
 	// Sanitize status for variations (see #324)
-	if ( $data['post_parent'] && ( ! isset( $data['ID'] ) || $data['post_parent'] != $data['ID'] ) ) {
+	if ( $data['post_parent'] && ( ! isset( $data['ID'] ) || $data['post_parent'] != $data['ID'] ) && $data['post_status'] == 'publish' ) {
 		$data['post_status'] = 'inherit';
 	}
 
@@ -272,6 +269,8 @@ function wpsc_sanitise_product_forms($post_data = null) {
 		$post_data = &$_POST;
 	}
 
+	$post_data = stripslashes_deep( $post_data );
+
 	$post_data['name'] = isset($post_data['post_title']) ? $post_data['post_title'] : '';
 	$post_data['title'] = $post_data['name'];
 	$post_data['description'] = isset($post_data['content']) ? $post_data['content'] : '';
@@ -284,8 +283,8 @@ function wpsc_sanitise_product_forms($post_data = null) {
 		$post_data['post_status'] = 'draft';
 	}
 
-	$post_data['meta']['_wpsc_price'] = (float)str_replace( ',','',$post_data['meta']['_wpsc_price'] );
-	$post_data['meta']['_wpsc_special_price'] = (float)str_replace( ',','',$post_data['meta']['_wpsc_special_price'] );
+	$post_data['meta']['_wpsc_price'] = wpsc_string_to_float( $post_data['meta']['_wpsc_price'] );
+	$post_data['meta']['_wpsc_special_price'] = wpsc_string_to_float( $post_data['meta']['_wpsc_special_price'] );
 	$post_data['meta']['_wpsc_sku'] = $post_data['meta']['_wpsc_sku'];
 	if (!isset($post_data['meta']['_wpsc_is_donation'])) $post_data['meta']['_wpsc_is_donation'] = '';
 	$post_data['meta']['_wpsc_is_donation'] = (int)(bool)$post_data['meta']['_wpsc_is_donation'];
@@ -296,11 +295,13 @@ function wpsc_sanitise_product_forms($post_data = null) {
 	  $post_data['meta']['_wpsc_stock'] = false;
 	}
 	unset($post_data['meta']['_wpsc_limited_stock']);
+	if(!isset($post_data['meta']['_wpsc_product_metadata']['notify_when_none_left'])) $post_data['meta']['_wpsc_product_metadata']['notify_when_none_left'] = 0;
 	if(!isset($post_data['meta']['_wpsc_product_metadata']['unpublish_when_none_left'])) $post_data['meta']['_wpsc_product_metadata']['unpublish_when_none_left'] = '';
     if(!isset($post_data['quantity_limited'])) $post_data['quantity_limited'] = '';
     if(!isset($post_data['special'])) $post_data['special'] = '';
     if(!isset($post_data['meta']['_wpsc_product_metadata']['no_shipping'])) $post_data['meta']['_wpsc_product_metadata']['no_shipping'] = '';
 
+	$post_data['meta']['_wpsc_product_metadata']['notify_when_none_left'] = (int)(bool)$post_data['meta']['_wpsc_product_metadata']['notify_when_none_left'];
 	$post_data['meta']['_wpsc_product_metadata']['unpublish_when_none_left'] = (int)(bool)$post_data['meta']['_wpsc_product_metadata']['unpublish_when_none_left'];
 	$post_data['meta']['_wpsc_product_metadata']['quantity_limited'] = (int)(bool)$post_data['quantity_limited'];
 	$post_data['meta']['_wpsc_product_metadata']['special'] = (int)(bool)$post_data['special'];
@@ -310,8 +311,9 @@ function wpsc_sanitise_product_forms($post_data = null) {
 	if(!isset($post_data['meta']['_wpsc_product_metadata']['display_weight_as'])) $post_data['meta']['_wpsc_product_metadata']['display_weight_as'] = '';
     if(!isset($post_data['meta']['_wpsc_product_metadata']['display_weight_as'])) $post_data['meta']['_wpsc_product_metadata']['display_weight_as'] = '';
 
-	$weight = wpsc_convert_weight($post_data['meta']['_wpsc_product_metadata']['weight'], $post_data['meta']['_wpsc_product_metadata']['weight_unit'], "pound", true);
-	$post_data['meta']['_wpsc_product_metadata']['weight'] = (float)$weight;
+    $weight = wpsc_string_to_float( $post_data['meta']['_wpsc_product_metadata']['weight'] );
+	$weight = wpsc_convert_weight( $weight, $post_data['meta']['_wpsc_product_metadata']['weight_unit'], "pound", true);
+	$post_data['meta']['_wpsc_product_metadata']['weight'] = $weight;
 	$post_data['meta']['_wpsc_product_metadata']['display_weight_as'] = $post_data['meta']['_wpsc_product_metadata']['weight_unit'];
 
 	$post_data['files'] = $_FILES;
@@ -360,9 +362,9 @@ function wpsc_insert_product($post_data, $wpsc_error = false) {
 		if (!isset($post_data[$column])) $post_data[$column] = '';
 
 		if($post_data[$column] !== null) {
-			$update_values[$column] = stripslashes($post_data[$column]);
+			$update_values[$column] = $post_data[$column];
 		} else if(($update != true) && ($default !== null)) {
-			$update_values[$column] = stripslashes($default);
+			$update_values[$column] = $default;
 		}
 	}
 
@@ -484,7 +486,7 @@ function wpsc_determine_variation_price( $variation_id, $term_ids = false ) {
 	$price = (float) get_product_meta( $variation->post_parent, 'price', true );
 
 	if ( ! $term_ids )
-		$term_ids = wp_get_object_terms( $variation_id, 'wpsc-variation', array( 'fields' => 'ids' ) );
+		$term_ids = wpsc_get_product_terms( $variation_id, 'wpsc-variation', 'term_id' );
 
 	$term_price_arr = get_option( 'term_prices' );
 	foreach ( $term_ids as $term_id ) {
@@ -526,7 +528,7 @@ function wpsc_edit_product_variations($product_id, $post_data) {
 
 	$variations = array();
 	$product_children = array();
-	if ( ! isset( $post_data['edit_var_val'] ) )
+	if (!isset($post_data['edit_var_val']))
 		$post_data['edit_var_val'] = '';
 
 	$variations = (array)$post_data['edit_var_val'];
@@ -543,20 +545,21 @@ function wpsc_edit_product_variations($product_id, $post_data) {
 	// Retrieve the array containing the combinations of each variation set to be associated with this product.
 	$combinations = $wpsc_combinator->return_combinations();
 
-	$product_terms = wp_get_object_terms($product_id, 'wpsc-variation');
+	$product_terms = wpsc_get_product_terms( $product_id, 'wpsc-variation' );
 
 	$variation_sets_and_values = array_merge($variation_sets, $variation_values);
 	$variation_sets_and_values = apply_filters('wpsc_edit_product_variation_sets_and_values', $variation_sets_and_values, $product_id);
 	wp_set_object_terms($product_id, $variation_sets_and_values, 'wpsc-variation');
 
+	$parent_id = $_REQUEST['product_id'];
+
 	$child_product_template = array(
 		'post_author' 	=> $user_ID,
-		'post_content' 	=> $post_data['description'],
-		'post_excerpt' 	=> $post_data['additional_description'],
-		'post_title' 	=> $post_data['name'],
+		'post_content' 	=> get_post_field( 'post_content', $parent_id, 'raw' ),
+		'post_excerpt' 	=> get_post_field( 'post_excerpt', $parent_id, 'raw' ),
+		'post_title' 	=> get_post_field( 'post_title', $parent_id, 'raw' ),
 		'post_status' 	=> 'inherit',
 		'post_type' 	=> "wpsc-product",
-		'post_name' 	=> sanitize_title($post_data['name']),
 		'post_parent' 	=> $product_id
 	);
 
@@ -670,10 +673,11 @@ function wpsc_edit_product_variations($product_id, $post_data) {
 			}
 		}
 	}
-	$current_children = query_posts(array(
+	$current_children = get_posts(array(
 		'post_parent'	=> $post_id,
-		'post_type'		=> "wpsc-product",
-		'post_status'	=> 'all'
+		'post_type'		=> 'wpsc-product',
+		'post_status'	=> 'all',
+		'numberposts'   => -1
 		));
 
 	foreach((array)$current_children as $child_prod){
@@ -859,8 +863,6 @@ function wpsc_item_reassign_file($product_id, $selected_files) {
 		return null;
 	}
 
-
-
 	foreach($selected_files as $selected_file) {
 		// if we already use this file, there is no point doing anything more.
 		$file_is_attached = false;
@@ -901,7 +903,7 @@ function wpsc_item_reassign_file($product_id, $selected_files) {
 		}
 	}
 
-	return $fileid;
+	return true;
 }
 
  /**
@@ -1057,4 +1059,103 @@ function wpsc_variations_stock_remaining($product_id){
 			`pm`.`meta_key` = "_wpsc_stock"
 	', $product_id ) );
 }
-?>
+
+function flat_price( $price ) {
+	if ( ! empty( $price ) && strchr( $price, '-' ) === false && strchr( $price, '+' ) === false && strchr( $price, '%' ) === false )
+		return true;
+}
+
+function percentile_price( $price ) {
+	if ( ! empty( $price ) && ( strchr( $price, '-' ) || strchr( $price, '+' ) ) && strchr( $price, '%' ) )
+		return true;
+}
+
+function differential_price( $price ) {
+	if ( ! empty( $price ) && ( strchr( $price, '-' ) || strchr( $price, '+' ) ) && strchr( $price, '%' ) === false )
+		return true;
+}
+
+/**
+ * Refresh variation terms assigned to parent product based on the variations it has.
+ *
+ * @since 3.8.9
+ * @access private
+ * @param  int $parent_id Parent product ID
+ */
+function _wpsc_refresh_parent_product_terms( $parent_id ) {
+	$children = get_children( array(
+		'post_parent' => $parent_id,
+		'post_status' => array( 'publish', 'inherit' ),
+	) );
+
+	$children_ids = wp_list_pluck( $children, 'ID' );
+
+	$children_terms = wpsc_get_product_terms( $children_ids, 'wpsc-variation' );
+	$new_terms = array();
+	foreach ( $children_terms as $term ) {
+		if ( $term->parent )
+			$new_terms[] = $term->parent;
+	}
+
+	$children_term_ids = wp_list_pluck( $children_terms, 'term_id' );
+	$new_terms = array_merge( $new_terms, $children_term_ids );
+	$new_terms = array_unique( $new_terms );
+	$new_terms = array_map( 'absint', $new_terms );
+	wp_set_object_terms( $parent_id, $new_terms, 'wpsc-variation' );
+}
+
+/**
+ * Make sure parent product's assigned terms are refreshed when its variations are deleted or trashed
+ *
+ * @since 3.8.9
+ * @access private
+ * @param  int $post_id Parent product ID
+ */
+function _wpsc_action_refresh_variation_parent_terms( $post_id ) {
+	$post = get_post( $post_id );
+	if ( $post->post_type != 'wpsc-product' || ! $post->post_parent || in_array( $post->post_status, array( 'publish', 'inherit' ) ) )
+		return;
+
+	_wpsc_refresh_parent_product_terms( $post->post_parent );
+}
+
+/**
+ * Make sure parent product's assigned terms are refresh when its variations' statuses are changed
+ *
+ * @since 3.8.9
+ * @access private
+ * @param  string $new_status New status
+ * @param  string $old_status Old status
+ * @param  object $post       Variation object
+ */
+function _wpsc_action_transition_post_status( $new_status, $old_status, $post ) {
+	if ( $post->post_type != 'wpsc-product' || ! $post->post_parent )
+		return;
+
+	_wpsc_refresh_parent_product_terms( $post->post_parent );
+}
+
+/**
+ * Prevent parent terms from being refreshed when its variations are updated. This is useful when
+ * the variations are being mass updated.
+ *
+ * @since  3.8.9
+ * @access private
+ */
+function _wpsc_remove_refresh_variation_parent_term_hooks() {
+	remove_action( 'transition_post_status', '_wpsc_action_transition_post_status', 10, 3 );
+	remove_action( 'deleted_post', '_wpsc_action_refresh_variation_parent_terms', 10, 1 );
+}
+
+/**
+ * Add hooks so that parent product's assigned terms are refreshed when its variations are updated.
+ *
+ * @since  3.8.9
+ * @access private
+ */
+function _wpsc_add_refresh_variation_parent_term_hooks() {
+	add_action( 'transition_post_status', '_wpsc_action_transition_post_status', 10, 3 );
+	add_action( 'deleted_post', '_wpsc_action_refresh_variation_parent_terms', 10, 1 );
+}
+
+_wpsc_add_refresh_variation_parent_term_hooks();

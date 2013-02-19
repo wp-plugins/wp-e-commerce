@@ -23,25 +23,6 @@ function wpsc_the_settings_tabs() {
 	WPSC_Settings_Page::get_instance()->output_tabs();
 }
 
-function country_list( $selected_country = null ) {
-	global $wpdb;
-
-	$output       = '';
-	$output      .= "<option value=''></option>";
-	$country_data = $wpdb->get_results( "SELECT * FROM `" . WPSC_TABLE_CURRENCY_LIST . "` ORDER BY `country` ASC", ARRAY_A );
-
-	foreach ( (array)$country_data as $country ) {
-		$selected = '';
-
-		if ( $selected_country == $country['isocode'] )
-			$selected = "selected='selected'";
-
-		$output .= "<option value='" . $country['isocode'] . "' $selected>" . htmlspecialchars( $country['country'] ) . "</option>";
-	}
-
-	return $output;
-}
-
 function wpsc_settings_page_update_notification() {
 
 	if ( isset( $_GET['skipped'] ) || isset( $_GET['updated'] ) || isset( $_GET['regenerate'] ) || isset( $_GET['deleted'] ) || isset( $_GET['shipadd'] ) ) { ?>
@@ -70,7 +51,7 @@ function wpsc_settings_page_update_notification() {
 			$message = true;
 		}
 
-		if ( !isset( $message ) )
+		if ( ! isset( $message ) )
 			_e( 'Settings successfully updated.', 'wpsc' );
 
 		$_SERVER['REQUEST_URI'] = remove_query_arg( array( 'locked', 'regenerate', 'skipped', 'updated', 'deleted', 'wpsc_downloadcsv', 'rss_key', 'start_timestamp', 'end_timestamp', 'email_buyer_id' ), $_SERVER['REQUEST_URI'] ); ?>

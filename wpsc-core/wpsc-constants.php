@@ -1,5 +1,4 @@
 <?php
-
 // Left Overs
 $wpsc_currency_data = array();
 $wpsc_title_data    = array();
@@ -8,13 +7,18 @@ $wpsc_title_data    = array();
  * wpsc_core_load_session()
  *
  * Load up the WPEC session
+ *
+ * Pending Gary's feedback, I think we can actually get rid of this.
  */
 function wpsc_core_load_session() {
-	if ( !isset( $_SESSION ) )
+
+	if ( ! isset( $_SESSION ) )
 		$_SESSION = null;
 
-	if ( ( !is_array( $_SESSION ) ) xor ( !isset( $_SESSION['nzshpcrt_cart'] ) ) xor ( !$_SESSION ) )
+	if ( ( !is_array( $_SESSION ) ) xor ( ! isset( $_SESSION['nzshpcrt_cart'] ) ) xor ( !$_SESSION ) )
 		session_start();
+
+	return;
 }
 
 /**
@@ -26,9 +30,10 @@ function wpsc_core_constants() {
 	if(!defined('WPSC_URL'))
 		define( 'WPSC_URL',       plugins_url( '', __FILE__ ) );
 	// Define Plugin version
-	define( 'WPSC_VERSION', '4.0-dev' );
-	define( 'WPSC_MINOR_VERSION', '571548' );
-	define( 'WPSC_PRESENTABLE_VERSION', '4.0-dev' );
+	define( 'WPSC_VERSION', '3.8.10-beta' );
+	define( 'WPSC_MINOR_VERSION', '21170b4' );
+	define( 'WPSC_PRESENTABLE_VERSION', '3.8.10-beta' );
+	define( 'WPSC_DB_VERSION', 3 );
 
 	// Define Debug Variables for developers
 	define( 'WPSC_DEBUG', false );
@@ -45,6 +50,13 @@ function wpsc_core_constants() {
 	// Require loading of deprecated functions for now. We will ween WPEC off
 	// of this in future versions.
 	define( 'WPEC_LOAD_DEPRECATED', true );
+
+	define( 'WPSC_CUSTOMER_COOKIE', 'wpsc_customer_cookie_' . COOKIEHASH );
+	if ( ! defined( 'WPSC_CUSTOMER_COOKIE_PATH' ) )
+		define( 'WPSC_CUSTOMER_COOKIE_PATH', COOKIEPATH );
+
+	if ( ! defined( 'WPSC_CUSTOMER_DATA_EXPIRATION' ) )
+    	define( 'WPSC_CUSTOMER_DATA_EXPIRATION', 48 * 3600 );
 }
 
 /**
@@ -112,18 +124,16 @@ function wpsc_core_constants_table_names() {
 	define( 'WPSC_META_PREFIX', '_wpsc_' );
 
 	// These tables are required, either for speed, or because there are no
-	// existing wordpress tables suitable for the data stored in them.
+	// existing WordPress tables suitable for the data stored in them.
 	define( 'WPSC_TABLE_PURCHASE_LOGS',          "{$wp_table_prefix}wpsc_purchase_logs" );
 	define( 'WPSC_TABLE_CART_CONTENTS',          "{$wp_table_prefix}wpsc_cart_contents" );
-	define( 'WPSC_TABLE_SUBMITED_FORM_DATA',     "{$wp_table_prefix}wpsc_submited_form_data" ); // typo!
-	define( 'WPSC_TABLE_SUBMITTED_FORM_DATA',     "{$wp_table_prefix}wpsc_submited_form_data" );
+	define( 'WPSC_TABLE_SUBMITED_FORM_DATA',     "{$wp_table_prefix}wpsc_submited_form_data" );
+	define( 'WPSC_TABLE_SUBMITTED_FORM_DATA',    "{$wp_table_prefix}wpsc_submited_form_data" );
 	define( 'WPSC_TABLE_CURRENCY_LIST',          "{$wp_table_prefix}wpsc_currency_list" );
 
 	// These tables may be needed in some situations, but are not vital to
 	// the core functionality of the plugin
 	define( 'WPSC_TABLE_CLAIMED_STOCK',          "{$wp_table_prefix}wpsc_claimed_stock" );
-
-	// @todo deprecate this at some point
 	define( 'WPSC_TABLE_ALSO_BOUGHT',            "{$wp_table_prefix}wpsc_also_bought" );
 
 	// This could be done using the posts table and the post meta table
@@ -155,15 +165,6 @@ function wpsc_core_constants_table_names() {
 	define( 'WPEC_TRANSIENT_THEME_PATH_PREFIX', 'wpsc_path_' );
 	define( 'WPEC_TRANSIENT_THEME_URL_PREFIX', 'wpsc_url_' );
 
-}
-
-function wpsc_core_constants_purchase_logs() {
-	define( 'WPSC_PAYMENT_STATUS_INCOMPLETE', 1 );
-	define( 'WPSC_PAYMENT_STATUS_RECEIVED'  , 2 );
-	define( 'WPSC_PAYMENT_STATUS_ACCEPTED'  , 3 );
-	define( 'WPSC_PAYMENT_STATUS_DISPATCHED', 4 );
-	define( 'WPSC_PAYMENT_STATUS_CLOSED'    , 5 );
-	define( 'WPSC_PAYMENT_STATUS_DECLINED'  , 6 );
 }
 
 /**
@@ -276,22 +277,15 @@ function wpsc_core_constants_uploads() {
  * Setup the cart
  */
 function wpsc_core_setup_cart() {
-	global $wpsc_cart;
-
 	if ( 2 == get_option( 'cart_location' ) )
 		add_filter( 'the_content', 'wpsc_shopping_cart', 14 );
 
-	// Cart exists in Session, so attempt to unserialize it
-	if ( isset( $_SESSION['wpsc_cart'] ) ) {
-		$wpsc_cart = maybe_unserialize( $_SESSION['wpsc_cart'] );
-		if ( !is_object( $wpsc_cart ) || ( 'wpsc_cart' != get_class( $wpsc_cart ) ) )
-			$wpsc_cart = new wpsc_cart;
+	$cart = maybe_unserialize( wpsc_get_customer_meta( 'cart' ) );
 
-	// Cart doesn't exist in session, so create one
-	} else {
-		$wpsc_cart = new wpsc_cart;
-	}
-
+	if ( is_object( $cart ) && ! is_wp_error( $cart ) )
+		$GLOBALS['wpsc_cart'] = $cart;
+	else
+		$GLOBALS['wpsc_cart'] = new wpsc_cart();
 }
 
 /***

@@ -1,24 +1,9 @@
 <?php
 
 function nzshpcrt_country_list( $selected_country = null ) {
-	global $wpdb;
-
-	$output = '';
-
-	if ( $selected_country == null )
-		$output = "<option value=''>" . __( 'Please select', 'wpsc' ) . "</option>";
-
-	$country_data = $wpdb->get_results( "SELECT * FROM `" . WPSC_TABLE_CURRENCY_LIST . "` ORDER BY `country` ASC", ARRAY_A );
-
-	foreach ( $country_data as $country ) {
-		$selected = '';
-		if ( $selected_country == $country['isocode'] )
-			$selected = "selected='selected'";
-		
-		$output .= "<option value='" . $country['isocode'] . "' ".$selected.">" . $country['country'] . "</option>";
-	}
-
-	return $output;
+	return _wpsc_country_dropdown_options( array(
+		'selected' => $selected_country,
+	) );
 }
 
 function nzshpcrt_region_list( $selected_country = null, $selected_region = null ) {
@@ -29,9 +14,8 @@ function nzshpcrt_region_list( $selected_country = null, $selected_region = null
 
 	$output = "";
 	$region_list = $wpdb->get_results( $wpdb->prepare( "SELECT `" . WPSC_TABLE_REGION_TAX . "`.* FROM `" . WPSC_TABLE_REGION_TAX . "`, `" . WPSC_TABLE_CURRENCY_LIST . "`  WHERE `" . WPSC_TABLE_CURRENCY_LIST . "`.`isocode` IN(%s) AND `" . WPSC_TABLE_CURRENCY_LIST . "`.`id` = `" . WPSC_TABLE_REGION_TAX . "`.`country_id`", $selected_country ), ARRAY_A );
-	
+
 	if ( $region_list != null ) {
-		$output .= "<option value=''>None</option>";
 		foreach ( $region_list as $region ) {
 			if ( $selected_region == $region['id'] ) {
 				$selected = "selected='selected'";
@@ -42,7 +26,7 @@ function nzshpcrt_region_list( $selected_country = null, $selected_region = null
 			$output .= "<option value='" . $region['id'] . "' $selected>" . $region['name'] . "</option>\r\n";
 		}
 	} else {
-		$output .= "<option value=''>None</option>\r\n";
+		$output .= "<option value=''>" . esc_html__( 'None', 'wpsc' ) . "</option>\r\n";
 	}
 
 	return $output;
@@ -50,7 +34,7 @@ function nzshpcrt_region_list( $selected_country = null, $selected_region = null
 
 function nzshpcrt_form_field_list( $selected_field = null ) {
 	global $wpdb;
-	$output = "<option value=''>Please choose</option>";
+	$output = "<option value=''>" . esc_html__( 'Please choose', 'wpsc' ) . "</option>";
 	$form_sql = "SELECT * FROM `" . WPSC_TABLE_CHECKOUT_FORMS . "` WHERE `active` = '1';";
 	$form_data = $wpdb->get_results( $form_sql, ARRAY_A );
 
@@ -94,7 +78,7 @@ function wpsc_category_options( $group_id, $this_category = null, $category_id =
 				$selected = "selected='selected'";
 			}
 
-			$output .= "<option $selected value='" . $option->term_id . "'>" . str_repeat( "-", $iteration ) . stripslashes( $option->name ) . "</option>\r\n";
+			$output .= "<option $selected value='" . $option->term_id . "'>" . str_repeat( "-", $iteration ) . esc_html( $option->name ) . "</option>\r\n";
 			$output .= wpsc_category_options( $option->term_id, $this_category, $option->term_id, $iteration + 1, $selected_id );
 			$selected = "";
 		}
@@ -157,8 +141,8 @@ function wpsc_uploaded_files() {
 
 /**
  * Returns HTML for Digital Download UI
- * 
- * @param int $product_id 
+ *
+ * @param int $product_id
  * @return HTML
  */
 function wpsc_select_product_file( $product_id = null ) {
@@ -184,37 +168,43 @@ function wpsc_select_product_file( $product_id = null ) {
 				$output .= '<th>' . _x( 'Trash', 'Digital download UI', 'wpsc' ) . '</th>';
 				$output .= '<th>' . _x( 'Preview', 'Digital download UI', 'wpsc' ) . '</th>';
 			$output .= '</tr>';
-		$output .= '</thead>';	
+		$output .= '</thead>';
 
 	$num = 0;
 
 	$output .= '<tbody>';
-
+	$delete_nonce = _wpsc_create_ajax_nonce( 'delete_file' );
 	foreach ( (array)$attached_files as $file ) {
-	
+
 		$file_dir = WPSC_FILE_DIR . $file->post_title;
 		$file_size = ( 'http://s3file' == $file->guid ) ? __( 'Remote file sizes cannot be calculated', 'wpsc' ) : wpsc_convert_byte( filesize( $file_dir ) );
 
-		$file_url = WPSC_FILE_URL.$file->post_title;
+		$file_url = add_query_arg(
+			array(
+				'wpsc_download_id' => $file->ID,
+				'_wpnonce'            => wp_create_nonce( 'wpsc-admin-download-file-' . $file->ID ),
+			),
+			admin_url()
+		);
 		$deletion_url = wp_nonce_url( "admin.php?wpsc_admin_action=delete_file&amp;file_name={$file->post_title}&amp;product_id={$product_id}&amp;row_number={$num}", 'delete_file_' . $file->post_title );
-		
+
 		$class = ( ! wpsc_is_odd( $num ) ) ? 'alternate' : '';
 
 		$output .= '<tr class="wpsc_product_download_row ' . $class . '">';
 		$output .= '<td style="padding-right: 30px;">' . $file->post_title . '</td>';
 		$output .= '<td>' . $file_size .'</td>';
 		$output .= '<td>.' . wpsc_get_extension( $file->post_title ) . '</td>';
-		$output .= "<td><a class='file_delete_button' href='{$deletion_url}' >" . _x( 'Delete', 'Digital download row UI', 'wpsc' ) . "</a></td>";
+		$output .= "<td><a data-file-name='" . esc_attr( $file->post_title ) . "' data-product-id='" . esc_attr( $product_id ) . "' data-nonce='" . esc_attr( $delete_nonce ) . "' class='file_delete_button' href='{$deletion_url}' >" . _x( 'Delete', 'Digital download row UI', 'wpsc' ) . "</a></td>";
 		$output .= '<td><a href=' .$file_url .'>' . _x( 'Download', 'Digital download row UI', 'wpsc' ) . '</a></td>';
 
-		$output .= '</tr>';	
+		$output .= '</tr>';
 
 		$num++;
 	}
 
 	$output .= '</tbody>';
 	$output .= '</table>';
-	
+
 	if( empty( $attached_files ) )
 		$output .= "<p class='no-item'>" . __( 'There are no files attached to this product. Upload a new file or select from other product files.', 'wpsc' ) . "</p>";
 	$output .= "<div class='" . ( ( is_numeric( $product_id ) ) ? 'edit_' : '') . "select_product_handle'></div>";
@@ -225,6 +215,17 @@ function wpsc_select_product_file( $product_id = null ) {
 
 	return $output;
 }
+
+function _wpsc_admin_download_file() {
+	$file_id = $_REQUEST['wpsc_download_id'];
+	check_admin_referer( 'wpsc-admin-download-file-' . $file_id );
+
+	$file_data = get_post( $file_id );
+	_wpsc_force_download_file( $file_id );
+}
+
+if ( ! empty( $_REQUEST['wpsc_download_id'] ) )
+	add_action( 'admin_init', '_wpsc_admin_download_file' );
 
 function wpsc_select_variation_file( $file_id, $variation_ids, $variation_combination_id = null ) {
 	global $wpdb;
@@ -257,7 +258,7 @@ function wpsc_select_variation_file( $file_id, $variation_ids, $variation_combin
 
 function wpsc_list_product_themes( $theme_name = null ) {
 	global $wpdb;
-	
+
 	if ( !$selected_theme = get_option( 'wpsc_selected_theme' ) )
 		$selected_theme = 'default';
 

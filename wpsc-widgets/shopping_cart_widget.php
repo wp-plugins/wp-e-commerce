@@ -47,7 +47,7 @@ class WP_Widget_Shopping_Cart extends WP_Widget {
 				}
 				$fancy_collapser = ' <a href="#" onclick="return shopping_cart_collapser()" id="fancy_collapser_link"><img src="' . WPSC_CORE_IMAGES_URL . '/' . $collapser_image . '" title="" alt="" id="fancy_collapser" /></a>';
 			} else {
-				if ( isset($_SESSION['nzshpcrt_cart']) && $_SESSION['nzshpcrt_cart'] == null ) {
+				if ( ! wpsc_get_customer_meta( 'nzshpcart' ) ) {
 					$collapser_image = 'plus.png';
 				} else {
 					$collapser_image = 'minus.png';
@@ -68,7 +68,7 @@ class WP_Widget_Shopping_Cart extends WP_Widget {
 		if ( ( ( isset( $_SESSION['slider_state'] ) && ( $_SESSION['slider_state'] == 0 ) ) || ( wpsc_cart_item_count() < 1 ) ) && ( get_option( 'show_sliding_cart' ) == 1 ) )
 			$display_state = 'style="display: none;"';
 
-		// Output ctart
+		// Output start
 		$use_object_frame = false;
 		if ( ( $cache_enabled == true ) && ( !defined( 'DONOTCACHEPAGE' ) || ( constant( 'DONOTCACHEPAGE' ) !== true ) ) ) {
 			echo '<div id="sliding_cart" class="shopping-cart-wrapper">';
@@ -80,7 +80,7 @@ class WP_Widget_Shopping_Cart extends WP_Widget {
 				<?php
 			} else {
 				?>
-				<div class="wpsc_cart_loading"><p><?php _e( 'Loading...', 'wpsc' ); ?></p>
+				<div class="wpsc_cart_loading"><p><?php _e( 'Loading...', 'wpsc' ); ?></p></div>
 				<?php
 			}
 			echo '</div>';
