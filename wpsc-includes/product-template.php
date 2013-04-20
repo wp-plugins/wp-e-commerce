@@ -355,30 +355,44 @@ function wpsc_show_pnp(){
 		return true;
 	return false;
 }
+
 /**
-* wpsc_product_variation_price_available function
-* Checks for the lowest price of a products variations
-*
-* @return $price (string) number formatted price
-*/
-function wpsc_product_variation_price_available( $product_id, $from_text = false, $only_normal_price = false ){
-	static $price_data = array();
+ * WPSC Product Variation Price From
+ * Gets the formatted lowest price of a product's variations.
+ *
+ * @since  3.8.10
+ *
+ * @param  $product_id  (int)       Product ID
+ * @param  $args        (array)     Array of options
+ * @return              (string)    Number formatted price
+ *
+ * @uses   apply_filters()          Calls 'wpsc_do_convert_price' passing price and product ID.
+ * @uses   wpsc_currency_display()  Passing price and args.
+ */
+function wpsc_product_variation_price_from( $product_id, $args = null ) {
 	global $wpdb;
+	$args = wp_parse_args( $args, array(
+		'from_text'         => false,
+		'only_normal_price' => false,
+		'only_in_stock'     => false
+	) );
+
+	static $price_data = array();
 
 	if ( isset( $price_data[$product_id] ) ) {
 		$results = $price_data[$product_id];
 	} else {
+		$stock_sql = '';
+		if ( $args['only_in_stock'] )
+			$stock_sql = "INNER JOIN {$wpdb->postmeta} AS pm3 ON pm3.post_id = p.id AND pm3.meta_key = '_wpsc_stock' AND pm3.meta_value != '0'";
 		$sql = $wpdb->prepare( "
 			SELECT pm.meta_value AS price, pm2.meta_value AS special_price
 			FROM {$wpdb->posts} AS p
 			INNER JOIN {$wpdb->postmeta} AS pm ON pm.post_id = p.id AND pm.meta_key = '_wpsc_price'
 			INNER JOIN {$wpdb->postmeta} AS pm2 ON pm2.post_id = p.id AND pm2.meta_key = '_wpsc_special_price'
-			INNER JOIN {$wpdb->postmeta} AS pm3 ON pm3.post_id = p.id AND pm3.meta_key = '_wpsc_stock' AND pm3.meta_value != '0'
-
-			WHERE
-				p.post_type = 'wpsc-product'
-				AND
-				p.post_parent = %d
+			$stock_sql
+			WHERE p.post_type = 'wpsc-product'
+				AND p.post_parent = %d
 		", $product_id );
 
 		$results = $wpdb->get_results( $sql );
@@ -389,7 +403,7 @@ function wpsc_product_variation_price_available( $product_id, $from_text = false
 
 	foreach ( $results as $row ) {
 		$price = (float) $row->price;
-		if ( ! $only_normal_price ) {
+		if ( ! $args['only_normal_price'] ) {
 			$special_price = (float) $row->special_price;
 			if ( $special_price != 0 && $special_price < $price )
 				$price = $special_price;
@@ -404,10 +418,10 @@ function wpsc_product_variation_price_available( $product_id, $from_text = false
 	$price = wpsc_currency_display( $price, array( 'display_as_html' => false ) );
 
 	if ( isset( $prices[0] ) && $prices[0] == $prices[count( $prices ) - 1] )
-		$from_text = false;
+		$args['from_text'] = false;
 
-	if ( $from_text )
-		$price = sprintf( $from_text, $price );
+	if ( $args['from_text'] )
+		$price = sprintf( $args['from_text'], $price );
 
 	return $price;
 }
@@ -422,8 +436,18 @@ function wpsc_product_normal_price() {
 }
 
 /**
- * wpsc product price function
- * @return string - the product price
+ * WPSC Product Price
+ *
+ * @param  $no_decimals        (bool)           Don't show decimals
+ * @param  $only_normal_price  (bool)           Don't show sale price
+ * @param  $product_id         (int)            Product ID
+ * @return                     (string)         Formatted product price
+ *
+ * @uses   apply_filters()                      Calls 'wpsc_product_variation_text' passing "from" text.
+ * @uses   apply_filters()                      Calls 'wpsc_do_convert_price' passing price and product ID.
+ * @uses   wpsc_product_has_variations()        Check if product has variations passing product ID.
+ * @uses   wpsc_product_variation_price_from()  Passing product ID and options.
+ * @uses   wpsc_currency_display()              Passing price and args.
  */
 function wpsc_the_product_price( $no_decimals = false, $only_normal_price = false, $product_id = 0 ) {
 	global $wpsc_query, $wpsc_variations, $wpdb;
@@ -434,7 +458,10 @@ function wpsc_the_product_price( $no_decimals = false, $only_normal_price = fals
 	if ( wpsc_product_has_variations( $product_id ) ) {
 		$from_text = __( ' from %s', 'wpsc' );
 		$from_text = apply_filters( 'wpsc_product_variation_text', $from_text );
-		$output = wpsc_product_variation_price_available( $product_id, $from_text, $only_normal_price );
+		$output = wpsc_product_variation_price_from( $product_id, array(
+			'from_text'         => $from_text,
+			'only_normal_price' => $only_normal_price
+		) );
 	} else {
 		$price = $full_price = get_post_meta( $product_id, '_wpsc_price', true );
 
@@ -1850,6 +1877,26 @@ function wpsc_product_has_variations( $id = 0 ) {
 	return $has_variations[$id];
 }
 
+/**
+ * WPSC The Product Price Display
+ *
+ * @param  $args  (array)   Array of args.
+ * @return        (string)  HTML formatted prices
+ *
+ * @uses   apply_filters()                      Calls 'wpsc_the_product_price_display_old_price_class' passing class and product ID
+ * @uses   apply_filters()                      Calls 'wpsc_the_product_price_display_old_price_amount_class' passing class and product ID
+ * @uses   apply_filters()                      Calls 'wpsc_the_product_price_display_price_class' passing class and product ID
+ * @uses   apply_filters()                      Calls 'wpsc_the_product_price_display_price_amount_class' passing class and product ID
+ * @uses   apply_filters()                      Calls 'wpsc_the_product_price_display_you_save_class' passing class and product ID
+ * @uses   apply_filters()                      Calls 'wpsc_the_product_price_display_you_save_amount_class' passing class and product ID
+ * @uses   wpsc_product_normal_price()          Get the normal price
+ * @uses   wpsc_the_product_price()             Get the current price
+ * @uses   wpsc_you_save()                      Get pricing saving
+ * @uses   wpsc_product_on_special()            Is product on sale?
+ * @uses   wpsc_product_has_variations()        Checks if product has variations
+ * @uses   wpsc_product_variation_price_from()  Gets the lowest variation price
+ * @uses   wpsc_currency_display()              Display price as currency
+ */
 function wpsc_the_product_price_display( $args = array() ) {
 	if ( empty( $args['id'] ) )
 		$id = get_the_ID();
@@ -1906,8 +1953,8 @@ function wpsc_the_product_price_display( $args = array() ) {
 		// a specific variation
 		$show_you_save = false;
 
-		$old_price_number = wpsc_product_variation_price_available( $id, false, true );
-		$current_price_number = wpsc_product_variation_price_available( $id, false, false );
+		$old_price_number = wpsc_product_variation_price_from( $id, array( 'only_normal_price' => true ) );
+		$current_price_number = wpsc_product_variation_price_from( $id );
 
 		// if coincidentally, one of the variations are not on special, but its price is equal to
 		// or lower than the lowest variation sale price, old price should be hidden, and current
