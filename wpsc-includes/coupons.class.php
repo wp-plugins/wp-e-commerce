@@ -211,7 +211,7 @@ class wpsc_coupons {
 			break;
 
 			case 'not_contain'://Checks if the product name contains the condition value
-				return preg_match( "/(.*)" . $value . "(.*)/",$cart_item->quantity );
+				return ! preg_match( "/(.*)" . $value . "(.*)/",$cart_item->quantity );
 			break;
 
 			case 'begins'://Checks if the product name begins with condition value
@@ -268,7 +268,7 @@ class wpsc_coupons {
 	public function _callback_condition_subtotal_amount( $condition, $cart_item ) {
 		global $wpsc_cart;
 		$subtotal = $wpsc_cart->calculate_subtotal();
-		$value = (int) $condition['value'];
+		$value = (float) $condition['value'];
 
 		switch( $condition['logic'] ) {
 			case 'equal'://Checks if the subtotal of products in the cart equals condition value
@@ -298,13 +298,35 @@ class wpsc_coupons {
 	public function _filter_cart_item_conditions( $cart_item ) {
 		global $wpsc_cart;
 
+		$compare_logic = false;
 		foreach ( $this->conditions as $condition ) {
 			$callback = '_callback_condition_' . $condition['property'];
 			if ( ! is_callable( array( $this, $callback ) ) )
 				return false;
 
-			if ( ! $this->$callback( $condition, $cart_item ) )
-				return apply_filters( 'wpsc_coupon_compare_logic', false, $condition, $cart_item );
+			if ( ! $this->$callback( $condition, $cart_item ) ) {
+				switch ( $condition['operator'] ) {
+					case 'or':
+						$compare_logic = $compare_logic || apply_filters( 'wpsc_coupon_compare_logic', false, $condition, $cart_item );
+					break;
+					case 'and':
+						$compare_logic = $compare_logic && apply_filters( 'wpsc_coupon_compare_logic', false, $condition, $cart_item );
+					break;
+					default:
+						$compare_logic = apply_filters( 'wpsc_coupon_compare_logic', false, $condition, $cart_item );
+				}
+			} else {
+				switch ( $condition['operator'] ) {
+					case 'or':
+						$compare_logic = $compare_logic || $this->$callback( $condition, $cart_item );
+					break;
+					case 'and':
+						$compare_logic = $compare_logic && $this->$callback( $condition, $cart_item );
+					break;
+					default:
+						$compare_logic = $this->$callback( $condition, $cart_item );
+				}
+			}
 		}
 
 		return true;

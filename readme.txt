@@ -3,8 +3,8 @@ Contributors: mufasa, garyc40, JustinSainton, mychelle
 Donate link: http://getshopped.org
 Tags: e-commerce, wp-e-commerce, shop, cart, paypal, authorize, stock control, ecommerce, shipping, tax
 Requires at least: 3.4
-Tested up to: 3.6-beta
-Stable tag: 3.8.10
+Tested up to: 3.6
+Stable tag: 3.8.11
 
 WP e-Commerce is a free WordPress Shopping Cart Plugin that lets customers buy your products, services and digital downloads online.
 
@@ -20,24 +20,24 @@ Features:
 * Plays well with other Plugins
 * Supports regular WordPress widgets, as well as a few snazzy ones of our own
 * Utilizes shortcodes and template tags (just like WordPress)
-* Works out-of-the-box with WordPress MU (make sure you use sub domains with your MU setup)
+* Works out-of-the-box with WordPress Multisite (make sure you use sub-domains with your Multisite setup)
 
 = 100% Customizable =
-* A designers dream – use your own HTML & CSS and have complete control over the look and feel of your store
+* Use your own HTML & CSS and have complete control over the look and feel of your store
 * Easy to modify templates
 
-= Amazing Support =
+= Support =
 * Lots of video tutorials
-* Guaranteed speedy response (through our premium forums)
+* Speedy response (through our premium forums)
 * Access to instant support from our community of users
 
 = Payment Gateways Integration =
-* Manual Payment (checks/money orders) (included)
-* PayPal Payments Standard (included)
-* PayPal Payments Pro (included)
-* PayPal Express Checkout (included)
-* Google Checkout (Level 2) (included)
-* Chronopay (included)
+* Manual Payment (checks/money orders)
+* PayPal Payments Standard
+* PayPal Payments Pro
+* PayPal Express Checkout
+* Google Wallet (Level 2)
+* Chronopay
 * PayPal Payflow Pro (available with Gold Cart)
 * Authorize.net (available with Gold Cart)
 * FirstData/LinkPoint (available with Gold Cart)
@@ -47,7 +47,7 @@ Features:
 * DPS (available with Gold Cart)
 * Paystation (available with Gold Cart)
 * SagePay (available with Gold Cart)
-* If you still aren’t happy, we provide you with the necessary info to write your payment gateway
+* Need a different gateway?  We have documentation available for developing your own custom payment gateway
 
 = Marketing =
 * Flexible coupon/discount pricing rules
@@ -57,24 +57,20 @@ Features:
 * Multi-tier pricing for quantity discounts.
 * Search Engine Friendly URLs
 * New Products widget
-* Cross-sells on product pages (in 3.8 this is now available as a Plugin)
-* Google Site Map
+* Cross-sells on product pages
+* Google Sitemap and Google Analytics
 * Uses the popular “Share This” button for easily promoting your products on popular social networking sites
-* Integrates with Facebook Marketplace (Facebook Marketplace API has closed – we’re working on it)
 * Integrates with Google Base
-* Integrates with Campaign Monitor for advanced email marketing
-* Integrates with Intense Debate for shared comments
-* Mail Chimp integration coming soon
 
 = Search Engine Optimization =
 * 100% Search Engine Friendly
 * Meta-information for products and categories
 * RSS feeds for products and categories
 * Integrates with Google (XML site maps and Google Merchant Centre)
-* Integrates with the All in One SEO plugin for WordPress (which includes Google Analytics)
+* Integrates with the All in One SEO plugin for WordPress
 
 = Internationalization Support =
-* Multi-lingual (the first Plugin to fully utilize and integrate with GlotPress)
+* Basic support for popular multi-lingual plugins (qTranslate and WPML)
 * Support for multiple currencies
 * Ability to target specific countries
 
@@ -87,7 +83,6 @@ Features:
 * Weight rate shipping
 
 = Checkout =
-* One-Page Checkout or Stepped Checkout, whichever you prefer
 * SSL security support for orders on both front-end and back-end
 * Checkout without account/Guest Checkout
 * Shopping Cart with tax and shipping estimates
@@ -104,30 +99,25 @@ Features:
 = Catalog Management =
 * Single-page product data entry
 * Ability to duplicate products
-* Quickly edit your products from the store front (saving you heaps of time)
-* Smart Groups allow you to organize your products with hierarchical categories, as well as by brand.
+* Quickly edit your products from the store front
+* Organize your products with hierarchical categories
 * Batch import/export of catalog
-* Google Base integration
 * Product variation management
-* Create attributes on the fly
 * Downloadable/Digital Products
 * Support for donations
 * Customer Personalized Products
 * Media Manager with automatic image resizing
-* Handles multiple product images with easy drag-and-drop sorting
-* support for Special Prices
 * Tax rates per location
 * Basic inventory control
 
 = Catalog Browsing =
-* Live product search – mmm just like apple.com (available add on)
 * Cross-sells
 * Product listing in list format
 * Product listing in grid format (available with Gold Cart)
 * Breadcrumbs
 * Product Image Zoom-in Capability
 * Stock Availability
-* Multiple Images Per Product (activated with Gold Cart)
+* Multiple Images Per Product (available with Gold Cart)
 * Product comments
 * Filter by Product Tags
 * New Products widget
@@ -155,6 +145,40 @@ Before updating please make a backup of your existing files and database. Just i
 After upgrading from earlier versions look for link "Update Store". This will update your database structure to work with new version.
 
 == Changelog ==
+= 3.8.11 = 
+* New: Payment Gateway UI is revamped.
+* New: Sales Log UI is revamped.
+* New: wpsc_single_purchase_log_date_time_format and wpsc_single_purchase_log_date_format (Used in new Sales Log UI).
+* New: Added 'wpsc_usps_domestic_rate' and 'wpsc_usps_intl_rate' filters.
+* New: 'wpsc_country_get_property' filter.
+* New: WPSC_Country::get_data() method and 'wpsc_country_get_data' filter.
+* New: Added generic 'wpsc_save_' . $this->current_tab_id . '_settings' action.
+* New: 'wpsc_shipping_module_settings_form' filter on admin shipping module form output.
+* New: Choose either AND or OR for coupon conditions logic.
+* Change: Reduced internal usage of get_option( 'siteurl' ) in favor of home_url().
+* Change: Updated Colorbox.js to v.1.4.15.
+* Change: Eliminated internal usage of 'index.php' as an AJAX callback URL.  Nginx users, rejoice.
+* Change: Eliminated internal usage of eval() in javascript.
+* Change: wpsc_get_country() uses WPSC_Country now.
+* Change: .on() is now used in place of .livequery(), .bind(), .live() and .delegate().
+* Change: Minor cleanup of Marketing settings tab UI.
+* Change: wpsc_the_product_image() optimized to utilize the product thumbnail earlier in the function.
+* Change: wpsc_the_variation_price() output is now filtered through wpsc_do_convert_price filter.
+* Change: Submitted_Form_Data table now has a value field with a LONGTEXT data type, rather than varchar(255).
+* Change: Continued internal cleanup of coding standards and documentation.
+* Fix: Properly substitute placeholder in "Out of stock" email to administrator.
+* Fix: Fixed PHP notices when accessing Dashboard as subscriber.
+* Fix: Coupon logic improvements (edge case of using 'not_contains" logic with item_quantity).
+* Fix: Automated fix when possible, and nag when not, for 3.8.10 regression in User Management templates.
+* Fix: Error notices on category functions.
+* Fix: fetch_feed() error on GetShopped news.
+* Fix: Variation terms were not being applied to the parent product.
+* Fix: If you emptied variation sale price, the stock levels would not work any more.
+* Fix: A notice was thrown if you had UPS selected but had not saved settings for it.
+* Fix: USPS Shipping Module now correctly respects testing environement settings.
+* Fix: Correcting casting price value to float instead of integer in coupon logic conditions for sub_total.
+* Fix: 'wpsc_transaction_result_content' now returns the $cart_item as an array instead of an object (which was a regression).
+
 = 3.8.10 =
 * New: Coupon UI is revamped.
 * New: [Shipwire] Addition of Shipping Services, Economy, Plus & Premium.

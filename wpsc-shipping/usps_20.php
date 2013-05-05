@@ -160,7 +160,7 @@ class ash_usps{
         }
 
         $env = "prod";
-        if((boolean)$this->use_test_env === TRUE){
+        if ( (bool) $this->use_test_env === true ) {
             $env = "test";
         }
 
@@ -607,7 +607,7 @@ class ash_usps{
     	        $temp_rate = $wpec_ash_xml->get("Rate",$postage);
     	        $rate = (!empty($temp_rate)) ? $temp_rate[0] : 0.0;
     	        if (!empty($service_name)){
-    	            $temp[$service_name] = $rate;
+    	            $temp[$service_name] = apply_filters( 'wpsc_usps_domestic_rate', $rate, $service_name );
     	        }
 	        }
 	        array_push($package_services, $temp);
@@ -636,8 +636,8 @@ class ash_usps{
 	        $service_name = $this->_get_service("SvcDescription",$service);
 	        $temp_rate = $wpec_ash_xml->get("Postage",$service);
 	        $rate = (!empty($temp_rate)) ? $temp_rate[0] : 0.0;
-	        if (!empty($service)){
-	            $service_table[$service_name] = $rate;
+	        if (!empty($service_name)){
+	            $service_table[$service_name] = apply_filters( 'wpsc_usps_intl_rate', $rate, $service_name );
 	        }
 	    }
 	    return $service_table;
@@ -913,7 +913,7 @@ class ash_usps{
             $wpec_ash = new ASH();
         }
 	    if (!is_object($wpec_ash_tools)){
-            $wpec_ash = new ASHTools();
+            $wpec_ash_tools = new ASHTools();
         }
 
 	    $this->shipment = $wpec_ash->get_shipment();
@@ -928,7 +928,7 @@ class ash_usps{
         $data = array();
         //*** WPEC Configuration values ***\\
         $settings = get_option("wpec_usps");
-        $this->env = $settings["test_server"];
+        $this->use_test_env = ! isset( $settings["test_server"] ) ? false : ( bool ) $settings['test_server'];
         $data["fcl_type"] = (!empty($settings["fcl_type"])) ? $settings["fcl_type"] : "PARCEL";
         $data["mail_type"] = (!empty($settings["intl_pkg"])) ? $settings["intl_pkg"] : "Package";
         $data["base_zipcode"] = get_option("base_zipcode");

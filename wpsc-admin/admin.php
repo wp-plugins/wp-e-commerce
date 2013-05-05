@@ -560,7 +560,10 @@ function wpsc_admin_include_css_and_js_refac( $pagehook ) {
 			'variation_parent_swap'    => esc_html_x( 'New Variation Set', 'Variation taxonomy parent', 'wpsc' ),
 			/* translators             : This string is prepended to the 'New Variation Set' string */
 			'variation_helper_text'    => esc_html_x( 'Choose the Variation Set you want to add variants to. If you\'re creating a new variation set then select', 'Variation helper text', 'wpsc' ),
-			'variations_tutorial'      => esc_html__( 'Variations allow you to create options for your products. For example, if you\'re selling T-Shirts, they will generally have a "Size" option. Size will be the Variation Set name, and it will be a "New Variant Set". You will then create variants (small, medium, large) which will have the "Variation Set" of Size. Once you have made your set you can use the table on the right to manage them (edit, delete). You will be able to order your variants by dragging and dropping them within their Variation Set.', 'wpsc' )
+			'variations_tutorial'      => esc_html__( 'Variations allow you to create options for your products. For example, if you\'re selling T-Shirts, they will generally have a "Size" option. Size will be the Variation Set name, and it will be a "New Variant Set". You will then create variants (small, medium, large) which will have the "Variation Set" of Size. Once you have made your set you can use the table on the right to manage them (edit, delete). You will be able to order your variants by dragging and dropping them within their Variation Set.', 'wpsc' ),
+			/* translators             : These strings are dynamically inserted as a drop-down for the Coupon comparison conditions */
+			'coupons_compare_or'       => esc_html_x( 'OR'  , 'Coupon comparison logic', 'wpsc' ),
+			'coupons_compare_and'      => esc_html_x( 'AND' , 'Coupon comparison logic', 'wpsc' ),
 		) );
 	}
 	if ( $pagehook == 'wpsc-product-variations-iframe' ) {
@@ -601,7 +604,6 @@ function wpsc_admin_dynamic_js() {
 	header( 'Cache-Control: public, must-revalidate, max-age=86400' );
 	header( 'Pragma: public' );
 
-	$siteurl = get_option( 'siteurl' );
 	$hidden_boxes = get_option( 'wpsc_hidden_box' );
 
 	$form_types1 = get_option( 'wpsc_checkout_form_fields' );
@@ -618,7 +620,7 @@ function wpsc_admin_dynamic_js() {
 	}
 
 	$hidden_boxes = implode( ',', (array)$hidden_boxes );
-	echo "var base_url = '" . esc_js( $siteurl ) . "';\n\r";
+	echo "var base_url = '" . esc_js( site_url() ) . "';\n\r";
 	echo "var WPSC_URL = '" . esc_js( WPSC_URL ) . "';\n\r";
 	echo "var WPSC_IMAGE_URL = '" . esc_js( WPSC_IMAGE_URL ) . "';\n\r";
 	echo "var WPSC_DIR_NAME = '" . esc_js( WPSC_DIR_NAME ) . "';\n\r";
@@ -814,7 +816,7 @@ function wpsc_dashboard_widget_setup() {
 
 	// Add the dashboard widgets
 	if ( current_user_can( $news_cap ) )
-		wp_add_dashboard_widget( 'wpsc_dashboard_news', __( 'Getshopped News' , 'wpsc' ), 'wpsc_dashboard_news' );
+		wp_add_dashboard_widget( 'wpsc_dashboard_news', __( 'WP e-Commerce News' , 'wpsc' ), 'wpsc_dashboard_news' );
 	if ( current_user_can( $sales_cap ) )
 		wp_add_dashboard_widget( 'wpsc_dashboard_widget', __( 'Sales Summary', 'wpsc' ), 'wpsc_dashboard_widget' );
 	if ( current_user_can( $quarterly_sales_cap ) )
@@ -824,7 +826,10 @@ function wpsc_dashboard_widget_setup() {
 
 	// Sort the Dashboard widgets so ours it at the top
 	global $wp_meta_boxes;
-	$normal_dashboard = $wp_meta_boxes['dashboard']['normal']['core'];
+	$boxes  = $wp_meta_boxes['dashboard'];
+	$normal = isset( $wp_meta_boxes['dashboard']['normal'] ) ? $wp_meta_boxes['dashboard']['normal'] : array();
+
+	$normal_dashboard   = isset( $normal['core'] ) ? $normal['core'] : array();
 
 	// Backup and delete our new dashbaord widget from the end of the array
 	$wpsc_widget_backup = array();
@@ -866,8 +871,8 @@ add_action( 'wp_dashboard_setup', 'wpsc_dashboard_widget_setup' );
  * @uses wp_widget_rss_output()   Display the RSS entries in a list
  */
 function wpsc_dashboard_news() {
-	$rss = fetch_feed( 'http://getshopped.org/category/wp-e-commerce-plugin/' );
-	$args = array( 'show_author' => 1, 'show_date' => 1, 'show_summary' => 1, 'items'=>3 );
+	$rss = fetch_feed( 'http://getshopped.org/feed/?category_name=wp-e-commerce-plugin' );
+	$args = array( 'show_author' => 1, 'show_date' => 1, 'show_summary' => 1, 'items' => 3 );
 	wp_widget_rss_output( $rss, $args );
 
 }
@@ -1347,7 +1352,7 @@ function wpsc_duplicate_product_process( $post, $new_parent_id = false ) {
 	$post_content          = $post->post_content;
 	$post_content_filtered = $post->post_content_filtered;
 	$post_excerpt          = $post->post_excerpt;
-	$post_title            = $post->post_title . ' ' . __( '(Duplicate)', 'wpsc' );
+	$post_title            = sprintf( __( '%s (Duplicate)', 'wpsc' ), $post->post_title );
 	$post_name             = $post->post_name;
 	$comment_status        = $post->comment_status;
 	$ping_status           = $post->ping_status;
@@ -1489,8 +1494,35 @@ function _wpsc_admin_notices_3dot8dot9() {
 	echo '<div id="wpsc-3.8.9-notice" class="error">' . $message . '</div>';
 }
 
-if ( isset( $_REQUEST['dismiss_389_upgrade_notice'] ) )
+if ( isset( $_REQUEST['dismiss_389_upgrade_notice'] ) || version_compare( WPSC_VERSION, '3.8.10', '>=' ) )
 	update_option( 'wpsc_hide_3.8.9_notices', true );
 
 if ( ! get_option( 'wpsc_hide_3.8.9_notices' ) )
 	add_action( 'admin_notices', '_wpsc_admin_notices_3dot8dot9' );
+
+/**
+ * @todo docs
+ * @access private
+ *
+ * @uses add_query_arg()      Adds argument to the WordPress query
+ * @uses update_option()      Updates an option in the WordPress database given string and value
+ * @uses get_option()         Gets option from the database given string
+ */
+function _wpsc_admin_notices_3dot8dot11() {
+	$message = '<p>' . __( 'You are currently using WPeC 3.8.11.  We have included a fix for a <a href="%1$s">bug on the User Account management page</a>. We are able to fix this automatically on most sites, but it appears that you have made changes to your wpsc-user-log.php page.  For that reason, we have some <a href="%2$s">simple instructions for you to follow</a> to resolve the issue.  We are sorry for the inconvenience.' , 'wpsc' ) . '</p>';
+	$message .= "\n<p>" . __( '<a href="%3$s">Hide this warning</a>', 'wpsc' ) . '</p>';
+	$message = sprintf(
+		$message,
+		'https://github.com/wp-e-commerce/WP-e-Commerce/issues/359',
+		'http://docs.getshopped.org/documentation/3-8-11-user-logs',
+		add_query_arg( 'dismiss_3811_upgrade_notice', 1 )
+	);
+
+	echo '<div id="wpsc-3.8.11-notice" class="error">' . $message . '</div>';
+}
+
+if ( isset( $_REQUEST['dismiss_3811_upgrade_notice'] ) )
+	update_option( '_wpsc_3811_user_log_notice', false );
+
+if ( get_option( '_wpsc_3811_user_log_notice' ) )
+	add_action( 'admin_notices', '_wpsc_admin_notices_3dot8dot11' );

@@ -170,7 +170,7 @@ return $output;
 function setting_button(){
 	$next_url	= 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF']."?page=wpsc-edit-products";
 
-// 	$output.="<div><img src='".get_option('siteurl')."/wp-content/plugins/".WPSC_DIR_NAME."/images/settings_button.jpg' onclick='display_settings_button()'>";
+// 	$output.="<div><img src='" . plugins_url( WPSC_DIR_NAME . '/images/settings_button.jpg' ) . "' onclick='display_settings_button()'>";
 	$output.="<div style='float: right; margin-top: 0px; position: relative;'> | <a href='#' onclick='display_settings_button(); return false;' style='text-decoration: underline;'>".esc_html__('Settings', 'wpsc')." &raquo;</a>";
 	$output.="<span id='settings_button' style='width:180px;background-color:#f1f1f1;position:absolute; right: 10px; border:1px solid black; display:none;'>";
 	$output.="<ul class='settings_button'>";
@@ -332,7 +332,7 @@ function wpsc_packing_slip( $purchase_id ) {
 
 		if ( 2 == get_option( 'payment_method' ) ) {
 			$gateway_name = '';
-			$nzshpcrt_gateways = nzshpcrt_get_gateways();
+			global $nzshpcrt_gateways;
 
 			foreach( $nzshpcrt_gateways as $gateway ) {
 				if ( $purch_data['gateway'] != 'testmode' ) {

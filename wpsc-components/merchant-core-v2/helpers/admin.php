@@ -40,9 +40,9 @@ function _wpsc_filter_merchant_v2_gateway_form( $form, $selected_gateway ) {
 	}
 
 	if ( $selected_gateway_data ) {
-		if ( array_key_exists( $selected_gateway, $payment_gateway_names ) ) {
+		if ( array_key_exists( $selected_gateway, $payment_gateway_names ) && $payment_gateway_names[$selected_gateway] !== "") {
 			$display_name = $payment_gateway_names[$selected_gateway];
-		} elseif ( ! empty( $selected_gateway_data['display_name'] ) ) {
+		} elseif ( ! empty( $selected_gateway_data['display_name'] ) && $selected_gateway_data['display_name'] !== "" ) {
 			$display_name = $selected_gateway_data['display_name'];
 		} else {
 			switch($selected_gateway_data['payment_type']) {
@@ -68,10 +68,10 @@ function _wpsc_filter_merchant_v2_gateway_form( $form, $selected_gateway ) {
 		ob_start();
 		?>
 			<tr>
-				<td><?php esc_html_e( 'Display Name', 'wpsc' ); ?></td>
+				<td width="150"><?php esc_html_e( 'Display Name', 'wpsc' ); ?></td>
 				<td>
-					<input type="text" name="user_defined_name[<?php echo esc_attr( $selected_gateway ); ?>]" value="<?php echo esc_html( $display_name ); ?>" /><br />
-					<small><?php esc_html_e( 'The text that people see when making a purchase.', 'wpsc' ); ?></small>
+					<input type="text" name="user_defined_name[<?php echo esc_attr( $selected_gateway ); ?>]" value="<?php echo esc_html( $display_name ); ?>" />
+					<p class="description"><?php esc_html_e( 'The text that people see when making a purchase.', 'wpsc' ); ?></p>
 				</td>
 			</tr>
 		<?php
@@ -103,7 +103,7 @@ function _wpsc_action_merchant_v2_submit_gateway_options() {
 	}
 	$custom_gateways = get_option( 'custom_gateway_options' );
 
-	$nzshpcrt_gateways = nzshpcrt_get_gateways();
+	global $nzshpcrt_gateways;
 	foreach ( $nzshpcrt_gateways as $gateway ) {
 		if ( in_array( $gateway['internalname'], $custom_gateways ) ) {
 			if ( isset( $gateway['submit_function'] ) ) {

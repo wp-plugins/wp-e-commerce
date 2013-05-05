@@ -702,14 +702,11 @@ function wpsc_edit_the_product_link( $link = null, $before = '', $after = '', $i
 	if ( $id > 0 )
 		$product_id = $id;
 
-
-	$siteurl = get_option( 'siteurl' );
-
 	$output = '';
 	if(is_user_logged_in()){
 		get_currentuserinfo();
 		if ( $current_user->{$table_prefix . 'capabilities'}['administrator'] == 1 )
-			$output = $before . "<a class='wpsc_edit_product' href='{$siteurl}/wp-admin/post.php?action=edit&amp;post={$product_id}'>" . $link . "</a>" . $after;
+			$output = $before . '<a class="wpsc_edit_product" href="' . esc_attr( get_edit_post_link( $product_id ) ) . '">' . $link . '</a>' . $after;
 
 	}
 	return $output;
@@ -1080,47 +1077,35 @@ function wpsc_product_postage_and_packaging() {
 }
 
 /**
- * wpsc product image function
- * @return string - the URL to the thumbnail image
+ * WPSC Product Image
+ *
+ * Gets the product image URL. Uses the post thumbnail if set.
+ *
+ * @param  int     $width                   Image width
+ * @param  int     $height                  Image height
+ * @param  int     $product_id              Product ID
+ * @return string                           The URL to the thumbnail image
+ *
+ * @uses   wpsc_the_product_thumbnail_id()  Get the product thumbnail ID
  */
-function wpsc_the_product_image( $width='', $height='', $product_id='' ) {
+function wpsc_the_product_image( $width = '', $height = '', $product_id = '' ) {
 	if ( empty( $product_id ) )
 		$product_id = get_the_ID();
 
-
+	// If variation, get parent product
 	$product = get_post( $product_id );
-
 	if ( $product->post_parent > 0 )
 		$product_id = $product->post_parent;
 
-	$attached_images = (array)get_posts( array(
-				'post_type' => 'attachment',
-				'numberposts' => 1,
-				'post_status' => null,
-				'post_parent' => $product_id,
-				'orderby' => 'menu_order',
-				'order' => 'ASC'
-			) );
+	$src = false;
 
-
-	$post_thumbnail_id = get_post_thumbnail_id( $product_id );
-
-	$src = wp_get_attachment_image_src( $post_thumbnail_id, 'large' );
-
-	if ( ! empty( $src ) && is_string( $src[0] ) ) {
-		$src = $src[0];
-	} elseif ( ! empty( $attached_images ) ) {
-		$attached_image = wp_get_attachment_image_src( $attached_images[0]->ID, 'large' );
-		$src = $attached_image[0];
-	} else {
-		$src = false;
-	}
+	$product_thumbnail_id = wpsc_the_product_thumbnail_id( $product_id );
+	$src = wp_get_attachment_image_src( $product_thumbnail_id, 'large' );
 
 	if ( is_ssl() && ! empty( $src ) )
 		$src = str_replace( 'http://', 'https://', $src );
-	$src = apply_filters( 'wpsc_product_image', $src );
 
-	return $src;
+	return apply_filters( 'wpsc_product_image', $src );
 }
 
 /**
@@ -1140,25 +1125,33 @@ function wpsc_check_display_type(){
 }
 
 /**
- * Get the product thumbnail id.
+ * Get The Product Thumbnail ID
+ *
  * If no post thumbnail is set, this will return the ID of the first image
  * associated with a product.
+ *
+ * @param  int  $product_id  Product ID
+ * @return int               Product thumbnail ID
  */
 function wpsc_the_product_thumbnail_id( $product_id ) {
-
 	$thumbnail_id = null;
 
-	// Use product thumbnail
+	// If variation, get parent product
+	$product = get_post( $product_id );
+	if ( $product->post_parent > 0 )
+		$product_id = $product->post_parent;
+
+	// Use product thumbnail...
 	if ( has_post_thumbnail( $product_id ) ) {
 		$thumbnail_id = get_post_thumbnail_id( $product_id  );
-	// Use first product image
 	} else {
-		// Get all attached images to this product
+		// ... or get first image
 		$attached_images = (array) get_posts( array(
 			'post_type'   => 'attachment',
 			'numberposts' => 1,
 			'post_status' => null,
 			'post_parent' => $product_id,
+			'orderby'     => 'menu_order',
 			'order'       => 'ASC'
 		) );
 		if ( ! empty( $attached_images ) )
@@ -1166,7 +1159,6 @@ function wpsc_the_product_thumbnail_id( $product_id ) {
 	}
 	return $thumbnail_id;
 }
-
 
 /**
 * Regenerate size metadata of a thumbnail in case it's missing.
@@ -1202,8 +1194,8 @@ function _wpsc_regenerate_thumbnail_size( $thumbnail_id, $size ) {
  */
 function wpsc_the_product_thumbnail( $width = null, $height = null, $product_id = 0, $page = false ) {
 	$thumbnail = false;
-
 	$display = wpsc_check_display_type();
+
 	// Get the product ID if none was passed
 	if ( empty( $product_id ) )
 		$product_id = get_the_ID();
@@ -1214,9 +1206,8 @@ function wpsc_the_product_thumbnail( $width = null, $height = null, $product_id 
 	$thumbnail_id = wpsc_the_product_thumbnail_id( $product_id );
 
 	// If no thumbnail found for item, get it's parent image (props. TJM)
-	if ( ! $thumbnail_id && $product->post_parent ) {
+	if ( ! $thumbnail_id && $product->post_parent )
 		$thumbnail_id = wpsc_the_product_thumbnail_id( $product->post_parent );
-	}
 
 	if ( ! $page ) {
 		if ( is_single() )
@@ -1229,37 +1220,31 @@ function wpsc_the_product_thumbnail( $width = null, $height = null, $product_id 
 		$width  = get_option( 'product_image_width' );
 		$height = get_option( 'product_image_height' );
 
-		//Overwrite height & width if custom dimensions exist for thumbnail_id
-		if ( 'grid' != $display && 'products-page' == $page && isset($thumbnail_id)) {
-			$custom_width = get_post_meta( $thumbnail_id, '_wpsc_custom_thumb_w', true );
+		// Overwrite height & width if custom dimensions exist for thumbnail_id
+		if ( 'grid' != $display && 'products-page' == $page && isset( $thumbnail_id ) ) {
+			$custom_width  = get_post_meta( $thumbnail_id, '_wpsc_custom_thumb_w', true );
 			$custom_height = get_post_meta( $thumbnail_id, '_wpsc_custom_thumb_h', true );
 
-			if ( !empty( $custom_width ) && !empty( $custom_height ) ) {
-				$width = $custom_width;
+			if ( ! empty( $custom_width ) && ! empty( $custom_height ) ) {
+				$width  = $custom_width;
 				$height = $custom_height;
 			}
-		} elseif( $page == 'single' && isset($thumbnail_id)) {
+		} elseif ( $page == 'single' && isset( $thumbnail_id ) ) {
 			$custom_thumbnail = get_post_meta( $thumbnail_id, '_wpsc_selected_image_size', true );
 
 			if ( ! $custom_thumbnail ) {
 				$custom_thumbnail = 'medium-single-product';
 				$current_size = image_get_intermediate_size( $thumbnail_id, $custom_thumbnail );
-				$settings_width = get_option( 'single_view_image_width' );
+				$settings_width  = get_option( 'single_view_image_width' );
 				$settings_height = get_option( 'single_view_image_height' );
 
-				if (  ! $current_size
-				     || (
-				     	     $current_size['width'] != $settings_width
-					      && $current_size['height'] != $settings_height
-					    )
-				)
+				if ( ! $current_size || ( $current_size['width'] != $settings_width && $current_size['height'] != $settings_height ) )
 					_wpsc_regenerate_thumbnail_size( $thumbnail_id, $custom_thumbnail );
 			}
 			$src = wp_get_attachment_image_src( $thumbnail_id, $custom_thumbnail );
 
-			if ( !empty( $src ) && is_string( $src[0] ) ) {
+			if ( ! empty( $src ) && is_string( $src[0] ) )
 				$thumbnail = $src[0];
-			}
 		} elseif ( $page == 'manage-products' && isset( $thumbnail_id ) ) {
 			$current_size = image_get_intermediate_size( $thumbnail_id, 'admin-product-thumbnails' );
 
@@ -1273,14 +1258,13 @@ function wpsc_the_product_thumbnail( $width = null, $height = null, $product_id 
 		}
 	}
 
-	// calculate the height based on the ratio of the original demensions
-	// blame Cameron if this is buggy :P
-	if ( $height == 0 || $width ==0 ){
-		$attachment_meta = get_post_meta( $thumbnail_id,'_wp_attachment_metadata', false );
-		$original_width = $attachment_meta[0]['width'];
+	// Calculate the height based on the ratio of the original dimensions.
+	if ( $height == 0 || $width == 0 ) {
+		$attachment_meta = get_post_meta( $thumbnail_id, '_wp_attachment_metadata', false );
+		$original_width  = $attachment_meta[0]['width'];
 		$original_height = $attachment_meta[0]['height'];
 
-		if( $width != 0 ){
+		if ( $width != 0 ) {
 			$height = ( $original_height / $original_width ) * $width;
 			$height = round( $height, 0 );
 		} elseif ( $height != 0 ) {
@@ -1681,10 +1665,13 @@ function wpsc_the_variation_price( $return_as_numeric = false ) {
 	if ( $wpsc_variations->variation_count > 0 ) {
 
 		$product_id = get_the_ID();
-		$wpq = array( 'variations' => $wpsc_variations->variation->slug,
+		$wpq = array( 
+			'variations'  => $wpsc_variations->variation->slug,
 			'post_status' => array( 'inherit', 'publish' ),
-			'post_type' => 'wpsc-product',
-			'post_parent' => $product_id );
+			'post_type'   => 'wpsc-product',
+			'post_parent' => $product_id 
+		);
+		
 		$query = new WP_Query( $wpq );
 		// Should never happen
 		if ( $query->post_count != 1 )
@@ -1692,18 +1679,18 @@ function wpsc_the_variation_price( $return_as_numeric = false ) {
 
 		$variation_product_id = $query->posts[0]->ID;
 
-		$price = get_product_meta( $variation_product_id, "price",true );
-		$special_price = get_product_meta( $variation_product_id, "special_price", true );
-		if($special_price < $price && $special_price > 0)
+		$price         = get_product_meta( $variation_product_id, 'price',true );
+		$special_price = get_product_meta( $variation_product_id, 'special_price', true );
+		
+		if ( $special_price < $price && $special_price > 0 )
 			$price = $special_price;
-		if ( !$return_as_numeric ) {
-			$output = wpsc_currency_display( $price,array( 'display_as_html' => false ) );
-		} else {
-			$output = $price;
-		}
+			
+		$price  = apply_filters( 'wpsc_do_convert_price', $price, $product_id, $variation_product_id );
+		$output = $return_as_numeric ? $price :  wpsc_currency_display( $price, array( 'display_as_html' => false ) );
 	} else {
 		$output = false;
 	}
+	
 	return $output;
 }
 

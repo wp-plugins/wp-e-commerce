@@ -143,7 +143,7 @@ function wpsc_decrement_claimed_stock($purchase_log_id) {
 							) );
 
 							if ( $result )
-								$email_message = __( 'The product "%s" is out of stock and has been unpublished.', 'wpsc' );
+								$email_message = sprintf( __( 'The product "%s" is out of stock and has been unpublished.', 'wpsc' ), $product->post_title );
 						}
 
 						if ( $product_meta["notify_when_none_left"] == 1 )
@@ -276,7 +276,7 @@ function wpsc_send_ping($server) {
 	// when set to true, this outputs debug messages by itself
 	$client->debug = false;
 	$home = trailingslashit( get_option('product_list_url') );
-	$rss_url = get_option('siteurl')."/index.php?rss=true&amp;action=product_list";
+	$rss_url = add_query_arg( array( 'rss' => 'true', 'action' => 'product_list' ), home_url( '/' ) );
 	if ( !$client->query('weblogUpdates.extendedPing', get_option('blogname'), $home, $rss_url ) ) {
 		$client->query('weblogUpdates.ping', get_option('blogname'), $home);
 	}

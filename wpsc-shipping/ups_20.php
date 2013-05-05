@@ -223,7 +223,7 @@ class ash_ups {
                         </tr>
                         ");
             $insured_shipment = "";
-            if ($wpsc_ups_settings['insured_shipment'] == "1"){
+            if ( isset( $wpsc_ups_settings['insured_shipment'] ) && $wpsc_ups_settings['insured_shipment'] == "1"){
                 $insured_shipment = "checked=\"checked\"";
             }
             $output .= ("
@@ -235,7 +235,7 @@ class ash_ups {
                         </tr>
                         ");
             $singular_shipping = "";
-            if ($wpsc_ups_settings['singular_shipping'] == "1"){
+            if ( isset( $wpsc_ups_settings['singular_shipping'] ) && $wpsc_ups_settings['singular_shipping'] == "1"){
                 $singular_shipping = "checked=\"checked\"";
             }
             $output .= ("
@@ -616,7 +616,7 @@ class ash_ups {
     private function _parseQuote($raw){
         global $wpdb;
 
-        $config = get_option('wpsc_ups_settings');
+        $config = get_option( 'wpsc_ups_settings', array() );
         $debug  = (array_key_exists('upsenvironment', $config)) ? $config['upsenvironment'] : "";
 
         $rate_table = array();
@@ -850,7 +850,7 @@ class ash_ups {
 
         if (!(boolean)$args["singular_shipping"]){
             // This is where shipping breaks out of UPS if weight is higher than 150 LBS
-            if($weight > 150){
+            if ( $args['weight'] > 150){
                     wpsc_delete_customer_meta( 'quote_shipping_method' );
                     $shipping_quotes[TXT_WPSC_OVER_UPS_WEIGHT] = 0;
                     $session_cache_check['weight'] = $args['weight'];
@@ -896,9 +896,7 @@ class ash_ups {
             }
         }
 
-        $wpec_ash->cache_results($this->internal_name,
-                                 $args["dest_ccode"], $args["dest_state"],
-                                 $args["dest_pcode"], $rate_table, $this->shipment);
+        $wpec_ash->cache_results($this->internal_name, $rate_table, $this->shipment);
 
         // return the final formatted array !
         return $rate_table;
