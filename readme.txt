@@ -10,7 +10,7 @@ WP e-Commerce is a free WordPress Shopping Cart Plugin that lets customers buy y
 
 == Description ==
 
-We make setting up an ecommerce shop easy, and with over 2.3 Million downloads, we have unparalleled experience.
+We make setting up an ecommerce shop easy, and with over 2.4 Million downloads, we have unparalleled experience.
 
 Features:
 
@@ -145,7 +145,7 @@ Before updating please make a backup of your existing files and database. Just i
 After upgrading from earlier versions look for link "Update Store". This will update your database structure to work with new version.
 
 == Changelog ==
-= 3.8.11 = 
+= 3.8.11 =
 * New: Payment Gateway UI is revamped.
 * New: Sales Log UI is revamped.
 * New: wpsc_single_purchase_log_date_time_format and wpsc_single_purchase_log_date_format (Used in new Sales Log UI).
