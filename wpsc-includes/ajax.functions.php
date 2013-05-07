@@ -16,10 +16,6 @@ if ( isset( $_REQUEST['wpsc_ajax_action'] ) && ($_REQUEST['wpsc_ajax_action'] ==
 	add_action( 'init', 'wpsc_special_widget' );
 }
 
-/**
- * add_to_cart function, used through ajax and in normal page loading.
- * No parameters, returns nothing
- */
 function wpsc_add_to_cart() {
 	global $wpsc_cart;
 
@@ -92,6 +88,7 @@ function wpsc_add_to_cart() {
 
 	$cart_item = $wpsc_cart->set_item( $product_id, $parameters );
 
+
 	if ( is_object( $cart_item ) ) {
 		do_action( 'wpsc_add_to_cart', $product, $cart_item );
 		$cart_messages[] = str_replace( "[product_name]", $cart_item->get_title(), __( 'You just added "[product_name]" to your cart.', 'wpsc' ) );
@@ -106,20 +103,28 @@ function wpsc_add_to_cart() {
 		}
 	}
 
-	$json_response = array( 'cart_messages' => $cart_messages, 'product_id' => $product_id );
-	$output = _wpsc_ajax_get_cart( false, $cart_messages );
+	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 
-	$json_response = $json_response + $output;
+		$json_response = array( 'cart_messages' => $cart_messages, 'product_id' => $product_id, 'cart_total' => wpsc_cart_total() );
 
-	if ( is_numeric( $product_id ) && 1 == get_option( 'fancy_notifications' ) )
-		$json_response['fancy_notification'] = str_replace( array( "\n", "\r" ), array( '\n', '\r' ), fancy_notification_content( $cart_messages ) );
+		$output = _wpsc_ajax_get_cart( false, $cart_messages );
 
-	if ( defined( 'DOING_AJAX' ) && DOING_AJAX )
+		$json_response = $json_response + $output;
+
+		if ( is_numeric( $product_id ) && 1 == get_option( 'fancy_notifications' ) )
+			$json_response['fancy_notification'] = str_replace( array( "\n", "\r" ), array( '\n', '\r' ), fancy_notification_content( $cart_messages ) );
+
 		die( json_encode( $json_response ) );
+	}
 }
 
 add_action( 'wp_ajax_add_to_cart'       , 'wpsc_add_to_cart' );
 add_action( 'wp_ajax_nopriv_add_to_cart', 'wpsc_add_to_cart' );
+
+// execute on POST and GET
+if ( isset( $_REQUEST['wpsc_ajax_action'] ) && 'add_to_cart' == $_REQUEST['wpsc_ajax_action'] ) {
+	add_action( 'init', 'wpsc_add_to_cart' );
+}
 
 function wpsc_get_cart() {
 	_wpsc_ajax_get_cart();
@@ -136,12 +141,19 @@ function wpsc_empty_cart() {
 	global $wpsc_cart;
 	$wpsc_cart->empty_cart( false );
 
-	$output = _wpsc_ajax_get_cart( false );
-	die( json_encode( $output ) );
+	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+		$output = _wpsc_ajax_get_cart( false );
+		die( json_encode( $output ) );
+	}
 }
 
 add_action( 'wp_ajax_empty_cart'       , 'wpsc_empty_cart' );
 add_action( 'wp_ajax_nopriv_empty_cart', 'wpsc_empty_cart' );
+
+// execute on POST and GET
+if ( isset( $_REQUEST['wpsc_ajax_action'] ) && ( 'empty_cart' == $_REQUEST['wpsc_ajax_action'] || isset( $_GET['sessionid'] )  && $_GET['sessionid'] > 0 ) ) {
+	add_action( 'init', 'wpsc_empty_cart' );
+}
 
 /**
  * coupons price, used through ajax and in normal page loading.
@@ -207,9 +219,44 @@ function wpsc_update_item_quantity() {
 			wpsc_coupon_price( $coupon );
 		}
 	}
+	$die = ! ( ( isset( $_REQUEST['wpsc_ajax_action'] ) && 'true' == $_REQUEST['wpsc_ajax_action'] ) || ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) );
 
-	_wpsc_ajax_get_cart();
+	_wpsc_ajax_get_cart( $die );
 }
+
+function _wpsc_get_alternate_html() {
+	// These shenanigans are necessary for two reasons.
+	// 1) Some hook into POST, some GET, some REQUEST. They check for the conditional params below.
+	// 2) Most functions properly die() - that means that our output buffer stops there and won't continue on for our purposes.
+	// If there is a better way to get that output without dying, I'm all ears.  A nice slow HTTP request for now.
+	$javascript = wp_remote_retrieve_body(
+					wp_remote_post(
+						add_query_arg(
+							array( 'ajax' => 'true', 'wpsc_action' => 'wpsc_get_alternate_html', 'ajax' => 'true', 'wpsc_ajax_action' => 'add_to_cart' ), home_url() ),
+							array( 'body' =>
+								array( 'cart_messages' => $cart_messages, 'ajax' => 'true', 'wpsc_ajax_action' => 'add_to_cart', 'product_id' => $_REQUEST['product_id']
+									)
+							)
+						)
+					);
+	return $javascript;
+}
+
+/**
+ * Returns the jQuery that is likely included in calls to this action.  For back compat only, will be deprecated soon.
+ * Couldn't think up a better way to return this output, which most often will end in die(), without die()ing early ourselves.
+ *
+ * @param  array  $cart_messages [description]
+ */
+function _wpsc_ajax_return_alternate_html() {
+	$cart_messages = is_array( $_POST['cart_messages'] ) ? $_POST['cart_messages'] : array();
+
+	do_action( 'wpsc_alternate_cart_html', $cart_messages );
+	die;
+}
+
+if ( isset( $_REQUEST['wpsc_action'] ) && 'wpsc_get_alternate_html' == $_REQUEST['wpsc_action'] )
+	add_action( 'init', '_wpsc_ajax_return_alternate_html' );
 
 /**
  * Returns the Cart Widget
@@ -221,9 +268,9 @@ function wpsc_update_item_quantity() {
  * @return mixed                 Returns an array of output data, alternatively
  */
 function _wpsc_ajax_get_cart( $die = true, $cart_messages = array() ) {
-	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+	$return = array();
 
-		$return = array();
+	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 
 		ob_start();
 		include_once( wpsc_get_template_file_path( 'wpsc-cart_widget.php' ) );
@@ -245,24 +292,27 @@ function _wpsc_ajax_get_cart( $die = true, $cart_messages = array() ) {
 			}
 		}
 
-		//Deprecated action. Do not use.  We now have a custom JS event called 'wpsc_fancy_notification'. There is access to the complete $json_response object.
-		ob_start();
+		$action_output = '';
+		if ( has_action( 'wpsc_alternate_cart_html' ) ) {
+			//Deprecated action. Do not use.  We now have a custom JS event called 'wpsc_fancy_notification'. There is access to the complete $json_response object.
+			ob_start();
 
-		do_action( 'wpsc_alternate_cart_html', $cart_messages );
-		$action_output = ob_get_contents();
+			echo _wpsc_get_alternate_html();
+			$action_output = ob_get_contents();
 
-		ob_end_clean();
+			ob_end_clean();
+		}
 
 		if ( ! empty( $action_output ) ) {
 			_wpsc_doing_it_wrong( 'wpsc_alternate_cart_html', __( 'As of WPeC 3.8.11, it is improper to hook into "wpsc_alternate_cart_html" to output javascript.  We now have a custom javascript event called "wpsc_fancy_notification" you can hook into.', 'wpsc' ), '3.8.11' );
-			$return['action_output'] = $action_output;
+			$return['wpsc_alternate_cart_html'] = $action_output;
 		}
-
-		if ( $die )
-			die( $output . $action_output );
-		else
-			return $return;
 	}
+
+	if ( $die )
+		die( $output . $action_output );
+	else
+		return $return;
 }
 
 // execute on POST and GET
@@ -305,6 +355,7 @@ function wpsc_update_product_rating() {
 if ( isset( $_REQUEST['wpsc_ajax_action'] ) && ($_REQUEST['wpsc_ajax_action'] == 'rate_product') ) {
 	add_action( 'init', 'wpsc_update_product_rating' );
 }
+
 
 /**
  * update_shipping_price function, used through ajax and in normal page loading.
@@ -412,6 +463,11 @@ function wpsc_update_product_price() {
 add_action( 'wp_ajax_update_product_price'       , 'wpsc_update_product_price' );
 add_action( 'wp_ajax_nopriv_update_product_price', 'wpsc_update_product_price' );
 
+// execute on POST and GET
+if ( isset( $_REQUEST['update_product_price'] ) && 'true' == $_REQUEST['update_product_price'] && ! empty( $_POST['product_id'] ) && is_numeric( $_POST['product_id'] ) ) {
+	add_action( 'init', 'wpsc_update_product_price' );
+}
+
 /**
  * update location function, used through ajax and in normal page loading.
  * No parameters, returns nothing
@@ -474,13 +530,14 @@ function wpsc_update_location() {
 		exit;
 }
 
+add_action( 'wp_ajax_update_location'       , 'wpsc_update_location' );
+add_action( 'wp_ajax_nopriv_update_location', 'wpsc_update_location' );
+
 // execute on POST and GET
-if ( isset( $_REQUEST['wpsc_ajax_actions'] ) && $_REQUEST['wpsc_ajax_actions'] == 'update_location' ) {
+if ( isset( $_REQUEST['wpsc_ajax_actions'] ) && 'update_location' == $_REQUEST['wpsc_ajax_actions'] ) {
 	add_action( 'init', 'wpsc_update_location' );
 }
 
-add_action( 'wp_ajax_update_location'       , 'wpsc_update_location' );
-add_action( 'wp_ajax_nopriv_update_location', 'wpsc_update_location' );
 
 function wpsc_cart_html_page() {
 	require_once(WPSC_FILE_PATH . "/wpsc-includes/shopping_cart_container.php");
@@ -823,6 +880,11 @@ function wpsc_change_tax() {
 add_action( 'wp_ajax_change_tax'       , 'wpsc_change_tax' );
 add_action( 'wp_ajax_nopriv_change_tax', 'wpsc_change_tax' );
 
+// execute on POST and GET
+if ( isset( $_REQUEST['wpsc_ajax_action'] ) && 'change_tax' == $_REQUEST['wpsc_ajax_action'] ) {
+	add_action( 'init', 'wpsc_change_tax' );
+}
+
 function _wpsc_change_profile_country() {
 	global $wpdb;
 
@@ -943,7 +1005,7 @@ function wpsc_download_file() {
 		$download_data = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `" . WPSC_TABLE_DOWNLOAD_STATUS . "` WHERE `uniqueid` = '%s' AND `downloads` > '0' AND `active`='1' LIMIT 1", $downloadid ), ARRAY_A );
 
 		if ( is_null( $download_data ) && is_numeric( $downloadid ) )
-		    $download_data = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `" . WPSC_TABLE_DOWNLOAD_STATUS . "` WHERE `id` = %d AND `downloads` > '0' AND `active`='1' AND `uniqueid` IS NULL LIMIT 1", $downloadid ), ARRAY_A );
+			$download_data = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `" . WPSC_TABLE_DOWNLOAD_STATUS . "` WHERE `id` = %d AND `downloads` > '0' AND `active`='1' AND `uniqueid` IS NULL LIMIT 1", $downloadid ), ARRAY_A );
 
 
 		if ( (get_option( 'wpsc_ip_lock_downloads' ) == 1) && ($_SERVER['REMOTE_ADDR'] != null) ) {
@@ -1029,7 +1091,7 @@ function _wpsc_force_download_file( $file_id ) {
 			header( 'Cache-Control: must-revalidate, post-check=0, pre-check=0' );
 		}
 		header( "Pragma: public" );
-                        header( "Expires: 0" );
+						header( "Expires: 0" );
 
 		// destroy the session to allow the file to be downloaded on some buggy browsers and webservers
 		session_destroy();
@@ -1062,69 +1124,66 @@ function wpsc_update_shipping_quotes_on_shipping_same_as_billing() {
 	}
 	else {
 		?>
-   <tr class="wpsc_shipping_info">
-            <td colspan="5">
-               <?php _e( 'Please choose a country below to calculate your shipping costs', 'wpsc' ); ?>
-            </td>
-         </tr>
+		<tr class="wpsc_shipping_info">
+				<td colspan="5">
+					<?php _e( 'Please choose a country below to calculate your shipping costs', 'wpsc' ); ?>
+				</td>
+		</tr>
 
-         <?php if (!wpsc_have_shipping_quote()) : // No valid shipping quotes ?>
-            <?php if (wpsc_have_valid_shipping_zipcode()) : ?>
-                  <tr class='wpsc_update_location'>
-                     <td colspan='5' class='shipping_error' >
-                        <?php _e('Please provide a Zipcode and click Calculate in order to continue.', 'wpsc'); ?>
-                     </td>
-                  </tr>
-            <?php else: ?>
-               <tr class='wpsc_update_location_error'>
-                  <td colspan='5' class='shipping_error' >
-                     <?php _e('Sorry, online ordering is unavailable to this destination and/or weight. Please double check your destination details.', 'wpsc'); ?>
-                  </td>
-               </tr>
-            <?php endif; ?>
-         <?php endif; ?>
-         <tr class='wpsc_change_country'>
-            <td colspan='5'>
-               <form name='change_country' id='change_country' action='' method='post'>
-                  <?php echo wpsc_shipping_country_list();?>
-                  <input type='hidden' name='wpsc_update_location' value='true' />
-                  <input type='submit' name='wpsc_submit_zipcode' value='Calculate' />
-               </form>
-            </td>
-         </tr>
+		<?php if ( ! wpsc_have_shipping_quote() ) : // No valid shipping quotes ?>
+			<?php if ( wpsc_have_valid_shipping_zipcode() ) : ?>
+				<tr class='wpsc_update_location'>
+					<td colspan='5' class='shipping_error' >
+						<?php _e('Please provide a Zipcode and click Calculate in order to continue.', 'wpsc'); ?>
+					</td>
+				</tr>
+			<?php else : ?>
+				<tr class='wpsc_update_location_error'>
+					<td colspan='5' class='shipping_error' >
+						<?php _e('Sorry, online ordering is unavailable to this destination and/or weight. Please double check your destination details.', 'wpsc'); ?>
+					</td>
+				</tr>
+			<?php endif; ?>
+		<?php endif; ?>
+		<tr class='wpsc_change_country'>
+			<td colspan='5'>
+				<form name='change_country' id='change_country' action='' method='post'>
+					<?php echo wpsc_shipping_country_list();?>
+					<input type='hidden' name='wpsc_update_location' value='true' />
+					<input type='submit' name='wpsc_submit_zipcode' value='<?php esc_attr_e( 'Calculate', 'wpsc' ); ?>' />
+				</form>
+			</td>
+		</tr>
 
-         <?php if (wpsc_have_morethanone_shipping_quote()) :?>
-            <?php while (wpsc_have_shipping_methods()) : wpsc_the_shipping_method(); ?>
-                  <?php    if (!wpsc_have_shipping_quotes()) { continue; } // Don't display shipping method if it doesn't have at least one quote ?>
-                  <tr class='wpsc_shipping_header'><td class='shipping_header' colspan='5'><?php echo wpsc_shipping_method_name().__(' - Choose a Shipping Rate', 'wpsc'); ?> </td></tr>
-                  <?php while (wpsc_have_shipping_quotes()) : wpsc_the_shipping_quote();  ?>
-                     <tr class='<?php echo wpsc_shipping_quote_html_id(); ?>'>
-                        <td class='wpsc_shipping_quote_name wpsc_shipping_quote_name_<?php echo wpsc_shipping_quote_html_id(); ?>' colspan='3'>
-                           <label for='<?php echo wpsc_shipping_quote_html_id(); ?>'><?php echo wpsc_shipping_quote_name(); ?></label>
-                        </td>
-                        <td class='wpsc_shipping_quote_price wpsc_shipping_quote_price_<?php echo wpsc_shipping_quote_html_id(); ?>' style='text-align:center;'>
-                           <label for='<?php echo wpsc_shipping_quote_html_id(); ?>'><?php echo wpsc_shipping_quote_value(); ?></label>
-                        </td>
-                        <td class='wpsc_shipping_quote_radio wpsc_shipping_quote_radio_<?php echo wpsc_shipping_quote_html_id(); ?>' style='text-align:center;'>
-                           <?php if(wpsc_have_morethanone_shipping_methods_and_quotes()): ?>
-                              <input type='radio' id='<?php echo wpsc_shipping_quote_html_id(); ?>' <?php echo wpsc_shipping_quote_selected_state(); ?>  onclick='switchmethod("<?php echo wpsc_shipping_quote_name(); ?>", "<?php echo wpsc_shipping_method_internal_name(); ?>")' value='<?php echo wpsc_shipping_quote_value(true); ?>' name='shipping_method' />
-                           <?php else: ?>
-                              <input <?php echo wpsc_shipping_quote_selected_state(); ?> disabled='disabled' type='radio' id='<?php echo wpsc_shipping_quote_html_id(); ?>'  value='<?php echo wpsc_shipping_quote_value(true); ?>' name='shipping_method' />
-                                 <?php wpsc_update_shipping_single_method(); ?>
-                           <?php endif; ?>
-                        </td>
-                     </tr>
-                  <?php endwhile; ?>
-            <?php endwhile; ?>
-         <?php endif; ?>
+		<?php if (wpsc_have_morethanone_shipping_quote()) :?>
+			<?php while (wpsc_have_shipping_methods()) : wpsc_the_shipping_method(); ?>
+				<?php if ( ! wpsc_have_shipping_quotes() ) { continue; } // Don't display shipping method if it doesn't have at least one quote ?>
+				<tr class='wpsc_shipping_header'><td class='shipping_header' colspan='5'><?php echo wpsc_shipping_method_name().__(' - Choose a Shipping Rate', 'wpsc'); ?> </td></tr>
+				<?php while (wpsc_have_shipping_quotes()) : wpsc_the_shipping_quote();  ?>
+					<tr class='<?php echo wpsc_shipping_quote_html_id(); ?>'>
+						<td class='wpsc_shipping_quote_name wpsc_shipping_quote_name_<?php echo wpsc_shipping_quote_html_id(); ?>' colspan='3'>
+							<label for='<?php echo wpsc_shipping_quote_html_id(); ?>'><?php echo wpsc_shipping_quote_name(); ?></label>
+						</td>
+						<td class='wpsc_shipping_quote_price wpsc_shipping_quote_price_<?php echo wpsc_shipping_quote_html_id(); ?>' style='text-align:center;'>
+							<label for='<?php echo wpsc_shipping_quote_html_id(); ?>'><?php echo wpsc_shipping_quote_value(); ?></label>
+						</td>
+						<td class='wpsc_shipping_quote_radio wpsc_shipping_quote_radio_<?php echo wpsc_shipping_quote_html_id(); ?>' style='text-align:center;'>
+							<?php if(wpsc_have_morethanone_shipping_methods_and_quotes()): ?>
+								<input type='radio' id='<?php echo wpsc_shipping_quote_html_id(); ?>' <?php echo wpsc_shipping_quote_selected_state(); ?>  onclick='switchmethod("<?php echo wpsc_shipping_quote_name(); ?>", "<?php echo wpsc_shipping_method_internal_name(); ?>")' value='<?php echo wpsc_shipping_quote_value(true); ?>' name='shipping_method' />
+							<?php else: ?>
+								<input <?php echo wpsc_shipping_quote_selected_state(); ?> disabled='disabled' type='radio' id='<?php echo wpsc_shipping_quote_html_id(); ?>'  value='<?php echo wpsc_shipping_quote_value(true); ?>' name='shipping_method' />
+									<?php wpsc_update_shipping_single_method(); ?>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endwhile; ?>
+			<?php endwhile; ?>
+		<?php endif; ?>
 
-         <?php wpsc_update_shipping_multiple_methods(); ?>
+		<?php wpsc_update_shipping_multiple_methods(); ?>
 
 		<?php
 
 	}
 	exit;
-
 }
-
-?>
