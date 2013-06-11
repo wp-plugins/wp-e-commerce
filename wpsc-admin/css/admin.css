@@ -2,6 +2,29 @@
 * This is the new WPSC Admin CSS file
 
 */
+table.wp-list-table .column-title {
+	width: 26%;
+}
+table.wp-list-table .column-featured {
+	width: 30px;
+}
+table.wp-list-table .column-price,
+table.wp-list-table .column-sale_price {
+	width: 8%;
+}
+table.wp-list-table .column-SKU {
+	width: 11%;
+}
+table.wp-list-table .column-stock {
+	width: 8%;
+}
+table.wp-list-table .column-weight {
+	width: 7%;
+}
+table.wp-list-table .column-cats {
+	width: 15%;
+}
+
 ul.variation_checkboxes li {
 margin: 1px 0 3px;
 }
@@ -1165,18 +1188,25 @@ ul.categorisation_links li{
 ul.categorisation_links li.selected a{
 	color: #D54E21;
 }
+.multiple-select-container {
+	margin-left: 0.5em;
+}
 
 .multiple-select {
 	background: white none repeat scroll 0px 0px;
 	border: 1px solid #DFDFDF;
 	display: inline-block;
 	height: 120px;
-	margin: 10px 0;
 	overflow-x: hidden;
 	overflow-y: auto;
-	padding: 0px;
+	padding: 0 0 0 5px;
 	position: relative;
-	width:98%
+}
+.multiple-select input {
+	width: inherit;
+}
+.multiple-select label {
+	display: inherit;
 }
 
 table.category_forms  a.delete_button {
@@ -1362,14 +1392,13 @@ a.wpsc_featured_product_toggle {
 	display: block;
 	height: 18px;
 	width: 18px;
-	margin: 4px 0px 0px 6px;
+	margin: 4px 0px 0px 0px;
 }
 
-a.wpsc_featured_product_toggle img {
-	display: block;
-	margin: 0px auto 0px auto;
-
-}
+.column-featured a { background:url( '../../wpsc-core/images/core-sprite.png') no-repeat 0 -32px transparent; }
+.column-featured a.gold-star { background-position:0 -16px; }
+.column-featured a:active,
+.column-featured a.gold-star:active { background-position:0 0; }
 
 div.wpsc_clear {
 	clear: both;
@@ -1978,4 +2007,14 @@ th.right-col {
 div.new_layer,
 div#table_rate {
 	display:none;
+}
+
+body.edit-tags-php img.wpsc_category_image {
+	max-width:256px;
+	max-height:256px;
+	min-width:128px;
+}
+
+.wpsc-width-height-fields label {
+	display: inline;
 }

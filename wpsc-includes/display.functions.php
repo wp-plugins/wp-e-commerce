@@ -15,36 +15,60 @@
  * @return string - html displaying one or more products
  */
 function wpsc_buy_now_button( $product_id, $replaced_shortcode = false ) {
-	$product = get_post( $product_id );
-	$supported_gateways = array('wpsc_merchant_paypal_standard','paypal_multiple');
-	$selected_gateways = get_option( 'custom_gateway_options' );
+
+	$product_id = absint($product_id);
+
+	$product            = get_post( $product_id );
+	$supported_gateways = array( 'wpsc_merchant_paypal_standard', 'paypal_multiple' );
+	$selected_gateways  = get_option( 'custom_gateway_options' );
+
 	if ( $replaced_shortcode )
 		ob_start();
 
-	if ( in_array( 'wpsc_merchant_paypal_standard', (array)$selected_gateways ) ) {
+	if ( in_array( 'wpsc_merchant_paypal_standard', (array) $selected_gateways ) ) {
 		if ( $product_id > 0 ) {
-			$post_meta = get_post_meta( $product_id, '_wpsc_product_metadata', true );
-			$shipping = isset( $post_meta['shipping'] ) ? $post_meta['shipping']['local'] : '';
-			$price = get_post_meta( $product_id, '_wpsc_price', true );
+
+			$post_meta     = get_post_meta( $product_id, '_wpsc_product_metadata', true );
+			$shipping      = isset( $post_meta['shipping'] ) ? $post_meta['shipping']['local'] : '';
+			$price         = get_post_meta( $product_id, '_wpsc_price', true );
 			$special_price = get_post_meta( $product_id, '_wpsc_special_price', true );
+
 			if ( $special_price )
 				$price = $special_price;
+
 			if ( wpsc_uses_shipping ( ) ) {
 				$handling = get_option( 'base_local_shipping' );
 			} else {
 				$handling = $shipping;
 			}
 
-			$src = _x( 'https://www.paypal.com/en_US/i/btn/btn_buynow_LG.gif', 'PayPal Buy Now Button', 'wpsc' );
-			$src = apply_filters( 'wpsc_buy_now_button_src', $src );
-			$classes = "wpsc-buy-now-form wpsc-buy-now-form-{$product_id}";
-			$button_html = '<input class="wpsc-buy-now-button wpsc-buy-now-button-' . esc_attr( $product_id ) . '" type="image" name="submit" border="0" src=' . esc_url( $src ) . ' alt="' . esc_attr( 'PayPal - The safer, easier way to pay online', 'wpsc' ) . '" />';
+			$has_variants = wpsc_product_has_variations( $product_id );
+
+			$src     = apply_filters( 'wpsc_buy_now_button_src', _x( 'https://www.paypal.com/en_US/i/btn/btn_buynow_LG.gif', 'PayPal Buy Now Button', 'wpsc' ) );
+			$classes = apply_filters( 'wpsc_buy_now_button_class', "wpsc-buy-now-form wpsc-buy-now-form-{$product_id}" );
+
+			$button_html = sprintf( '<input%1$s class="wpsc-buy-now-button wpsc-buy-now-button-%2$s" type="image" name="submit" border="0" src="%3$s" alt="%4$s" />',
+				disabled( $has_variants, true, false ),
+				esc_attr( $product_id ),
+				esc_url( $src ),
+				esc_attr__( 'PayPal - The safer, easier way to pay online', 'wpsc' )
+			);
+
 			$button_html = apply_filters( 'wpsc_buy_now_button_html', $button_html, $product_id );
-			?>
-			<form class="<?php echo esc_attr( $classes ); ?>" target="paypal" action="<?php echo esc_url( home_url() ); ?>" method="post">
+?>
+			<form class="<?php echo esc_attr( sanitize_html_class( $classes, '' ) ); ?>" id="buy-now-product_<?php echo $product_id; ?>" target="paypal" action="<?php echo esc_url( home_url() ); ?>" method="post">
 				<input type="hidden" name="wpsc_buy_now_callback" value="1" />
 				<input type="hidden" name="product_id" value="<?php echo esc_attr( $product_id ); ?>" />
-				<?php if ( get_option( 'multi_add' ) ): ?>
+<?php
+				if ( $has_variants ) :
+					// grab the variation form fields here
+					$wpsc_variations = new wpsc_variations( $product_id );
+					while ( wpsc_have_variation_groups() ) : wpsc_the_variation_group();
+						printf('<input type="hidden" class="variation-value" name="variation[%1$d]" id="%2$s" value="0"/>', wpsc_vargrp_id(), wpsc_vargrp_form_id() );
+					endwhile;
+				endif; /* END wpsc_product_has_variations */
+?>
+				<?php if ( get_option( 'multi_add' ) ) : ?>
 					<label for="quantity"><?php esc_html_e( 'Quantity', 'wpsc' ); ?></label>
 					<input type="text" size="4" id="quantity" name="quantity" value="" /><br />
 				<?php else: ?>
@@ -70,20 +94,20 @@ function wpsc_also_bought( $product_id ) {
 	if ( get_option( 'wpsc_also_bought' ) == 0 ) {
 		return '';
 	}
-	
+
 	// To be made customiseable in a future release
 	$also_bought_limit = 3;
 	$element_widths = 96;
 	$image_display_height = 96;
 	$image_display_width = 96;
-	
+
 	// Filter will be used by a plugin to provide 'Also Bought' functionality when this is deprecated from core.
 	// Filter is currently private and should not be used by plugin/theme devs as it may only be temporary.
 	$output = apply_filters( '_wpsc_also_bought', '', $product_id );
 	if ( ! empty( $output ) ) {
 		return $output;
 	}
-	
+
 	// If above filter returns output then the following is ignore and can be deprecated in future.
 	$also_bought = $wpdb->get_results( $wpdb->prepare( "SELECT `" . $wpdb->posts . "`.* FROM `" . WPSC_TABLE_ALSO_BOUGHT . "`, `" . $wpdb->posts . "` WHERE `selected_product`= %d AND `" . WPSC_TABLE_ALSO_BOUGHT . "`.`associated_product` = `" . $wpdb->posts . "`.`id` AND `" . $wpdb->posts . "`.`post_status` IN('publish','protected') ORDER BY `" . WPSC_TABLE_ALSO_BOUGHT . "`.`quantity` DESC LIMIT $also_bought_limit", $product_id ), ARRAY_A );
 	if ( is_array( $also_bought ) && count( $also_bought ) > 0 ) {
@@ -338,25 +362,26 @@ function wpsc_obtain_the_title() {
 	return $output.$seperator;
 }
 
+/**
+ *	Return category or product description depending on queried item
+ */
 function wpsc_obtain_the_description() {
-	global $wpdb, $wp_query, $wpsc_title_data;
+
 	$output = null;
 
-	if ( is_numeric( $wp_query->query_vars['category_id'] ) ) {
-		$category_id = $wp_query->query_vars['category_id'];
-	} else if ( $_GET['category'] ) {
-		$category_id = absint( $_GET['category'] );
+	// Return Category Description
+	if ( is_numeric( get_query_var('category_id') ) ) {
+		$output = wpsc_get_categorymeta( get_query_var('category_id'), 'description' );
+	} else if ( ! empty($_GET['category']) ) {
+		$output = wpsc_get_categorymeta( absint( $_GET['category'] ), 'description' );
 	}
 
-	if ( is_numeric( $category_id ) ) {
-		$output = wpsc_get_categorymeta( $category_id, 'description' );
+	// Return product content as description if product page
+	if ( !empty($_GET['product_id'] ) && is_numeric( $_GET['product_id'] ) ) {
+		$product = get_post(absint( $_GET['product_id'] ));
+		$output = $product->post_content;
 	}
 
-
-	if ( is_numeric( $_GET['product_id'] ) ) {
-		$product_id = absint( $_GET['product_id'] );
-		$output = $wpdb->get_var( $wpdb->prepare( "SELECT `post_content` FROM `" . $wpdb->posts . "` WHERE `id` = %d LIMIT 1", $product_id ) );
-	}
 	return $output;
 }
 

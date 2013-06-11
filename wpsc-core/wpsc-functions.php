@@ -688,6 +688,9 @@ function _wpsc_pre_get_posts_reset_taxonomy_globals( $query ) {
 	if ( ! get_option( 'use_pagination' ) )
 		return;
 
+	if ( ! is_page( wpsc_get_the_post_id_by_shortcode( '[productspage]' ) ) && ! $query->get( 'wpsc_product_category' ) )
+		return;
+
 	$query->set( 'posts_per_page', get_option( 'wpsc_products_per_page' ) );
 
 	$post_type_object = get_post_type_object( 'wpsc-product' );
@@ -721,7 +724,7 @@ function wpsc_start_the_query() {
 		if ( count( $wpsc_query_vars ) <= 1 ) {
 			$post_type_object = get_post_type_object( 'wpsc-product' );
 			$wpsc_query_vars = array(
-				'post_status' => current_user_can( $post_type_object->cap->edit_posts ) ? 'private,draft,pending,publish' : 'publish',
+				'post_status' => apply_filters( 'wpsc_product_display_status', array( 'publish' ) ),
 				'post_parent' => 0,
 				'order'       => apply_filters( 'wpsc_product_order', get_option( 'wpsc_product_order', 'ASC' ) )
 			);
@@ -1179,8 +1182,7 @@ class wpsc_products_by_category {
 			}
 
 			$post_type_object = get_post_type_object( 'wpsc-product' );
-			$permitted_post_statuses = current_user_can( $post_type_object->cap->edit_posts ) ? "'private', 'draft', 'pending', 'publish'" : "'publish'";
-
+			$permitted_post_statuses = "'" . implode( "', '", $query->query_vars['post_status'] ) . "'";
 
 			$whichcat .= " AND $wpdb->posts.post_status IN ($permitted_post_statuses) ";
 			$groupby = "{$wpdb->posts}.ID";
@@ -1907,10 +1909,10 @@ function wpsc_get_product_terms( $product_id, $tax, $field = '' ) {
  * Returns page slug that corresponds to a given WPEC-specific shortcode.
  *
  * @since 3.8.10
- * 
+ *
  * @uses   wpsc_get_the_post_id_by_shortcode()  Gets page ID of shortcode.
  * @uses   get_post_field()                     Returns post name of page ID.
- * 
+ *
  * @param  string $shortcode                    Shortcode of WPEC-specific page, e.g. '[productspage]''
  * @return string                               Post slug
  */

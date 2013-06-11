@@ -65,7 +65,7 @@ function wpsc_a_page_url($page=null) {
  *
  * @return
  */
-function wpsc_pagination($totalpages = '', $per_page = '', $current_page = '', $page_link = '') {
+function wpsc_pagination( $totalpages = '', $per_page = '', $current_page = '', $page_link = '' ) {
 	global $wp_query, $wpsc_query, $wp_the_query;
 
 	$num_paged_links = 4; //amount of links to show on either side of current page
@@ -264,7 +264,7 @@ function wpsc_pagination($totalpages = '', $per_page = '', $current_page = '', $
 		}
 	}
 	// Return the output.
-	echo $output;
+	echo apply_filters( 'wpsc_pagination', $output, $totalpages, $per_page, $current_page, $page_link );
 }
 
 /**
@@ -561,7 +561,7 @@ function wpsc_display_products() {
 	$product_page_id = wpsc_get_the_post_id_by_shortcode('[productspage]');
 	//we have to display something, if we are not displaying categories, then we must display products
 	$output = true;
-	if ( wpsc_display_categories () && $post ) {
+	if ( wpsc_display_categories () && isset ( $post->ID ) ) {
 		if ( get_option( 'wpsc_default_category' ) == 'list' && $post->ID == $product_page_id )
 			$output = false;
 
@@ -1104,7 +1104,11 @@ function wpsc_the_product_image( $width = '', $height = '', $product_id = '' ) {
 	$src = is_array( $src ) ? $src[0] : $src;
 
 	if ( is_ssl() && ! empty( $src ) )
-		$src = str_replace( 'http://', 'https://', $src[0] );
+		$src = str_replace( 'http://', 'https://', $src );
+
+	// WordPress's esc_url() function strips out spaces, so encode them here to ensure they don't get stripped out
+	// Ref: http://core.trac.wordpress.org/ticket/23605
+	$src = str_replace( ' ', '%20', $src );
 
 	return apply_filters( 'wpsc_product_image', $src );
 }
@@ -1129,18 +1133,14 @@ function wpsc_check_display_type(){
  * Get The Product Thumbnail ID
  *
  * If no post thumbnail is set, this will return the ID of the first image
- * associated with a product.
+ * associated with a product. If no image is found and the product is a variation it will
+ * then try getting the parent product's image instead.
  *
  * @param  int  $product_id  Product ID
  * @return int               Product thumbnail ID
  */
 function wpsc_the_product_thumbnail_id( $product_id ) {
 	$thumbnail_id = null;
-
-	// If variation, get parent product
-	$product = get_post( $product_id );
-	if ( $product->post_parent > 0 )
-		$product_id = $product->post_parent;
 
 	// Use product thumbnail...
 	if ( has_post_thumbnail( $product_id ) ) {
@@ -1158,8 +1158,30 @@ function wpsc_the_product_thumbnail_id( $product_id ) {
 		if ( ! empty( $attached_images ) )
 			$thumbnail_id = $attached_images[0]->ID;
 	}
+	return apply_filters( 'wpsc_the_product_thumbnail_id', $thumbnail_id, $product_id );
+}
+
+/**
+ * Maybe Get The Parent Product Thumbnail ID
+ *
+ * If no thumbnail is found and the product is a variation it will
+ * then try getting the parent product's image instead.
+ *
+ * @param  int  $thumbnail_id  Thumbnail ID
+ * @param  int  $product_id    Product ID
+ * @return int                 Product thumbnail ID
+ *
+ * @uses   wpsc_the_product_thumbnail_id()  Get the product thumbnail ID
+ */
+function wpsc_maybe_get_the_parent_product_thumbnail_id( $thumbnail_id, $product_id ) {
+	if ( ! $thumbnail_id ) {
+		$product = get_post( $product_id );
+		if ( $product->post_parent > 0 )
+			$thumbnail_id = wpsc_the_product_thumbnail_id( $product->post_parent );
+	}
 	return $thumbnail_id;
 }
+add_filter( 'wpsc_the_product_thumbnail_id', 'wpsc_maybe_get_the_parent_product_thumbnail_id', 10, 2 );
 
 /**
 * Regenerate size metadata of a thumbnail in case it's missing.
@@ -1279,6 +1301,10 @@ function wpsc_the_product_thumbnail( $width = null, $height = null, $product_id 
 
 	if ( ! empty( $thumbnail ) && is_ssl() )
 		$thumbnail = str_replace( 'http://', 'https://', $thumbnail );
+
+	// WordPress's esc_url() function strips out spaces, so encode them here to ensure they don't get stripped out
+	// Ref: http://core.trac.wordpress.org/ticket/23605
+	$thumbnail = str_replace( ' ', '%20', $thumbnail );
 
 	return $thumbnail;
 }
@@ -1450,12 +1476,11 @@ function wpsc_display_product_multicurrency() {
 
 /**
  * wpsc variation group name function
- * @return string - the variaton group name
+ * @return string - the variation group name
  */
 function wpsc_the_vargrp_name() {
-	// get the variation group name;
 	global $wpsc_variations;
-	return $wpsc_variations->variation_group->name;
+	return apply_filters( 'wpsc_vargrp_name', $wpsc_variations->variation_group->name, $wpsc_variations->variation_group );
 }
 
 /**
@@ -1579,11 +1604,11 @@ function wpsc_product_existing_rating( $product_id ) {
 	$count = $get_average[0]['count'];
 	$output  = "  <span class='votetext'>";
 	for ( $l = 1; $l <= $average; ++$l ) {
-		$output .= "<img class='goldstar' src='" . WPSC_CORE_IMAGES_URL . "/gold-star.gif' alt='$l' title='$l' />";
+		$output .= "<img class='goldstar' src='" . WPSC_CORE_IMAGES_URL . "/gold-star.png' alt='$l' title='$l' />";
 	}
 	$remainder = 5 - $average;
 	for ( $l = 1; $l <= $remainder; ++$l ) {
-		$output .= "<img class='goldstar' src='" . WPSC_CORE_IMAGES_URL . "/grey-star.gif' alt='$l' title='$l' />";
+		$output .= "<img class='goldstar' src='" . WPSC_CORE_IMAGES_URL . "/grey-star.png' alt='$l' title='$l' />";
 	}
 	$output .= "<span class='vote_total'>&nbsp;(<span id='vote_total_{$product_id}'>" . $count . "</span>)</span> \r\n";
 	$output .= "</span> \r\n";
