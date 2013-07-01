@@ -187,7 +187,7 @@ function wpsc_purchase_log_csv() {
 			$output .= "\n"; // terminates the row/line in the CSV file
 		}
 		// Get the most number of products and create a header for them
-		$headers3 = "";
+		$headers3 = array();
 		for( $i = 0; $i < $count; $i++ ){
 			$headers3[] = _x( 'Quantity', 'purchase log csv headers', 'wpsc' );
 			$headers3[] = _x( 'Product Name', 'purchase log csv headers', 'wpsc' );
@@ -201,6 +201,7 @@ function wpsc_purchase_log_csv() {
 
 		$headers      = apply_filters( 'wpsc_purchase_log_csv_headers', $headers . $form_headers . $headers2 . $headers3, $data, $form_data );
 		$output       = apply_filters( 'wpsc_purchase_log_csv_output', $output, $data, $form_data );
+		do_action( 'wpsc_purchase_log_csv' );
 		header( 'Content-Type: text/csv' );
 		header( 'Content-Disposition: inline; filename="' . $csv_name . '"' );
 		echo $headers . "\n". $output;
@@ -678,19 +679,6 @@ function wpsc_delete_variation_set() {
 
 if ( isset( $_REQUEST['wpsc_admin_action'] ) && ( 'wpsc-delete-variation-set' == $_REQUEST['wpsc_admin_action'] ) )
 	add_action( 'admin_init', 'wpsc_delete_variation_set' );
-
-function wpsc_force_flush_theme_transients() {
-	// Flush transients
-	wpsc_flush_theme_transients( true );
-
-	// Bounce back
-	$sendback = wp_get_referer();
-	wp_redirect( $sendback );
-
-	exit();
-}
-if ( isset( $_REQUEST['wpsc_flush_theme_transients'] ) && ( $_REQUEST['wpsc_flush_theme_transients'] == 'true' ) )
-	add_action( 'admin_init', 'wpsc_force_flush_theme_transients' );
 
 function wpsc_backup_theme() {
 	$wp_theme_path = get_stylesheet_directory();
