@@ -441,7 +441,7 @@ add_filter( 'post_updated_messages', 'wpsc_post_updated_messages' );
 function wpsc_serialize_shopping_cart() {
 	global $wpdb, $wpsc_start_time, $wpsc_cart;
 
-	if ( is_admin() )
+	if ( is_admin() && ! ( defined( 'DOING_AJAX' ) && DOING_AJAX ) )
 		return;
 
 	// avoid flooding transients with bots hitting feeds
@@ -457,7 +457,7 @@ function wpsc_serialize_shopping_cart() {
 	// because by now, some output must have been printed out
 	$customer_id = wpsc_get_current_customer_id();
 	if ( $customer_id )
-		wpsc_update_customer_meta( 'cart', serialize( $wpsc_cart ) );
+		wpsc_update_customer_meta( 'cart', base64_encode( serialize( $wpsc_cart ) ) );
 
 	return true;
 }
@@ -471,32 +471,19 @@ add_action( 'shutdown', 'wpsc_serialize_shopping_cart' );
  * @return void
  */
 function wpsc_get_page_post_names() {
-	$wpsc_page['products']            = basename( get_option( 'product_list_url' ) );
-	if ( empty($wpsc_page['products']) || false !== strpos($wpsc_page['products'], '?page_id=') ) {
+	$wpsc_page['products'] = basename( get_option( 'product_list_url' ) );
+
+	if ( empty( $wpsc_page['products'] ) || false !== strpos( $wpsc_page['products'], '?page_id=' ) ) {
 		// Products page either doesn't exist, or is a draft
 		// Default to /product/xyz permalinks for products
 		$wpsc_page['products'] = 'product';
 	}
+
 	$wpsc_page['checkout']            = basename( get_option( 'checkout_url' ) );
 	$wpsc_page['transaction_results'] = basename( get_option( 'transact_url' ) );
 	$wpsc_page['userlog']             = basename( get_option( 'user_account_url' ) );
 
 	return $wpsc_page;
-}
-
-/**
- * Disable SSL validation for Curl. Added/removed on a per need basis, like so:
- *
- * add_filter('http_api_curl', 'wpsc_curl_ssl');
- * remove_filter('http_api_curl', 'wpsc_curl_ssl');
- *
- * @param resource $ch
- * @return resource $ch
- **/
-function wpsc_curl_ssl($ch) {
-	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-	curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-	return $ch;
 }
 
 function wpsc_cron() {
@@ -506,270 +493,6 @@ function wpsc_cron() {
 	}
 }
 add_action( 'init', 'wpsc_cron' );
-
-/**
- * In case the user is not logged in, create a customer cookie with a unique
- * ID to pair with the transient in the database.
- *
- * @access public
- * @since 3.8.9
- * @return string Customer ID
- */
-function wpsc_create_customer_id() {
-	$expire = time() + WPSC_CUSTOMER_DATA_EXPIRATION; // valid for 48 hours
-	$secure = is_ssl();
-	$id = '_' . wp_generate_password(); // make sure the ID is a string
-	$data = $id . $expire;
-	$hash = hash_hmac( 'md5', $data, wp_hash( $data ) );
-	// store ID, expire and hash to validate later
-	$cookie = $id . '|' . $expire . '|' . $hash;
-
-	setcookie( WPSC_CUSTOMER_COOKIE, $cookie, $expire, WPSC_CUSTOMER_COOKIE_PATH, COOKIE_DOMAIN, $secure, true );
-	$_COOKIE[WPSC_CUSTOMER_COOKIE] = $cookie;
-	return $id;
-}
-
-/**
- * Make sure the customer cookie is not compromised.
- *
- * @access public
- * @since 3.8.9
- * @return mixed Return the customer ID if the cookie is valid, false if otherwise.
- */
-function wpsc_validate_customer_cookie() {
-	$cookie = $_COOKIE[WPSC_CUSTOMER_COOKIE];
-	list( $id, $expire, $hash ) = explode( '|', $cookie );
-	$data = $id . $expire;
-	$hmac = hash_hmac( 'md5', $data, wp_hash( $data ) );
-
-	if ( $hmac != $hash )
-		return false;
-
-	return $id;
-}
-
-/**
- * Merge anonymous customer data (stored in transient) with an account meta data when the customer
- * logs in.
- *
- * This is done to preserve customer settings and cart.
- *
- * @since 3.8.9
- * @access private
- */
-function _wpsc_merge_customer_data() {
-	$account_id = get_current_user_id();
-	$cookie_id = wpsc_validate_customer_cookie();
-
-	if ( ! $cookie_id )
-		return;
-
-	$cookie_data = get_transient( "wpsc_customer_meta_{$cookie_id}" );
-	if ( ! is_array( $cookie_data ) || empty( $cookie_data ) )
-		return;
-
-	foreach ( $cookie_data as $key => $value ) {
-		wpsc_update_customer_meta( $key, $value, $account_id );
-	}
-
-	delete_transient( "wpsc_customer_meta_{$cookie_id}" );
-	setcookie( WPSC_CUSTOMER_COOKIE, '', time() - 3600, WPSC_CUSTOMER_COOKIE_PATH, COOKIE_DOMAIN, is_ssl(), true );
-	unset( $_COOKIE[WPSC_CUSTOMER_COOKIE] );
-}
-
-/**
- * Get current customer ID.
- *
- * If the user is logged in, return the user ID. Otherwise return the ID associated
- * with the customer's cookie.
- *
- * If $mode is set to 'create', WPEC will create the customer ID if it hasn't
- * already been created yet.
- *
- * @access public
- * @since 3.8.9
- * @param  string $mode Set to 'create' to create customer cookie and ID
- * @return mixed        User ID (if logged in) or customer cookie ID
- */
-function wpsc_get_current_customer_id( $mode = '' ) {
-	if ( is_user_logged_in() && isset( $_COOKIE[WPSC_CUSTOMER_COOKIE] ) )
-		_wpsc_merge_customer_data();
-
-	if ( is_user_logged_in() )
-		return get_current_user_id();
-	elseif ( isset( $_COOKIE[WPSC_CUSTOMER_COOKIE] ) )
-		return wpsc_validate_customer_cookie();
-	elseif ( $mode == 'create' )
-		return wpsc_create_customer_id();
-
-	return false;
-}
-
-/**
- * Return an array containing all metadata of a customer
- *
- * @access public
- * @since 3.8.9
- * @param  mixed $id Customer ID. Default to the current user ID.
- * @return WP_Error|array Return an array of metadata if no error occurs, WP_Error
- *                        if otherwise.
- */
-function wpsc_get_all_customer_meta( $id = false ) {
-	global $wpdb;
-
-	if ( ! $id )
-		$id = wpsc_get_current_customer_id();
-
-	if ( ! $id )
-		return new WP_Error( 'wpsc_customer_meta_invalid_customer_id', __( 'Invalid customer ID', 'wpsc' ), $id );
-
-	// take multisite into account
-	$blog_prefix = is_multisite() ? $wpdb->get_blog_prefix() : '';
-	if ( is_numeric( $id ) )
-		$profile = get_user_meta( $id, "_wpsc_{$blog_prefix}customer_profile", true );
-	else
-		$profile = get_transient( "wpsc_customer_meta_{$blog_prefix}{$id}" );
-
-	if ( ! is_array( $profile ) )
-		$profile = array();
-
-	return apply_filters( 'wpsc_get_all_customer_meta', $profile, $id );
-}
-
-/**
- * Get a customer meta value.
- *
- * @access public
- * @since  3.8.9
- * @param  string  $key Meta key
- * @param  int|string $id  Customer ID. Optional, defaults to current customer
- * @return mixed           Meta value, or null if it doesn't exist or if the
- *                         customer ID is invalid.
- */
-function wpsc_get_customer_meta( $key = '', $id = false ) {
-	global $wpdb;
-
-	$profile = wpsc_get_all_customer_meta( $id );
-
-	// attempt to regenerate current customer ID if it's invalid
-	if ( is_wp_error( $profile ) && ! $id ) {
-		wpsc_create_customer_id();
-		$profile = wpsc_get_all_customer_meta();
-	}
-
-	if ( is_wp_error( $profile ) || ! array_key_exists( $key, $profile ) )
-		return null;
-
-	return $profile[$key];
-}
-
-/**
- * Overwrite customer meta with an array of meta_key => meta_value.
- *
- * @access public
- * @since  3.8.9
- * @param  array      $profile Customer meta array
- * @param  int|string $id      Customer ID. Optional. Defaults to current customer.
- * @return boolean             True if meta values are updated successfully. False
- *                             if otherwise.
- */
-function wpsc_update_all_customer_meta( $profile, $id = false ) {
-	global $wpdb;
-
-	if ( ! $id )
-		$id = wpsc_get_current_customer_id( 'create' );
-
-	$blog_prefix = is_multisite() ? $wpdb->get_blog_prefix() : '';
-
-	if ( is_numeric( $id ) )
-		return update_user_meta( $id, "_wpsc_{$blog_prefix}customer_profile", $profile );
-	else
-		return set_transient( "wpsc_customer_meta_{$blog_prefix}{$id}", $profile, WPSC_CUSTOMER_DATA_EXPIRATION );
-}
-
-/**
- * Update a customer meta.
- *
- * @access public
- * @since  3.8.9
- * @param  string     $key   Meta key
- * @param  mixed      $value Meta value
- * @param  string|int $id    Customer ID. Optional. Defaults to current customer.
- * @return boolean|WP_Error  True if successful, false if not successful, WP_Error
- *                           if there are any errors.
- */
-function wpsc_update_customer_meta( $key, $value, $id = false ) {
-	global $wpdb;
-
-	if ( ! $id )
-		$id = wpsc_get_current_customer_id( 'create' );
-
-	$profile = wpsc_get_all_customer_meta( $id );
-
-	if ( is_wp_error( $profile ) )
-		return $profile;
-
-	$profile[$key] = $value;
-
-	return wpsc_update_all_customer_meta( $profile, $id );
-}
-
-/**
- * Delete customer meta.
- *
- * @access public
- * @since  3.8.9
- * @param  string     $key  Meta key
- * @param  string|int $id   Customer ID. Optional. Defaults to current customer.
- * @return boolean|WP_Error True if successful. False if not successful. WP_Error
- *                          if there are any errors.
- */
-function wpsc_delete_customer_meta( $key, $id = false ) {
-	$profile = wpsc_get_all_customer_meta( $id );
-
-	if ( is_wp_error( $profile ) )
-		return $profile;
-
-	if ( array_key_exists( $key, $profile ) )
-		unset( $profile[$key] );
-
-	return wpsc_update_all_customer_meta( $profile, $id );
-}
-
-/**
- * Setup current user object and customer ID as well as cart.
- *
- * @uses  do_action() Calls 'wpsc_setup_customer' after customer data is ready
- *
- * @access private
- * @since  3.8.13
- */
-function _wpsc_action_setup_customer() {
-	wpsc_get_current_customer_id( 'create' );
-	wpsc_core_setup_cart();
-	do_action( 'wpsc_setup_customer' );
-}
-
-/**
- * Delete all customer meta for a certain customer ID
- *
- * @since  3.8.9.4
- * @param  string|int $id Customer ID. Optional. Defaults to current customer
- * @return boolean        True if successful, False if otherwise
- */
-function wpsc_delete_all_customer_meta( $id = false ) {
-	global $wpdb;
-
-	if ( ! $id )
-		$id = wpsc_get_current_customer_id();
-
-	$blog_prefix = is_multisite() ? $wpdb->get_blog_prefix() : '';
-
-	if ( is_numeric( $id ) )
-		return delete_user_meta( $id, "_wpsc_{$blog_prefix}customer_profile" );
-	else
-		return delete_transient( "wpsc_customer_meta_{$blog_prefix}{$id}" );
-}
 
 /**
  * Updates permalink slugs
@@ -844,7 +567,6 @@ function wpsc_get_product_terms( $product_id, $tax, $field = '' ) {
 
 /**
  * Abstracts Suhosin check into a function.  Used primarily in relation to target markets.
- * May be deprecated or never publicly launched if we change how the target market variables work.
  *
  * @since 3.8.9
  * @return boolean
@@ -867,3 +589,4 @@ function wpsc_core_load_page_titles() {
 	if ( empty( $wpsc_page_titles ) )
 		$wpsc_page_titles = wpsc_get_page_post_names();
 }
+

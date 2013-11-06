@@ -9,11 +9,11 @@ class Sputnik_Admin {
 	public static function bootstrap() {
 		add_action( 'admin_init', array(__CLASS__, 'init'), 0);
 		add_action( 'all_admin_notices', array(__CLASS__, 'report_errors'));
+
 		add_action( 'admin_menu', array(__CLASS__, 'menu'));
+
 		add_action( 'admin_head-wpsc-product_page_sputnik', array(__CLASS__, 'admin_head_page'));
 		add_action( 'admin_head-wpsc-product_page_sputnik-account', array(__CLASS__, 'admin_head_page'));
-		add_action( 'load-wpsc-product_page_sputnik', array(__CLASS__, 'load_page'));
-		add_action( 'load-wpsc-product_page_sputnik-account', array(__CLASS__, 'load_page'));
 		add_action( 'install_plugins_pre_plugin-information', array(__CLASS__, 'maybe_info'), 0);
 		add_action( 'load-update.php', array(__CLASS__, 'maybe_redirect_update'));
 		add_filter( 'plugin_row_meta', array(__CLASS__, 'add_row_note'), 10, 3);
@@ -24,11 +24,6 @@ class Sputnik_Admin {
 		add_action('admin_print_styles', array(__CLASS__, 'styles'));
 		add_action('admin_print_scripts', array(__CLASS__, 'scripts'));
 
-		if (!Sputnik::account_is_linked()) {
-			foreach ( array( 'user_admin_notices', 'admin_notices' ) as $filter ) {
-				add_action($filter, array(__CLASS__, 'connect_notice'));
-			}
-		}
 		global $plugin_page;
 
 		if ( $plugin_page !== 'sputnik' && $plugin_page !== 'sputnik-account' )
@@ -37,7 +32,12 @@ class Sputnik_Admin {
 		// Run most OAuth stuff now, before output
 		if (!empty($_GET['oauth'])) {
 			if ($_GET['oauth'] == 'request') {
-				Sputnik_API::auth_request();
+				$redirect_url = '';
+				if ( ! empty( $_REQUEST['oauth_buy'] ) ) {
+					$redirect_url = self::build_url( array( 'oauth' => 'callback' ) );
+					$redirect_url = add_query_arg( 'oauth_buy', $_REQUEST['oauth_buy'], $redirect_url );
+				}
+				Sputnik_API::auth_request( $redirect_url );
 			}
 			if ($_GET['oauth'] == 'callback') {
 				Sputnik_API::auth_access();
@@ -155,20 +155,22 @@ class Sputnik_Admin {
 	}
 
 	public static function connect_notice() {
-		if (self::$page_is_current === true) {
+		if ( self::$page_is_current != true )
 			return;
-		}
 
-		if (!current_user_can('install_plugins')) {
+		if ( ! current_user_can( 'install_plugins' ) )
 			return;
-		}
+
+		$oauth_url    = self::build_url(array('oauth' => 'request', 'TB_iframe' => true));
+
 
 ?>
-			<div class="sputnik-message">
-				<div class="inner">
-					<h4><?php _e( '<strong>WPEConomy is now installed!</strong> &#8211; Get started by linking with your account!', 'sputnik' ); ?></h4>
-					<p class="submit"><a href="<?php echo self::build_url() ?>" class="button-primary"><?php _e( 'Link now', 'sputnik' ); ?></a></p>
-				</div>
+			<div class="sputnik-message updated">
+				<p>
+					<?php _e( '<strong>WPEConomy is now installed!</strong> &#8211; Get started by linking with your account!', 'wpsc' ); ?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+					<?php _e( "If you haven't created an account yet, don't worry, you will be prompted to do so.", 'wpsc') ?>
+				</p>
+				<a href="<?php echo esc_html( $oauth_url ); ?>" class="thickbox button button-primary thickbox`"><?php _e( 'Link your account now', 'sputnik' ); ?></a>
 			</div>
 <?php
 	}
@@ -203,10 +205,6 @@ class Sputnik_Admin {
 
 	public static function menu() {
 		$hooks[] = add_submenu_page( 'edit.php?post_type=wpsc-product', _x('Add-Ons', 'page title', 'sputnik'), _x('Add-Ons', 'menu title', 'sputnik'), 'install_plugins', 'sputnik', array(__CLASS__, 'page') );
-		$hooks[] = add_submenu_page( 'edit.php?post_type=wpsc-product', _x('Account', 'page title', 'sputnik'), _x('Account', 'menu title', 'sputnik'), 'install_plugins', 'sputnik-account', array(__CLASS__, 'account') );
-
-		// /add_filter('custom_menu_order', '__return_true');
-		//add_filter('menu_order', array(__CLASS__, 'menu_order'), 40);
 		$hooks[] = 'plugin-install.php';
 		foreach ($hooks as $hook) {
 			add_action("admin_print_styles-$hook", array(__CLASS__, 'page_styles'));
@@ -216,6 +214,7 @@ class Sputnik_Admin {
 
 	public static function build_url($args = array()) {
 		$url = add_query_arg( array( 'post_type' => 'wpsc-product', 'page' => 'sputnik' ), admin_url( 'edit.php' ) );
+
 		if (!empty($args)) {
 			$url = add_query_arg( $args, $url );
 		}
@@ -246,10 +245,20 @@ class Sputnik_Admin {
 		wp_enqueue_script('jquery-masonry', plugins_url( 'static/jquery.masonry.js', Sputnik::$path . '/wpsc-marketplace' ), array('jquery'), '20110901' );
 		wp_enqueue_script( 'paypal', 'https://www.paypalobjects.com/js/external/dg.js' );
 		wp_enqueue_script('sputnik_js', plugins_url( 'static/admin.js', Sputnik::$path . '/wpsc-marketplace' ), array( 'jquery', 'jquery-masonry', 'thickbox', 'paypal' ), '20110924' );
-		wp_localize_script('sputnik_js', 'sputnikL10n', array(
+
+		$l10n = array(
 			'plugin_information' => __('Plugin Information:', 'sputnik'),
 			'ays' => __('Are you sure you want to install this plugin?', 'sputnik')
-		) );
+		);
+
+		if ( ! empty( $_REQUEST['oauth_buy'] ) ) {
+			$plugin = Sputnik::get_plugin( $_REQUEST['oauth_buy'] );
+			$status = self::install_status( $plugin );
+			$l10n['buy_id'] = $plugin->slug;
+			$l10n['buy_href'] = $status['url'];
+		}
+
+		wp_localize_script('sputnik_js', 'sputnikL10n', $l10n );
 	}
 
 	public static function page() {
@@ -290,10 +299,13 @@ class Sputnik_Admin {
 		require_once(ABSPATH . 'wp-admin/includes/plugin-install.php');
 
 		try {
-			$account = Sputnik::get_account();
-			$api = Sputnik::get_plugin($plugin, $account->ID);
-		}
-		catch (Exception $e) {
+			if ( Sputnik::account_is_linked() ) {
+				$account = Sputnik::get_account();
+				$api = Sputnik::get_plugin( $plugin, $account->ID );
+			} else {
+				$api = Sputnik::get_plugin( $plugin );
+			}
+		} catch (Exception $e) {
 			status_header(500);
 			iframe_header( __('Plugin Install', 'sputnik') );
 			echo $e->getMessage();
@@ -558,10 +570,17 @@ class Sputnik_Admin {
 			$url = wp_nonce_url(self::build_url(array('buy' => $api->slug)), 'sputnik_install-plugin_' . $api->slug);
 		}
 
+		if ( ! Sputnik::account_is_linked() )
+			$url = self::build_url( array(
+				'oauth'     => 'request',
+				'oauth_buy' => $api->slug,
+				'TB_iframe' => true,
+			) );
+
 		return compact('status', 'url', 'version');
 	}
 
-	protected static function header($title, $account) {
+	protected static function header( $account ) {
 		if ($account !== false) {
 			$tabs = array(
 				'dash' => __('Store', 'sputnik'),
@@ -598,39 +617,46 @@ class Sputnik_Admin {
 	}
 
 	protected static function other_pages() {
+		global $tab;
+
 		$account = false;
 		try {
 			$account = Sputnik::get_account();
 		}
 		catch (Exception $e) {
-			if ($e->getCode() === 1) {
-				$GLOBALS['tab'] = 'auth';
-			}
-			elseif ($e->getCode() === 401) {
+			if ($e->getCode() === 401) {
 				delete_option('sputnik_oauth_access');
 				delete_option('sputnik_oauth_request');
-				$GLOBALS['tab'] = 'auth';
 			}
-			else {
+			elseif ( $e->getCode() !== 1 ) {
 				echo '<p>' . sprintf(__('Problem: %s', 'sputnik'), $e->getMessage() ). '</p>';
 			}
 		}
 
-		if ($GLOBALS['tab'] !== 'auth') {
-			self::header('Browse', $account);
-		} else {
-			self::header('Authentication', $account);
-		}
+		self::header( $account );
 
-		switch ($GLOBALS['tab']) {
-			case 'auth':
-				self::auth();
-				break;
-			default:
-				self::$list_table->display();
-				break;
+		if ( Sputnik::account_is_linked() ) {
+			self::auth();
+			?>
+			<div class="account-card">
+				<div class="block">
+					<?php echo get_avatar($account->email) ?>
+					<p class="lead-in">Logged in as</p>
+					<h3><?php echo esc_html($account->name) ?></h3>
+					<p><?php printf(__('<a href="%s">Log out</a> of your account', 'sputnik'), self::build_url(array('oauth' => 'reset'))) ?></p>
+				</div>
+				<div class="block">
+					<p>Email: <code><?php echo $account->email ?></code></p>
+					<?php if ( $tab != 'purchased' ): ?>
+						<p class="stat"><?php printf(__('<strong>%d</strong> <abbr title="Plugins you can install right now">Available</abbr>', 'sputnik'), count( self::$list_table->items )) ?></p>
+					<?php endif; ?>
+					<p class="stat"><?php printf(__('<strong>%d</strong> <abbr title="Plugins you have bought from the store">Purchased</abbr>', 'sputnik'), count( $account->purchased ) ) ?></p>
+				</div>
+			</div>
+			<?php
 		}
-
+		self::$list_table->views();
+		self::$list_table->display();
 		self::footer();
 	}
 
@@ -719,41 +745,11 @@ class Sputnik_Admin {
 	}
 
 	protected static function auth() {
-		$oauth_url    = self::build_url(array('oauth' => 'request'));
+		$oauth_url    = self::build_url(array('oauth' => 'request', 'TB_iframe' => true));
 
 		if ( isset( $_GET['auth'] ) && $_GET['auth'] == 'denied' ) {
 			self::print_message( __( 'Authorization cancelled.', 'sputnik' ) );
 		}
-?>
-<div id="sputnik-auth">
-	<p><?php _e( 'Welcome to WPEconomy! Before we can get started, we need to link this site with your WPEconomy.org account. Your details should have been emailed to you!', 'sputnik' );?></p>
-	<p class="buttons"><a id="oauth-link" href="<?php echo $oauth_url; ?>" class="button"><?php _e( 'Link account', 'sputnik' ) ?></a></p>
-</div>
-<script type="text/javascript">
-jQuery(document).ready(function($){
-
-	$('#oauth-link').click(function(){
-		openOAuthWindow($(this).attr('href'));
-		return false;
-	});
-
-	function openOAuthWindow(url) {
-		var w = 400;
-		var h = 360;
-		var left = (screen.width/2)-(w/2);
-		var top = (screen.height/2)-h;
-		var OAuthWindow = window.open(
-			url,
-			'oauth_window',
-			'resizable, width='+w+', height='+h+', left='+left+', top='+top
-		);
-		if (window.focus) {
-			OAuthWindow.focus();
-		}
-	}
-});
-</script>
-<?php
 	}
 
 	/**
@@ -926,10 +922,10 @@ jQuery(document).ready(function($){
 
 		?><form id="search-plugins" method="get" action="">
 			<input type="hidden" name="page" value="sputnik" />
+			<input type="hidden" name="post_type" value="wpsc-product" />
 			<input type="hidden" name="tab" value="search" />
 			<input type="text" name="s" value="<?php echo esc_attr($term) ?>" />
-			<label class="screen-reader-text" for="plugin-search-input"><?php _e('Search Plugins'); ?></label>
-			<?php submit_button( __( 'Search Plugins' ), 'button', 'plugin-search-input', false ); ?>
+			<?php submit_button( __( 'Search Plugins' ), 'button', '', false ); ?>
 		</form><?php
 	}
 

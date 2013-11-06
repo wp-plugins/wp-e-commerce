@@ -27,6 +27,9 @@ if ( isset( $_REQUEST['wpsc_ajax_action'] ) && (($_REQUEST['wpsc_ajax_action'] =
 if ( isset( $_POST['coupon_num'] ) )
 	add_action( 'init', 'wpsc_coupon_price' );
 
+if ( isset( $_REQUEST['wpsc_ajax_action'] ) && 'add_to_cart' == $_REQUEST['wpsc_ajax_action'] )
+    add_action( 'init', 'wpsc_add_to_cart' );
+
 if ( isset( $_REQUEST['wpsc_update_quantity'] ) && ($_REQUEST['wpsc_update_quantity'] == 'true') )
 	add_action( 'init', 'wpsc_update_item_quantity' );
 
@@ -298,9 +301,15 @@ function wpsc_update_item_quantity() {
 
 	if ( is_numeric( $_POST['key'] ) ) {
 		$key = (int)$_POST['key'];
-		if ( $_POST['quantity'] > 0 ) {
+
+		$quantity = isset( $_POST['wpsc_quantity_update'] ) ? $_POST['wpsc_quantity_update'] : '';
+
+		if ( isset( $_POST['quantity'] ) )
+			$quantity = $_POST['quantity'];
+
+		if ( $quantity > 0 ) {
 			// if the quantity is greater than 0, update the item;
-			$parameters['quantity'] = (int)$_POST['quantity'];
+			$parameters['quantity'] = (int) $quantity;
 			$wpsc_cart->edit_item( $key, $parameters );
 		} else {
 			// if the quantity is 0, remove the item.
@@ -939,8 +948,8 @@ function wpsc_update_shipping_quotes_on_shipping_same_as_billing() {
             </td>
          </tr>
 
-         <?php if (!wpsc_have_shipping_quote()) : // No valid shipping quotes ?>
-            <?php if (wpsc_have_valid_shipping_zipcode()) : ?>
+         <?php if ( ! wpsc_have_shipping_quote() ) : // No valid shipping quotes ?>
+            <?php if ( ! wpsc_have_valid_shipping_zipcode() ) : ?>
                   <tr class='wpsc_update_location'>
                      <td colspan='5' class='shipping_error' >
                         <?php _e('Please provide a Zipcode and click Calculate in order to continue.', 'wpsc'); ?>

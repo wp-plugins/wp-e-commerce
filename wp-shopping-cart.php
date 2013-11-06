@@ -3,7 +3,7 @@
   * Plugin Name: WP e-Commerce
   * Plugin URI: http://getshopped.org/
   * Description: A plugin that provides a WordPress Shopping Cart. See also: <a href="http://getshopped.org" target="_blank">GetShopped.org</a> | <a href="http://getshopped.org/forums/" target="_blank">Support Forum</a> | <a href="http://docs.getshopped.org/" target="_blank">Documentation</a>
-  * Version: 3.8.13-dev
+  * Version: 3.8.13-beta
   * Author: Instinct Entertainment
   * Author URI: http://getshopped.org/
   **/
@@ -116,6 +116,24 @@ class WP_eCommerce {
 		do_action( 'wpsc_started' );
 	}
 
+	function setup_table_names() {
+		global $wpdb;
+		$wpdb->wpsc_meta                = WPSC_TABLE_META;
+		$wpdb->wpsc_also_bought         = WPSC_TABLE_ALSO_BOUGHT;
+		$wpdb->wpsc_region_tax          = WPSC_TABLE_REGION_TAX;
+		$wpdb->wpsc_coupon_codes        = WPSC_TABLE_COUPON_CODES;
+		$wpdb->wpsc_cart_contents       = WPSC_TABLE_CART_CONTENTS;
+		$wpdb->wpsc_claimed_stock       = WPSC_TABLE_CLAIMED_STOCK;
+		$wpdb->wpsc_currency_list       = WPSC_TABLE_CURRENCY_LIST;
+		$wpdb->wpsc_purchase_logs       = WPSC_TABLE_PURCHASE_LOGS;
+		$wpdb->wpsc_checkout_forms      = WPSC_TABLE_CHECKOUT_FORMS;
+		$wpdb->wpsc_cart_itemmeta       = WPSC_TABLE_CART_ITEM_META; // required for _get_meta_table()
+		$wpdb->wpsc_cart_item_meta      = WPSC_TABLE_CART_ITEM_META;
+		$wpdb->wpsc_product_rating      = WPSC_TABLE_PRODUCT_RATING;
+		$wpdb->wpsc_download_status     = WPSC_TABLE_DOWNLOAD_STATUS;
+		$wpdb->wpsc_submitted_form_data = WPSC_TABLE_SUBMITTED_FORM_DATA;
+	}
+
 	/**
 	 * Setup the WPEC core constants
 	 *
@@ -146,6 +164,9 @@ class WP_eCommerce {
 		// WPEC Table names and related constants
 		wpsc_core_constants_table_names();
 
+		// setup wpdb table name attributes
+		$this->setup_table_names();
+
 		// Uploads directory info
 		wpsc_core_constants_uploads();
 
@@ -160,6 +181,7 @@ class WP_eCommerce {
 	 * @uses do_action()        Calls 'wpsc_includes' which runs after WPEC files have been included
 	 */
 	function includes() {
+		require_once( WPSC_FILE_PATH . '/wpsc-includes/wpsc-meta-init.php' );
 		require_once( WPSC_FILE_PATH . '/wpsc-core/wpsc-functions.php' );
 		require_once( WPSC_FILE_PATH . '/wpsc-core/wpsc-installer.php' );
 		require_once( WPSC_FILE_PATH . '/wpsc-core/wpsc-includes.php' );
@@ -238,7 +260,6 @@ class WP_eCommerce {
 		if ( ( float ) $wp_version < 3.0 ) {
 			 deactivate_plugins( plugin_basename( __FILE__ ) ); // Deactivate ourselves
 			 wp_die( __( 'Looks like you\'re running an older version of WordPress, you need to be running at least WordPress 3.0 to use WP e-Commerce 3.8', 'wpsc' ), __( 'WP e-Commerce 3.8 not compatible', 'wpsc' ), array( 'back_link' => true ) );
-			return;
 		}
 		define( 'WPSC_FILE_PATH', dirname( __FILE__ ) );
 		require_once( WPSC_FILE_PATH . '/wpsc-core/wpsc-installer.php' );

@@ -4,12 +4,14 @@ if ( defined( 'WPEC_LOAD_DEPRECATED' ) )
 	require_once( WPSC_FILE_PATH . '/wpsc-core/wpsc-deprecated.php' );
 
 // Start including the rest of the plugin here
+require_once( WPSC_FILE_PATH . '/wpsc-includes/customer.php'                       );
 require_once( WPSC_FILE_PATH . '/wpsc-includes/product-template.php'                );
 require_once( WPSC_FILE_PATH . '/wpsc-includes/variations.class.php'                );
 require_once( WPSC_FILE_PATH . '/wpsc-includes/ajax.functions.php'                  );
 require_once( WPSC_FILE_PATH . '/wpsc-includes/misc.functions.php'                  );
 require_once( WPSC_FILE_PATH . '/wpsc-includes/mimetype.php'                        );
 require_once( WPSC_FILE_PATH . '/wpsc-includes/cart.class.php'                      );
+require_once( WPSC_FILE_PATH . '/wpsc-includes/cart-item.class.php'                 );
 require_once( WPSC_FILE_PATH . '/wpsc-includes/checkout.class.php'                  );
 require_once( WPSC_FILE_PATH . '/wpsc-includes/display.functions.php'               );
 require_once( WPSC_FILE_PATH . '/wpsc-includes/theme.functions.php'                 );
@@ -47,9 +49,6 @@ require_once( WPSC_FILE_PATH . '/wpsc-shipping/library/shipwire_functions.php' )
 
 // Widgets
 include_once( WPSC_FILE_PATH . '/wpsc-widgets/admin_menu_widget.php' );
-
-// Meta
-require_once( WPSC_FILE_PATH . '/wpsc-includes/wpsc-meta-init.php' );
 
 // Gregs ASH Shipping
 require_once( WPSC_FILE_PATH . '/wpsc-includes/shipping.helper.php' );

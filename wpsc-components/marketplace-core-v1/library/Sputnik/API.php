@@ -66,6 +66,7 @@ class Sputnik_API {
 
 	protected static function authenticate() {
 		$token = get_option('sputnik_oauth_access', false);
+
 		if ($token == false) {
 			throw new Exception('Need to authenticate first', 1);
 		}
@@ -81,9 +82,10 @@ class Sputnik_API {
 
 		$auth_url = self::$auth->get_authorize_url( $token );
 
+		//Modifying to add marketplace and user email to query string.
 		if ( $redirect ) {
-			wp_redirect( $auth_url );
-			die();
+			wp_redirect( add_query_arg( array( 'domain' => self::domain(), 'user' => rawurlencode( wp_get_current_user()->user_email ) ), $auth_url ) );
+			exit;
 		} else {
 			return $auth_url;
 		}
@@ -103,7 +105,10 @@ class Sputnik_API {
 
 			update_option('sputnik_oauth_access', $access);
 
-			$return_url = Sputnik_Admin::build_url();
+			$args = array();
+			if ( ! empty( $_REQUEST['oauth_buy']  ) )
+				$args['oauth_buy'] = $_REQUEST['oauth_buy'];
+			$return_url = Sputnik_Admin::build_url( $args );
 		}
 
 		delete_option('sputnik_oauth_request');
@@ -113,8 +118,8 @@ class Sputnik_API {
 	<head>
 		<title><?php _e( 'Redirecting ...', 'wpsc' ); ?></title>
 		<script type="text/javascript">
-		window.opener.location = '<?php echo $return_url; ?>';
-		window.close();
+			parent.location = '<?php echo $return_url; ?>';
+			window.close();
 		</script>
 	</head>
 	<body>&nbsp;</body>

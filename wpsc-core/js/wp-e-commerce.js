@@ -239,7 +239,9 @@ jQuery(document).ready(function ($) {
 		if(file_upload_elements.length > 0) {
 			return true;
 		} else {
-			form_values = jQuery(this).serialize() + '&action=' + jQuery( 'input[name="wpsc_ajax_action"]' ).val();
+			var action_buttons = jQuery(this).children('input[name="wpsc_ajax_action"]');
+			var action = action_buttons[0].value;
+			form_values = jQuery(this).serialize() + '&action=' + action;
 
 			// Sometimes jQuery returns an object instead of null, using length tells us how many elements are in the object, which is more reliable than comparing the object to null
 			if( jQuery( '#fancy_notification' ).length === 0 ) {
@@ -306,6 +308,7 @@ jQuery(document).ready(function ($) {
 		var form_values = jQuery("input[name='product_id'], .wpsc_select_variation",parent_form).serialize() + '&action=update_product_price';
 
 		jQuery.post( wpsc_ajax.ajaxurl, form_values, function(response) {
+			var variation_display = jQuery('div#variation_display_' + prod_id );
 			var stock_display = jQuery('div#stock_display_' + prod_id),
 				price_field = jQuery('input#product_price_' + prod_id),
 				price_span = jQuery('#product_price_' + prod_id + '.pricedisplay, #product_price_' + prod_id + ' .currentprice'),
@@ -322,6 +325,9 @@ jQuery(document).ready(function ($) {
 				} else {
 					stock_display.addClass('out_of_stock').removeClass('in_stock');
 				}
+				variation_display.removeClass('no_variation').addClass('is_variation');
+			} else {
+				variation_display.removeClass('is_variation').addClass('no_variation');
 			}
 
 			stock_display.html(response.variation_msg);

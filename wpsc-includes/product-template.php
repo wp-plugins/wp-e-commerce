@@ -115,6 +115,7 @@ function wpsc_product_normal_price() {
 
 function wpsc_calculate_price( $product_id, $variations = false, $special = true ) {
 	global $wpdb;
+
 	$p_id = $product_id;
 	if ( ! empty( $variations ) )
 		$product_id = wpsc_get_child_object_in_terms( $product_id, $variations, 'wpsc-variation' );
@@ -171,15 +172,8 @@ function wpsc_the_product_thumbnail_id( $product_id ) {
 	if ( has_post_thumbnail( $product_id ) ) {
 		$thumbnail_id = get_post_thumbnail_id( $product_id  );
 	} else {
-		// ... or get first image
-		$attached_images = (array) get_posts( array(
-			'post_type'   => 'attachment',
-			'numberposts' => 1,
-			'post_status' => null,
-			'post_parent' => $product_id,
-			'orderby'     => 'menu_order',
-			'order'       => 'ASC'
-		) );
+		// ... or get first image in the product gallery
+		$attached_images = wpsc_get_product_gallery( $product_id );
 		if ( ! empty( $attached_images ) )
 			$thumbnail_id = $attached_images[0]->ID;
 	}
@@ -273,3 +267,51 @@ function wpsc_maybe_get_the_parent_product_thumbnail_id( $thumbnail_id, $product
 	return $thumbnail_id;
 }
 add_filter( 'wpsc_the_product_thumbnail_id', 'wpsc_maybe_get_the_parent_product_thumbnail_id', 10, 2 );
+
+function wpsc_get_product_gallery( $id ) {
+	$ids = get_post_meta( $id, '_wpsc_product_gallery', true );
+
+	$args = array(
+		'nopaging' => true,
+		'post_status' => 'all',
+		'post_type' => 'attachment'
+	);
+
+	// By default, when the user took no action to select product gallery, all the
+	// images attached to a product are treated as gallery images. If $ids is not
+	// empty, however, it means the user has made some selection for the product
+	// gallery, we should respect that selection.
+	if ( empty( $ids ) ) {
+		$args['post_parent'] = $id;
+		$args['orderby'] = 'menu_order';
+		$args['order'] = 'ASC';
+	} else {
+		if ( ! is_array( $ids ) )
+			$ids = array();
+
+		if ( has_post_thumbnail( $id ) ) {
+			$thumb_id = get_post_thumbnail_id( $id );
+			if ( ! in_array( $thumb_id, $ids ) )
+				array_unshift( $ids, $thumb_id );
+		}
+
+		if ( ! is_array( $ids ) || empty( $ids ) )
+			return array();
+
+		$args['post__in'] = $ids;
+	}
+
+	return get_posts( $args );
+}
+
+function wpsc_set_product_gallery( $id, $attachments ) {
+	$attachment_ids = array();
+	foreach ( $attachments as $attachment ) {
+		if ( is_object( $attachment ) )
+			$attachment_ids[] = $attachment->ID;
+		elseif ( is_numeric( $attachment ) )
+			$attachment_ids[] = absint( $attachment );
+	}
+
+	return update_post_meta( $id, '_wpsc_product_gallery', $attachment_ids );
+}

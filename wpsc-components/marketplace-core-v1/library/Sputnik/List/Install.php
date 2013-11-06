@@ -20,6 +20,14 @@ class Sputnik_List_Install extends WP_List_Table {
 		// These are the tabs which are shown on the page
 		$tabs = array();
 		$tabs['dashboard'] = __( 'Search', 'wpsc' );
+
+		if ( Sputnik::account_is_linked() ) {
+			$tabs['purchased'] = __( 'Purchased Plugins', 'wpsc' );
+		} elseif ( $tab == 'purchased' ) {
+			wp_redirect( Sputnik_Admin::build_url() );
+			exit;
+		}
+
 		if ( 'search' == $tab )
 			$tabs['search']	= __( 'Search Results', 'wpsc' );
 		$tabs['featured'] = _x( 'Featured', 'Plugin Installer', 'wpsc' );
@@ -41,6 +49,10 @@ class Sputnik_List_Install extends WP_List_Table {
 
 		try {
 			switch ( $tab ) {
+				case 'purchased':
+					$api = Sputnik_API::get_purchased();
+					break;
+
 				case 'search':
 					$term = isset( $_REQUEST['s'] ) ? stripslashes( $_REQUEST['s'] ) : '';
 					$api = Sputnik_API::search($term);
@@ -81,14 +93,23 @@ class Sputnik_List_Install extends WP_List_Table {
 
 		$this->items = $api['body'];
 
+		$total_items = isset( $api['headers']['x-pagecount'] ) ? $api['headers']['x-pagecount'] : -1;
+
 		$this->set_pagination_args( array(
-			'total_items' => $api['headers']['x-pagecount'],
+			'total_items' => $total_items,
 			'per_page' => 30,
 		) );
 	}
 
 	public function no_items() {
-		_e( 'No plugins match your request.', 'wpsc' );
+		global $tab;
+
+		echo '<p>';
+		if ( $tab == 'purchased' )
+			printf( __( "You haven't purchased any add-ons yet. <a href='%s'>Browse our add-on collection.</a>", 'wpsc' ), Sputnik_Admin::build_url() );
+		else
+			_e( 'No plugins match your request.', 'wpsc' );
+		echo '</p>';
 	}
 
 	public function get_views() {
@@ -149,13 +170,15 @@ class Sputnik_List_Install extends WP_List_Table {
 		if ($tab === 'account')
 			return;
 
+		if ( ! Sputnik::account_is_linked() )
+			return;
+
 		$account = Sputnik::get_account();
 		if ( 'top' ==  $which ) { ?>
 			<div class="tablenav top">
 				<div class="alignright actions">
-					<?php printf(__('Logged in as %s', 'wpsc' ), '<a href="' . Sputnik_Admin::build_account_url() . '" class="account-link">' . $account->name . '</a>') ?>
 <?php
-			if ($tab === 'search') {
+			if ( in_array( $tab, array( 'dashboard', 'search' ) ) ) {
 ?>
 					<?php Sputnik_Admin::search_form(); ?>
 <?php
@@ -411,23 +434,25 @@ class Sputnik_List_Install extends WP_List_Table {
 					<h4><?php echo $name ?></h4>
 					<span class="price"><?php echo $plugin->price ?></span>
 					<p><?php echo $plugin->description ?></p>
-					<div class="footer" style="display:none">
-						<div class="star-holder" title="<?php printf( _n( '(based on %s rating)', '(based on %s ratings)', $plugin->rating->count, 'wpsc' ), number_format_i18n( $plugin->rating->count ) ) ?>">
-							<div class="star star-rating" style="width: <?php echo (int) (20 * $plugin->rating->average) ?>px"></div>
-							<?php
-								$color = get_user_option('admin_color');
-								if ( empty($color) || 'fresh' == $color )
-									$star_url = admin_url( 'images/stars.png?v=20110615' ); // 'Fresh' Gray star for list tables
-								else
-									$star_url = admin_url( 'images/stars.png?v=20110615' ); // 'Classic' Blue star
-							?>
-							<div class="star star5"><img src="<?php echo $star_url; ?>" alt="" /></div>
-							<div class="star star4"><img src="<?php echo $star_url; ?>" alt="" /></div>
-							<div class="star star3"><img src="<?php echo $star_url; ?>" alt="" /></div>
-							<div class="star star2"><img src="<?php echo $star_url; ?>" alt="" /></div>
-							<div class="star star1"><img src="<?php echo $star_url; ?>" alt="" /></div>
+					<?php if ( isset( $plugin->rating ) && isset( $plugin->rating->count ) ): ?>
+						<div class="footer" style="display:none">
+							<div class="star-holder" title="<?php printf( _n( '(based on %s rating)', '(based on %s ratings)', $plugin->rating->count, 'wpsc' ), number_format_i18n( $plugin->rating->count ) ) ?>">
+								<div class="star star-rating" style="width: <?php echo (int) (20 * $plugin->rating->average) ?>px"></div>
+								<?php
+									$color = get_user_option('admin_color');
+									if ( empty($color) || 'fresh' == $color )
+										$star_url = admin_url( 'images/stars.png?v=20110615' ); // 'Fresh' Gray star for list tables
+									else
+										$star_url = admin_url( 'images/stars.png?v=20110615' ); // 'Classic' Blue star
+								?>
+								<div class="star star5"><img src="<?php echo $star_url; ?>" alt="" /></div>
+								<div class="star star4"><img src="<?php echo $star_url; ?>" alt="" /></div>
+								<div class="star star3"><img src="<?php echo $star_url; ?>" alt="" /></div>
+								<div class="star star2"><img src="<?php echo $star_url; ?>" alt="" /></div>
+								<div class="star star1"><img src="<?php echo $star_url; ?>" alt="" /></div>
+							</div>
 						</div>
-					</div>
+					<?php endif; ?>
 				</div>
 			</div>
 		</div>

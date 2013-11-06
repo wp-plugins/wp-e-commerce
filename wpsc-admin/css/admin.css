@@ -2,9 +2,6 @@
 * This is the new WPSC Admin CSS file
 
 */
-table.wp-list-table .column-title {
-	width: 26%;
-}
 table.wp-list-table .column-featured {
 	width: 30px;
 }
@@ -1829,10 +1826,6 @@ table.purchase-logs tr:hover .column-id .delete {
 
 .js #wpsc-product-variations-wrapper tbody .active td, .js #wpsc-product-variations-wrapper tbody .active th {
 	border-bottom-style:dashed;
-}
-
-.js #wpsc-product-variations-wrapper tbody td, .js #wpsc-product-variations-wrapper tbody th {
-	border-bottom-style:solid;
 }
 
 #wpsc-product-variations-wrapper div.updated,

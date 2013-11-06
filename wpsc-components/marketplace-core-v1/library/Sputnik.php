@@ -90,7 +90,6 @@ class Sputnik {
 		add_action( 'wp', array( get_class(), 'show_login_form' ) );
 		add_filter( 'extra_plugin_headers', array(get_class(), 'extra_headers'));
 		add_filter( 'extra_theme_headers', array(get_class(), 'extra_headers'));
-		add_action( 'widgets_init', create_function( '', 'return register_widget("Sputnik_Widget_Add_Product");' ) );
 
 		add_action( 'wpsc_update_purchase_log_status', array( get_class(), 'push_sales_data' ), 10, 4 );
 		add_action( 'init', array( get_class(), 'sales_data_postback' ) );
@@ -103,7 +102,7 @@ class Sputnik {
 		Sputnik_Pointers::bootstrap();
 	}
 
-	public function add_download_link( $message, $notification ) {
+	public static function add_download_link( $message, $notification ) {
 		$cart_contents = $notification->get_purchase_log()->get_cart_contents();
 
 		$products = '';
@@ -326,7 +325,7 @@ class Sputnik {
 		}
 	}
 
-	public function sales_data_postback() {
+	public static function sales_data_postback() {
 		if ( ! isset( $_REQUEST['sales_data'] ) )
 			return;
 
@@ -595,84 +594,4 @@ class Sputnik {
 	public static function get_invalid() {
 		return self::$invalid;
 	}
-}
-
-class Sputnik_Widget_Add_Product extends WP_Widget {
-
-	/**
-	 * Widget Constuctor
-	 */
-	function Sputnik_Widget_Add_Product() {
-
-		$widget_ops = array(
-			'classname'   => 'widget_sputnik_add_product',
-			'description' => __( 'Add a Product Marketplace Widget', 'wpsc' )
-		);
-
-		$this->WP_Widget( 'sputnik_add_a_product', __( 'Add a Product', 'wpsc' ), $widget_ops );
-
-	}
-
-	/**
-	 * Widget Output
-	 *
-	 * @param $args (array)
-	 * @param $instance (array) Widget values.
-	 *
-	 * @todo Add individual capability checks for each menu item rather than just manage_options.
-	 */
-	function widget( $args, $instance ) {
-
-		global $wpdb, $table_prefix;
-
-		extract( $args );
-
-		echo $before_widget;
-		$title = apply_filters( 'widget_title', empty( $instance['title'] ) ? __( 'Add a Product', 'wpsc' ) : $instance['title'] );
-		echo "<a class='thickbox' href='" . home_url( '/' ) . "?marketplace=true&KeepThis=true&TB_iframe=true&height=600&width=680'>" . $title . "</a>";
-		echo $after_widget;
-
-	}
-
-	/**
-	 * Update Widget
-	 *
-	 * @param $new_instance (array) New widget values.
-	 * @param $old_instance (array) Old widget values.
-	 *
-	 * @return (array) New values.
-	 */
-	function update( $new_instance, $old_instance ) {
-
-		$instance = $old_instance;
-		$instance['title']  = strip_tags( $new_instance['title'] );
-
-		return $instance;
-
-	}
-
-	/**
-	 * Widget Options Form
-	 *
-	 * @param $instance (array) Widget values.
-	 */
-	function form( $instance ) {
-
-		global $wpdb;
-
-		// Defaults
-		$instance = wp_parse_args( (array)$instance, array( 'title' => '' ) );
-
-		// Values
-		$title  = esc_attr( $instance['title'] );
-
-		?>
-		<p>
-			<label for="<?php echo $this->get_field_id('title'); ?>"><?php _e( 'Label:', 'wpsc' ); ?></label>
-			<input class="widefat" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo $title; ?>" />
-		</p>
-		<?php
-
-	}
-
 }
