@@ -10,7 +10,7 @@ WP e-Commerce is a free WordPress Shopping Cart Plugin that lets customers buy y
 
 == Description ==
 
-We make setting up an ecommerce shop easy, and with over 2.5 Million downloads, we have unparalleled experience.
+We make setting up an ecommerce shop easy, and with over 2.6 Million downloads, we have unparalleled experience.
 
 Features:
 
@@ -177,6 +177,7 @@ After upgrading from earlier versions look for link "Update Store". This will up
 * Fix: cart is not initialized when some shipping modules are triggered
 * Fix: redundant product thumbnail is displayed on category / single product list.
 * Fix: variation checkbox column width in WP 3.7.
+* Fix: Out of stock message for variations now correctly shows variation of product for the title, rather than main product.
 
 = 3.8.12.1 =
 * Fix: Fatal error in wpsc_product_list_exclude_child_categories() due to other themes
