@@ -505,7 +505,7 @@ function wpec_get_the_post_id_by_shortcode( $shortcode ) {
  * @3.8
  * @returns nothing
  */
-function wpsc_update_permalinks(  $return = '' ) {
+function wpsc_update_permalinks( $return = '' ) {
 	_wpsc_deprecated_function( __FUNCTION__, '3.8.9', '_wpsc_action_permalink_structure_changed' );
 	_wpsc_action_permalink_structure_changed();
 }
@@ -1697,7 +1697,7 @@ if ( isset( $_REQUEST['wpsc_admin_action'] ) && ( 'wpsc_display_invoice' == $_RE
  * @return resource $ch
  **/
 function wpsc_curl_ssl( $ch ) {
-	_wpsc_deprecated_function( __FUNCTION__, '3.8.13', __( "add_filter( 'https_ssl_verify', '__return_false' )", 'wpsc' ) );
+	_wpsc_deprecated_function( __FUNCTION__, '3.8.13', "add_filter( 'https_ssl_verify', '__return_false' )" );
 
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 	curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
@@ -1738,3 +1738,7 @@ function wpsc_delete_cartmeta( $cart_item_id, $meta_key, $meta_value = '' ) {
 	return wpsc_delete_cart_item_meta( $cart_item_id, $meta_key, $meta_value );
 }
 
+function wpsc_get_exchange_rate( $from, $to ) {
+	_wpsc_deprecated_function( __FUNCTION__, '3.8.13' );
+	return _wpsc_get_exchange_rate( $from, $to );
+}

@@ -7,10 +7,9 @@
  *
  *
  * @package wp-e-commerce
- * @since 3.9
+ * @since 3.8
  * @subpackage wpsc-cart-classes
 */
-
 
 /**
  * The WPSC Cart Items class
@@ -59,26 +58,37 @@ class wpsc_cart_item {
 	var $custom_message = null;
 	var $custom_file = null;
 
+	/**
+	 * compare cart item meta
+	 * @access public
+	 * @param other cart item against which this items meta will be compared
+	 * @return returns true if the cart item meta for this item is the same as is in the cart item in the argument
+	 */
+	function item_meta_equal( $other_cart_item ) {
+		$my_item_meta_key    = serialize( $this->item_meta );
+		$other_item_meta_key = serialize( $other_cart_item->item_meta );
 
+		return strcmp( $my_item_meta_key, $other_item_meta_key ) == 0;
+	}
 
 	/**
-	 * add cart item meta value
+	 * Add cart item meta value
+	 *
 	 * @access public
 	 * @param meta key name
 	 * @param meta key value
 	 * @return previous meta value if it existed, nothing otherwise
 	 */
-	function delete_meta($key) {
+	function delete_meta( $key ) {
 
-		if ( isset($this->item_meta[$key]) ) {
-			$value = $this->item_meta[$key];
-			unset( $this->item_meta[$key]);
+		if ( isset( $this->item_meta[ $key ] ) ) {
+			$value = $this->item_meta[ $key ];
+			unset( $this->item_meta[ $key ] );
 			return $value;
 		}
 
 		return;
 	}
-
 
 	/**
 	 * update or add cart item meta value
@@ -99,24 +109,23 @@ class wpsc_cart_item {
 		return $result;
 	}
 
-
 	/**
-	 * get cart item meta value
+	 * Get cart item meta value
+	 *
 	 * @access public
 	 * @param meta key name, optional, empty returns all meta as an array
 	 * @return previous meta value if it existed, null otherwise
 	 */
-	function get_meta($key='') {
+	function get_meta( $key = '' ) {
 
-		if ( empty($key) ) {
+		if ( empty( $key ) ) {
 			$result = $this->item_meta;
 		} else {
-			$result = isset($this->item_meta[$key])?$this->item_meta[$key]:null;
+			$result = isset( $this->item_meta[ $key ] ) ? $this->item_meta[ $key ] : null;
 		}
 
 		return $result;
 	}
-
 
 	public static function refresh_variation_cache() {
 		global $wpsc_cart;
@@ -174,6 +183,7 @@ class wpsc_cart_item {
 		if(($parameters['is_customisable'] == true) && ($parameters['file_data'] != null)) {
 			$this->save_provided_file($this->file_data);
 		}
+
 		$this->refresh_item();
 
 		if ( ! has_action( 'wpsc_add_item', array( 'wpsc_cart_item', 'refresh_variation_cache' ) ) )
@@ -194,8 +204,6 @@ class wpsc_cart_item {
 		$this->quantity = (int)$quantity;
 		$this->refresh_item();
 		$this->update_claimed_stock();
-
-
 	}
 
 	/**
@@ -234,7 +242,7 @@ class wpsc_cart_item {
 			}
 		}
 
-		$price = apply_filters( 'wpsc_price', $price, $product_id );
+		$price = apply_filters( 'wpsc_price', $price, $product_id, $this );
 
 		// create the string containing the product name.
 		$this->product_name = $this->get_title( 'raw' );
@@ -277,7 +285,11 @@ class wpsc_cart_item {
 			$this->tax = $taxes['tax'];
 		}
 
-		$this->product_url = get_permalink( $product_id );
+		if ( $product->post_parent ) {
+			$this->product_url = get_permalink( $product->post_parent );
+		} else {
+			$this->product_url = get_permalink( $product_id );
+		}
 
 		if( ! is_array( $this->variation_values ) )
 			$attach_parent = $product_id;
@@ -326,7 +338,7 @@ class wpsc_cart_item {
 	public function get_title( $mode = 'display' ) {
 
 		if ( ! get_post_field( 'post_parent', $this->product_id ) )
-			return get_post_field( 'post_title', $this->product_id);
+			return get_post_field( 'post_title', $this->product_id );
 
 		if ( empty( self::$variation_cache ) )
 			self::refresh_variation_cache();
@@ -334,16 +346,16 @@ class wpsc_cart_item {
 		$primary_product_id = get_post_field( 'post_parent', $this->product_id );
 		$title = get_post_field( 'post_title', $primary_product_id );
 
-		if ( isset( self::$variation_cache[$this->product_id] ) ) {
-			ksort( self::$variation_cache[$this->product_id] );
-			$vars   = implode( ', ', self::$variation_cache[$this->product_id] );
+		if ( isset( self::$variation_cache[ $this->product_id ] ) ) {
+			ksort( self::$variation_cache[ $this->product_id ] );
+			$vars   = implode( ', ', self::$variation_cache[ $this->product_id ] );
 			$title .= ' (' . $vars . ')';
 		}
 
-		$title = apply_filters( 'wpsc_cart_product_title', $title, $this->product_id );
+		$title = apply_filters( 'wpsc_cart_product_title', $title, $this->product_id, $this );
 
 		if ( $mode == 'display' )
-			$title = apply_filters( 'the_title', $title );
+			$title = apply_filters( 'the_title', $title, $this );
 
 		return $title;
 	}
@@ -393,7 +405,7 @@ class wpsc_cart_item {
 		$accepted_file_types['ext'][] = 'gif';
 		$accepted_file_types['ext'][] = 'png';
 
-		$accepted_file_types = apply_filters( 'wpsc_customer_upload_accepted_file_types', $accepted_file_types );
+		$accepted_file_types = apply_filters( 'wpsc_customer_upload_accepted_file_types', $accepted_file_types, $this );
 
 		$can_have_uploaded_image = get_product_meta($this->product_id,'product_metadata',true);
 		$product = get_post($this->product_id);
@@ -533,38 +545,41 @@ class wpsc_cart_item {
 
 		$cart_item_id = $wpdb->get_var( "SELECT " . $wpdb->insert_id . " AS `id` FROM `".WPSC_TABLE_CART_CONTENTS."` LIMIT 1");
 
-		wpsc_add_cart_item_meta($cart_item_id, 'sku', $this->sku, true );
+		wpsc_add_cart_item_meta( $cart_item_id, 'sku', $this->sku, true );
 
-		if ( !empty( $this->item_meta) ) {
-			foreach( $this->item_meta as $item_meta_key => $item_meta_value ) {
+		if ( ! empty( $this->item_meta ) ) {
+			foreach ( $this->item_meta as $item_meta_key => $item_meta_value ) {
 				wpsc_add_cart_item_meta( $cart_item_id, $item_meta_key, $item_meta_value, true );
 			}
 		}
 
-		$downloads = get_option('max_downloads');
-		if($this->is_downloadable == true) {
+		if ( $this->is_downloadable == true ) {
 
-			$product_files = (array)get_posts(array(
-					'post_type' => 'wpsc-product-file',
+			$product_files = (array) get_posts( array(
+					'post_type'   => 'wpsc-product-file',
 					'post_parent' => $this->product_id,
 					'numberposts' => -1,
 					'post_status' => 'inherit'
-			));
-			foreach($product_files as $file){
+			) );
+
+			$downloads = get_option( 'max_downloads' );
+
+			foreach ( $product_files as $file ) {
+
 				// if the file is downloadable, check that the file is real
-				$unique_id = sha1(uniqid(mt_rand(), true));
+				$unique_id = sha1( uniqid( mt_rand(), true ) );
 
 				$wpdb->insert(
 						WPSC_TABLE_DOWNLOAD_STATUS,
 						array(
 								'product_id' => $this->product_id,
-								'fileid' => $file->ID,
-								'purchid' => $purchase_log_id,
-								'cartid' => $cart_item_id,
-								'uniqueid' => $unique_id,
-								'downloads' => $downloads,
-								'active' => 0,
-								'datetime' => date( 'Y-m-d H:i:s' )
+								'fileid'     => $file->ID,
+								'purchid'    => $purchase_log_id,
+								'cartid'     => $cart_item_id,
+								'uniqueid'   => $unique_id,
+								'downloads'  => $downloads,
+								'active'     => 0,
+								'datetime'   => date( 'Y-m-d H:i:s' )
 						),
 						array(
 								'%d',
@@ -579,12 +594,12 @@ class wpsc_cart_item {
 				);
 
 				$download_id = $wpdb->get_var( "SELECT " . $wpdb->insert_id . " AS `id` FROM `".WPSC_TABLE_DOWNLOAD_STATUS."` LIMIT 1");
-				wpsc_update_meta($download_id, '_is_legacy', 'false', 'wpsc_downloads');
+				wpsc_update_meta( $download_id, '_is_legacy', 'false', 'wpsc_downloads' );
 			}
 
 		}
 
-		do_action('wpsc_save_cart_item', $cart_item_id, $this->product_id);
+		do_action( 'wpsc_save_cart_item', $cart_item_id, $this->product_id, $this );
 	}
 
 }
@@ -596,8 +611,8 @@ class wpsc_cart_item {
  * @since  3.8.9
  * @access private
  */
-class _WPSC_Comparison
-{
+class _WPSC_Comparison {
+
 	private $orderby = '';
 	private $order = 'ASC';
 

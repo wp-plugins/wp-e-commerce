@@ -365,10 +365,13 @@ final class WPSC_Settings_Page {
 	 */
 	public function set_current_tab( $tab_id = null ) {
 		if ( ! $tab_id ) {
+			$tabs = array_keys( $this->tabs );
+
 			if ( isset( $_GET['tab'] ) && array_key_exists( $_GET['tab'], $this->tabs ) )
 				$this->current_tab_id = $_GET['tab'];
 			else
-				$this->current_tab_id = array_shift( array_keys( $this->tabs ) );
+				$this->current_tab_id = array_shift( $tabs );
+
 		} else {
 			$this->current_tab_id = $tab_id;
 		}
@@ -508,7 +511,7 @@ final class WPSC_Settings_Page {
 				<div id="icon_card" class="icon32"></div>
 				<h2 id="wpsc-settings-page-title">
 					<?php esc_html_e( 'Store Settings', 'wpsc' ); ?>
-					<img src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" class="ajax-feedback" title="" alt="" />
+					<img src="<?php echo esc_url( wpsc_get_ajax_spinner() ); ?>" class="ajax-feedback" title="" alt="" />
 				</h2>
 				<?php $this->output_tabs(); ?>
 				<div id='wpsc_options_page'>
@@ -640,7 +643,7 @@ final class WPSC_Settings_Page {
 			$_POST['wpsc_options'] = stripslashes_deep( $_POST['wpsc_options'] );
 			// make sure stock keeping time is a number
 			if ( isset( $_POST['wpsc_options']['wpsc_stock_keeping_time'] ) ) {
-				$skt =& $_POST['wpsc_options']['wpsc_stock_keeping_time']; // I hate repeating myself
+				$skt = $_POST['wpsc_options']['wpsc_stock_keeping_time']; // I hate repeating myself
 				$skt = (float) $skt;
 				if ( $skt <= 0 || ( $skt < 1 && $_POST['wpsc_options']['wpsc_stock_keeping_interval'] == 'hour' ) ) {
 					unset( $_POST['wpsc_options']['wpsc_stock_keeping_time'] );

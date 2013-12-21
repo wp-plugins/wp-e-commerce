@@ -2,9 +2,9 @@
 Contributors: mufasa, garyc40, JustinSainton
 Donate link: http://getshopped.org
 Tags: e-commerce, wp-e-commerce, shop, cart, paypal, authorize, stock control, ecommerce, shipping, tax
-Requires at least: 3.5
-Tested up to: 3.7
-Stable tag: 3.8.12.1
+Requires at least: 3.7
+Tested up to: 3.8
+Stable tag: 3.8.13
 
 WP e-Commerce is a free WordPress Shopping Cart Plugin that lets customers buy your products, services and digital downloads online.
 
@@ -162,6 +162,7 @@ After upgrading from earlier versions look for link "Update Store". This will up
 * Change: Replace default noimage.png with a better image.
 * Change: Updated NL language
 * Change: Updated german language strings
+* Change: Use new spinner image in WordPress 3.8
 * Fix: Add preg_quote() to coupon regexes that intend to parse strings. Fixes issue where unexpected results occur when strings contain slashes, or really, any regex-oriented characters.
 * Fix: Change wpsc_get_remaining_quantity() to call the method dynamically, rather than statically.  The previous behaviour caused a strict standards warning.
 * Fix: Database Upgrade Routine to rename old _wpsc_* product metadata array keys so they no longer include the '_wpsc_' prefix
@@ -178,6 +179,11 @@ After upgrading from earlier versions look for link "Update Store". This will up
 * Fix: redundant product thumbnail is displayed on category / single product list.
 * Fix: variation checkbox column width in WP 3.7.
 * Fix: Out of stock message for variations now correctly shows variation of product for the title, rather than main product.
+* Fix: Use proper link in checkout for variation products.
+* Fix: Return tax information in switchmethod() JS function.
+* Fix: Resolve conflict with Advanced Custom Fields on save_post hook for products.
+* Fix: Update Bulgarian Currency symbol.
+* Fix: Resolve issue where updating pages causes rewrite rule conflicts when pretty permalinks are enabled.
 
 = 3.8.12.1 =
 * Fix: Fatal error in wpsc_product_list_exclude_child_categories() due to other themes

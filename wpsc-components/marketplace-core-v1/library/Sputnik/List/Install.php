@@ -200,13 +200,13 @@ class Sputnik_List_Install extends WP_List_Table {
 <?php
 			$this->pagination($which);
 ?>
-				<img src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" class="ajax-loading list-ajax-loading" alt="" />
+				<img src="<?php echo esc_url( wpsc_get_ajax_spinner() ); ?>" class="ajax-loading list-ajax-loading" alt="" />
 				<br class="clear" />
 			</div>
 		<?php } else { ?>
 			<div class="tablenav bottom">
 				<?php $this->pagination($which); ?>
-				<img src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" class="ajax-loading list-ajax-loading" alt="" />
+				<img src="<?php echo esc_url( wpsc_get_ajax_spinner() ); ?>" class="ajax-loading list-ajax-loading" alt="" />
 				<br class="clear" />
 			</div>
 		<?php
@@ -412,14 +412,13 @@ class Sputnik_List_Install extends WP_List_Table {
 		$action_links = apply_filters( 'sputnik_install_grid_action_links', $action_links, $plugin );
 
 		$thumb = false;
-		if (isset($plugin->thumb) && $plugin->thumb !== false) {
+		if ( empty( $plugin->thumb ) )
+			$thumb = WPSC_CORE_THEME_URL . '/wpsc-images/noimage.png';
+		else
 			$thumb = $plugin->thumb;
-		}
-		if ( 'klarna-payment-gateway' == $plugin->slug )
-			$thumb = 'https://github.com/JustinSainton/Klarna/raw/assets/thumb.png';
 ?>
 	<div>
-		<div class="sputnik-plugin<?php if ($thumb !== false) echo ' has-thumb'; ?>">
+		<div class="sputnik-plugin<?php if ( ! empty( $plugin->thumb ) ) echo ' has-thumb'; ?>">
 			<div class="sputnik-card">
 <?php
 				if ( $thumb !== false ):

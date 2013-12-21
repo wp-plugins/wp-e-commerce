@@ -4,6 +4,7 @@ add_action( 'wpsc_theme_footer', 'wpsc_fancy_notifications' );
 
 if ( get_option( 'wpsc_replace_page_title' ) == 1 )
 	add_filter( 'wp_title', 'wpsc_replace_wp_title', 10, 2 );
+
 add_filter( 'post_type_link', 'wpsc_product_link', 10, 3 );
 
 /**
@@ -32,8 +33,14 @@ function wpsc_product_link( $permalink, $post, $leavename ) {
 
 	// Only applies to WPSC products, don't stop on permalinks of other CPTs
 	// Fixes http://code.google.com/p/wp-e-commerce/issues/detail?id=271
-	if ($post->post_type != 'wpsc-product')
+	if ( 'wpsc-product' !== $post->post_type ) {
 		return $permalink;
+	}
+
+	if ( 'inherit' === $post->post_status && 0 !== $post->post_parent ) {
+		$post_id = $post->post_parent;
+		$post    = get_post( $post_id );
+	}
 
 	$permalink_structure = get_option( 'permalink_structure' );
 
@@ -551,22 +558,21 @@ function wpsc_category_image($category_id = null) {
 function wpsc_category_description($category_id = null) {
   if($category_id < 1)
 	$category_id = wpsc_category_id();
-  $category = get_term_by('id', $category_id, 'wpsc_product_category');
-  return  $category->description;
+  $category = get_term_by( 'id', $category_id, 'wpsc_product_category' );
+  return $category ? $category->description : '';
 }
 
 function wpsc_category_name($category_id = null) {
-	if($category_id < 1)
+	if ( $category_id < 1 )
 		$category_id = wpsc_category_id();
-	$category = get_term_by('id', $category_id, 'wpsc_product_category');
-	return $category->name;
+
+	$category = get_term_by( 'id', $category_id, 'wpsc_product_category' );
+	return $category ? $category->name : '';
 }
 
 function nzshpcrt_display_categories_groups() {
-    global $wpdb;
-
-    return $output;
-  }
+	return '';
+}
 
 /** wpsc list subcategories function
 		used to get an array of all the subcategories of a category.

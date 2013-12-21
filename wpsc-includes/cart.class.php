@@ -15,10 +15,6 @@
  */
 
 /**
-* cart item count function, no parameters
-* * @return integer the item countf
-*/
-/**
 * tax is included function, no parameters
 * * @return boolean true or false depending on settings>general page
 */
@@ -28,6 +24,10 @@ function wpsc_tax_isincluded() {
    return $wpec_taxes_controller->wpec_taxes_isincluded();
 }
 
+/**
+* cart item count function, no parameters
+* * @return integer the item count
+*/
 function wpsc_cart_item_count() {
    global $wpsc_cart;
    $count = 0;
@@ -36,7 +36,6 @@ function wpsc_cart_item_count() {
    }
    return $count;
 }
-
 
 /**
 * coupon amount function, no parameters
@@ -266,7 +265,7 @@ function _wpsc_validate_cart_product_quantity( $product_id, $parameters, $cart )
 		}
 	}
 }
-add_action( 'wpsc_add_item', '_wpsc_validate_cart_product_quantity', 10, 3 );
+add_action( 'wpsc_add_item' , '_wpsc_validate_cart_product_quantity', 10, 3 );
 add_action( 'wpsc_edit_item', '_wpsc_validate_cart_product_quantity', 10, 3 );
 
 /**
@@ -629,36 +628,46 @@ class wpsc_cart {
     * @param array parameters
     * @return boolean true on sucess, false on failure
    */
-  function set_item($product_id, $parameters, $updater = false) {
-    // default action is adding
+  function set_item( $product_id, $parameters, $updater = false ) {
 
-    $add_item = false;
+    // default action is adding
+    $add_item  = false;
     $edit_item = false;
 
-    if(($parameters['quantity'] > 0) && ($this->check_remaining_quantity($product_id, $parameters['variation_values'], $parameters['quantity']) == true)) {
-         $new_cart_item = new wpsc_cart_item($product_id,$parameters, $this);
-         do_action('wpsc_set_cart_item' , $product_id , $parameters , $this);
-         $add_item = true;
-         $edit_item = false;
-         if((count($this->cart_items) > 0) && ($new_cart_item->is_donation != 1)) {
-            //loop through each cart item
-            foreach($this->cart_items as $key => $cart_item) {
-               // compare product ids and variations.
-               if(($cart_item->product_id == $new_cart_item->product_id) &&
-                 ($cart_item->product_variations == $new_cart_item->product_variations) &&
-                 ($cart_item->custom_message == $new_cart_item->custom_message) &&
-                 ($cart_item->custom_file == $new_cart_item->custom_file)) {
-                  // if they are the same, increment the count, and break out;
-                  if(!$updater){
-                     $this->cart_items[$key]->quantity  += $new_cart_item->quantity;
-                  } else {
-                     $this->cart_items[$key]->quantity  = $new_cart_item->quantity;
+    if ( $parameters['quantity'] > 0 && $this->check_remaining_quantity( $product_id, $parameters['variation_values'], $parameters['quantity'] ) ) {
 
+         $new_cart_item = new wpsc_cart_item( $product_id, $parameters, $this );
+
+         do_action( 'wpsc_set_cart_item', $product_id, $parameters, $this, $new_cart_item );
+
+         $add_item  = true;
+         $edit_item = false;
+
+         if ( count( $this->cart_items ) > 0 && $new_cart_item->is_donation != 1 ) {
+
+            //loop through each cart item
+            foreach ( $this->cart_items as $key => $cart_item ) {
+
+               // compare product ids and variations.
+               	if ( $cart_item->product_id         == $new_cart_item->product_id          &&
+               			 $cart_item->product_variations == $new_cart_item->product_variations  &&
+               			 $cart_item->custom_message     == $new_cart_item->custom_message      &&
+               			 $cart_item->custom_file        == $new_cart_item->custom_file         &&
+           					 $cart_item->item_meta_equal( $new_cart_item ) ) {
+
+                  // if they are the same, increment the count, and break out;
+                  if ( ! $updater ) {
+                     $this->cart_items[ $key ]->quantity += $new_cart_item->quantity;
+                  } else {
+                     $this->cart_items[ $key ]->quantity = $new_cart_item->quantity;
                   }
-                  $this->cart_items[$key]->refresh_item();
-                  $add_item = false;
+
+                  $this->cart_items[ $key ]->refresh_item();
+
+                  $add_item  = false;
                   $edit_item = true;
-                  do_action('wpsc_edit_item' , $product_id , $parameters , $this);
+
+                  do_action( 'wpsc_edit_item', $product_id, $parameters, $this );
 
                }
             }
@@ -666,19 +675,20 @@ class wpsc_cart {
          }
 
          // if we are still adding the item, add it
-         if($add_item === true) {
+         if ( $add_item ) {
             $this->cart_items[] = $new_cart_item;
             do_action( 'wpsc_add_item', $product_id, $parameters, $this );
          }
 
       }
 
-     // if some action was performed, return true, otherwise, return false;
-     $status = false;
-      if(($add_item == true) || ($edit_item == true)) {
-         $status = $new_cart_item;
-      }
-      $this->cart_item_count = count($this->cart_items);
+    // if some action was performed, return true, otherwise, return false;
+    $status = false;
+    if ( $add_item || $edit_item ) {
+      $status = $new_cart_item;
+    }
+
+      $this->cart_item_count = count( $this->cart_items );
       $this->clear_cache();
 
       return $status;

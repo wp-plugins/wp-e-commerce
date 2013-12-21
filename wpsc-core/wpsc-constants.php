@@ -25,16 +25,17 @@ function wpsc_core_load_session() {
  * The core WPEC constants necessary to start loading
  */
 function wpsc_core_constants() {
-	if(!defined('WPSC_URL'))
+	if ( ! defined( 'WPSC_URL' ) )
 		define( 'WPSC_URL', plugins_url( '', __FILE__ ) );
+
 	// Define Plugin version
-	define( 'WPSC_VERSION', '3.8.13-beta' );
-	define( 'WPSC_MINOR_VERSION', '2c168e9ea8' );
-	define( 'WPSC_PRESENTABLE_VERSION', '3.8.13-beta' );
-	define( 'WPSC_DB_VERSION', 7 );
+	define( 'WPSC_VERSION'            , '3.8.13' );
+	define( 'WPSC_MINOR_VERSION'      , 'e8a508c011' );
+	define( 'WPSC_PRESENTABLE_VERSION', '3.8.13' );
+	define( 'WPSC_DB_VERSION'         , 8 );
 
 	// Define Debug Variables for developers
-	define( 'WPSC_DEBUG', false );
+	define( 'WPSC_DEBUG'        , false );
 	define( 'WPSC_GATEWAY_DEBUG', false );
 
 	// Images URL
@@ -261,9 +262,29 @@ function wpsc_core_setup_cart() {
 		$GLOBALS['wpsc_cart'] = $cart;
 	else
 		$GLOBALS['wpsc_cart'] = new wpsc_cart();
-
-	$GLOBALS['wpsc_cart']->get_shipping_method();
 }
+
+/**
+ * _wpsc_action_init_shipping_method()
+ *
+ * The cart was setup at the beginning of the init sequence, and that's
+ * too early to do shipping calculations because custom taxonomies, types
+ * and other plugins may not have been initialized.  So we save the shipping
+ * method initialization for the end of the init sequence.
+ */
+function _wpsc_action_init_shipping_method() {
+	global $wpsc_cart;
+
+	if ( ! is_object( $wpsc_cart ) ) {
+		wpsc_core_setup_cart();
+	}
+
+	if ( empty( $wpsc_cart->selected_shipping_method ) ) {
+		$wpsc_cart->get_shipping_method();
+	}
+}
+
+add_action( 'wpsc_init', '_wpsc_action_init_shipping_method' );
 
 /***
  * wpsc_core_setup_globals()

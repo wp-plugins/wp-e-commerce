@@ -3,6 +3,7 @@
 add_action( 'wpsc_set_cart_item'         , '_wpsc_action_update_customer_last_active'     );
 add_action( 'wpsc_add_item'              , '_wpsc_action_update_customer_last_active'     );
 add_action( 'wpsc_before_submit_checkout', '_wpsc_action_update_customer_last_active'     );
+add_action( 'wp_login'                   , '_wpsc_action_setup_customer'                  );
 
 /**
  * Helper function for setting the customer cookie content and expiration
@@ -31,17 +32,17 @@ function _wpsc_set_customer_cookie( $cookie, $expire ) {
  * @return string Customer ID
  */
 function _wpsc_create_customer_id() {
-	global $wp_roles;
 
-	$role = $wp_roles->get_role( 'wpsc_anonymous' );
+	$role = get_role( 'wpsc_anonymous' );
 
-	if ( ! $role )
-		$wp_roles->add_role( 'wpsc_anonymous', __( 'Anonymous', 'wpsc' ) );
+	if ( ! $role ) {
+		add_role( 'wpsc_anonymous', __( 'Anonymous', 'wpsc' ) );
+	}
 
 	$username = '_' . wp_generate_password( 8, false, false );
 	$password = wp_generate_password( 12, false );
 
-	$id = wp_create_user( $username, $password );
+	$id   = wp_create_user( $username, $password );
 	$user = new WP_User( $id );
 	$user->set_role( 'wpsc_anonymous' );
 
@@ -95,14 +96,21 @@ function _wpsc_maybe_setup_bot_user() {
  * @param  boolean $fake_it Defaults to false
  */
 function _wpsc_create_customer_id_cookie( $id, $fake_it = false ) {
+
 	$expire = time() + WPSC_CUSTOMER_DATA_EXPIRATION; // valid for 48 hours
-	$data = $id . $expire;
-	$hash = hash_hmac( 'md5', $data, wp_hash( $data ) );
+	$data   = $id . $expire;
+
+	$user      = get_user_by( 'id', $id );
+	$pass_frag = substr( $user->user_pass, 8, 4 );
+
+	$key = wp_hash( $user->user_login . $pass_frag . '|' . $expire );
+
+	$hash   = hash_hmac( 'md5', $data, $key );
 	$cookie = $id . '|' . $expire . '|' . $hash;
 
 	// store ID, expire and hash to validate later
 	if ( $fake_it )
-		$_COOKIE[WPSC_CUSTOMER_COOKIE] = $cookie;
+		$_COOKIE[ WPSC_CUSTOMER_COOKIE ] = $cookie;
 	else
 		_wpsc_set_customer_cookie( $cookie, $expire );
 }
@@ -115,33 +123,35 @@ function _wpsc_create_customer_id_cookie( $id, $fake_it = false ) {
  * @return mixed Return the customer ID if the cookie is valid, false if otherwise.
  */
 function _wpsc_validate_customer_cookie() {
-	if ( is_admin() || ! isset( $_COOKIE[WPSC_CUSTOMER_COOKIE] ) )
+	if ( is_admin() || ! isset( $_COOKIE[ WPSC_CUSTOMER_COOKIE ] ) )
 		return;
 
-	$cookie = $_COOKIE[WPSC_CUSTOMER_COOKIE];
+	$cookie = $_COOKIE[ WPSC_CUSTOMER_COOKIE ];
 	list( $id, $expire, $hash ) = $x = explode( '|', $cookie );
 	$data = $id . $expire;
-	$hmac = hash_hmac( 'md5', $data, wp_hash( $data ) );
 
-	$valid = true;
+	$id = intval( $id );
 
-	if ( ($hmac != $hash) || empty( $id ) || !is_numeric($id)) {
-		$valid = false;
-	} else {
-		// check to be sure the user still exists, could have been purged
-		$id = intval( $id );
-		$wp_user = get_user_by( 'id', $id );
-		if ( $wp_user === false ) {
-			$valid = false;
-		}
-	}
+	// invalid ID
+	if ( ! $id )
+		return false;
 
-	// if the cookie is invalid, just delete it and a new user will be generated
-	// later
-	if ( ! $valid ) {
-		unset( $_COOKIE[WPSC_CUSTOMER_COOKIE] );
-		_wpsc_set_customer_cookie( '', time() - 3600 );
-	}
+	$user = get_user_by( 'id', $id );
+
+	// no user found
+	if ( $user === false )
+		return false;
+
+	$pass_frag = substr( $user->user_pass, 8, 4 );
+	$key       = wp_hash( $user->user_login . $pass_frag . '|' . $expire );
+	$hmac      = hash_hmac( 'md5', $data, $key );
+
+	// integrity check
+	if ( $hmac == $hash )
+		return $id;
+
+	_wpsc_set_customer_cookie( '', time() - 3600 );
+	return false;
 }
 
 /**
@@ -161,11 +171,6 @@ function wpsc_get_current_customer_id() {
 
 	if ( ! empty( $id ) )
 		return $id;
-
-	// if the user is logged in and the cookie is still there, delete the cookie
-	if ( is_user_logged_in() && isset( $_COOKIE[WPSC_CUSTOMER_COOKIE] ) ) {
-		_wpsc_set_customer_cookie( '', time() - 3600 );
-	}
 
 	// if the user is logged in we use the user id
 	if ( is_user_logged_in() ) {
@@ -187,6 +192,10 @@ function wpsc_get_current_customer_id() {
  * @since  3.8.13
  */
 function _wpsc_action_setup_customer() {
+	// if the user is logged in and the cookie is still there, delete the cookie
+	if ( is_user_logged_in() && isset( $_COOKIE[WPSC_CUSTOMER_COOKIE] ) )
+		_wpsc_set_customer_cookie( '', time() - 3600 );
+
 	// if the customer cookie is invalid, unset it
 	_wpsc_validate_customer_cookie();
 
@@ -212,6 +221,8 @@ function _wpsc_action_setup_customer() {
  * @return string      Internal meta key
  */
 function _wpsc_get_customer_meta_key( $key ) {
+	global $wpdb;
+
 	$blog_prefix = is_multisite() ? $wpdb->get_blog_prefix() : '';
 	return "{$blog_prefix}_wpsc_{$key}";
 }
@@ -226,6 +237,8 @@ function _wpsc_get_customer_meta_key( $key ) {
  * @return boolean        True if successful, False if otherwise
  */
 function wpsc_delete_all_customer_meta( $id = false ) {
+	global $wpdb;
+
 	if ( ! $id )
 		$id = wpsc_get_current_customer_id();
 
