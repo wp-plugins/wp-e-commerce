@@ -4,6 +4,9 @@ add_action( 'wpsc_set_cart_item'         , '_wpsc_action_update_customer_last_ac
 add_action( 'wpsc_add_item'              , '_wpsc_action_update_customer_last_active'     );
 add_action( 'wpsc_before_submit_checkout', '_wpsc_action_update_customer_last_active'     );
 add_action( 'wp_login'                   , '_wpsc_action_setup_customer'                  );
+add_action( 'load-users.php'             , '_wpsc_action_load_users'                      );
+add_filter( 'views_users'                , '_wpsc_filter_views_users'                     );
+add_filter( 'editable_roles'             , '_wpsc_filter_editable_roles'                  );
 
 /**
  * Helper function for setting the customer cookie content and expiration
@@ -123,8 +126,10 @@ function _wpsc_create_customer_id_cookie( $id, $fake_it = false ) {
  * @return mixed Return the customer ID if the cookie is valid, false if otherwise.
  */
 function _wpsc_validate_customer_cookie() {
-	if ( is_admin() || ! isset( $_COOKIE[ WPSC_CUSTOMER_COOKIE ] ) )
-		return;
+
+	if ( is_admin() || ! isset( $_COOKIE[ WPSC_CUSTOMER_COOKIE ] ) ) {
+		return false;
+	}
 
 	$cookie = $_COOKIE[ WPSC_CUSTOMER_COOKIE ];
 	list( $id, $expire, $hash ) = $x = explode( '|', $cookie );
@@ -133,22 +138,25 @@ function _wpsc_validate_customer_cookie() {
 	$id = intval( $id );
 
 	// invalid ID
-	if ( ! $id )
+	if ( ! $id ) {
 		return false;
+	}
 
 	$user = get_user_by( 'id', $id );
 
 	// no user found
-	if ( $user === false )
+	if ( $user === false ) {
 		return false;
+	}
 
 	$pass_frag = substr( $user->user_pass, 8, 4 );
 	$key       = wp_hash( $user->user_login . $pass_frag . '|' . $expire );
 	$hmac      = hash_hmac( 'md5', $data, $key );
 
 	// integrity check
-	if ( $hmac == $hash )
+	if ( $hmac == $hash ) {
 		return $id;
+	}
 
 	_wpsc_set_customer_cookie( '', time() - 3600 );
 	return false;
@@ -192,12 +200,20 @@ function wpsc_get_current_customer_id() {
  * @since  3.8.13
  */
 function _wpsc_action_setup_customer() {
-	// if the user is logged in and the cookie is still there, delete the cookie
-	if ( is_user_logged_in() && isset( $_COOKIE[WPSC_CUSTOMER_COOKIE] ) )
-		_wpsc_set_customer_cookie( '', time() - 3600 );
-
 	// if the customer cookie is invalid, unset it
-	_wpsc_validate_customer_cookie();
+	$id = _wpsc_validate_customer_cookie();
+
+	// if a valid ID is present in the cookie, and the user is logged in,
+	// it's time to merge the carts
+	if ( isset( $_COOKIE[WPSC_CUSTOMER_COOKIE] ) && is_user_logged_in() ) {
+		// merging cart requires the taxonomies to have been initialized
+		if ( did_action( 'wpsc_register_taxonomies_after' ) ) {
+			_wpsc_merge_cart();
+		}
+		else {
+			add_action( 'wpsc_register_taxonomies_after', '_wpsc_merge_cart', 1 );
+		}
+	}
 
 	// if this request is by a bot, prevent multiple account creation
 	_wpsc_maybe_setup_bot_user();
@@ -209,6 +225,64 @@ function _wpsc_action_setup_customer() {
 	wpsc_core_setup_cart();
 
 	do_action( 'wpsc_setup_customer' );
+}
+
+function _wpsc_merge_cart() {
+	$old_id = _wpsc_validate_customer_cookie();
+
+	if ( ! $old_id ) {
+		return;
+	}
+
+	$new_id = get_current_user_id();
+
+	$old_cart = wpsc_get_customer_cart( $old_id );
+	$items    = $old_cart->get_items();
+
+	$new_cart = wpsc_get_customer_cart( $new_id );
+
+	// first of all empty the old cart so that the claimed stock and related
+	// hooks are released
+	$old_cart->empty_cart();
+
+	// add each item to the new cart
+	foreach ( $items as $item ) {
+		$new_cart->set_item( $item->product_id, array(
+			'quantity'         => $item->quantity,
+			'variation_values' => $item->variation_values,
+			'custom_message'   => $item->custom_message,
+			'provided_price'   => $item->provided_price,
+			'time_requested'   => $item->time_requested,
+			'custom_file'      => $item->custom_file,
+			'is_customisable'  => $item->is_customisable,
+			'meta'             => $item->meta
+		) );
+	}
+
+	require_once( ABSPATH . 'wp-admin/includes/user.php' );
+	wp_delete_user( $old_id );
+
+	_wpsc_set_customer_cookie( '', time() - 3600 );
+}
+
+function wpsc_get_customer_cart( $id = false ) {
+	global $wpsc_cart;
+
+	if ( ! empty( $wpsc_cart ) && ( ! $id || $id == wpsc_get_current_customer_id() ) )
+		return $wpsc_cart;
+
+	$cart = maybe_unserialize( base64_decode( wpsc_get_customer_meta( 'cart', $id ) ) );
+	if ( empty( $cart ) || ! $cart instanceof wpsc_cart )
+		$cart = new wpsc_cart();
+
+	return $cart;
+}
+
+function wpsc_update_customer_cart( $cart, $id = false ) {
+	if ( ! $id || $id == wpsc_get_current_customer_id() )
+		return wpsc_serialize_shopping_cart();
+
+	return wpsc_update_customer_meta( 'cart', base64_encode( serialize( $wpsc_cart ) ), $id );
 }
 
 /**
@@ -474,4 +548,104 @@ function _wpsc_is_bot_user() {
 
 	// at this point we have eliminated all but the most obvious choice, a human (or cylon?)
 	return false;
+}
+
+/**
+ * Given a users.php view's HTML code, this function returns the user count displayed
+ * in the view.
+ *
+ * If `count_users()` had implented caching, we could have just called that function again
+ * instead of using this hack.
+ *
+ * @access private
+ * @since  3.8.13.2
+ * @param  string $view
+ * @return int
+ */
+function _wpsc_extract_user_count( $view ) {
+	if ( preg_match( '/class="count">\((\d+)\)/', $view, $matches ) ) {
+		return absint( $matches[1] );
+	}
+
+	return 0;
+}
+
+/**
+ * Filter the user views so that Anonymous role is not displayed
+ *
+ * @since  3.8.13.2
+ * @access private
+ * @param  array $views
+ * @return array
+ */
+function _wpsc_filter_views_users( $views ) {
+	if ( isset( $views['wpsc_anonymous'] ) ) {
+		// ugly hack to make the anonymous users not count towards "All"
+		// really wish WordPress had a filter in count_users(), but in the mean time
+		// this will do
+		$anon_count = _wpsc_extract_user_count( $views['wpsc_anonymous'] );
+		$all_count = _wpsc_extract_user_count( $views['all'] );
+		$new_count = $all_count - $anon_count;
+		$views['all'] = str_replace( "(${all_count})", "(${new_count})", $views['all'] );
+	}
+
+	unset( $views['wpsc_anonymous'] );
+	return $views;
+}
+
+/**
+ * Add the action necessary to filter out anonymous users
+ *
+ * @since 3.8.13.2
+ * @access private
+ */
+function _wpsc_action_load_users() {
+	add_action( 'pre_user_query', '_wpsc_action_pre_user_query', 10, 1 );
+}
+
+/**
+ * Filter out anonymous users in "All" view
+ *
+ * @since 3.8.13.2
+ * @access private
+ * @param  WP_User_Query $query
+ */
+function _wpsc_action_pre_user_query( $query ) {
+	global $wpdb;
+
+	// only do this when we're viewing all users
+	if ( ! empty( $query->query_vars['role'] ) )
+		return;
+
+	// if the site is multisite, a JOIN is already done
+	if ( is_multisite() ) {
+		$query->query_where .= " AND CAST($wpdb->usermeta.meta_value AS CHAR) NOT LIKE '%" . like_escape( '"wpsc_anonymous"' ) . "%'";
+		return;
+	}
+
+	$cap_meta_query = array(
+		array(
+			'key'     => $wpdb->get_blog_prefix( $query->query_vars['blog_id'] ) . 'capabilities',
+			'value'   => '"wpsc_anonymous"',
+			'compare' => 'not like',
+		)
+	);
+
+	$meta_query = new WP_Meta_Query( $cap_meta_query );
+	$clauses = $meta_query->get_sql( 'user', $wpdb->users, 'ID', $query );
+
+	$query->query_from .= $clauses['join'];
+	$query->query_where .= $clauses['where'];
+}
+
+/**
+ * Make sure Anonymous role not editable
+ *
+ * @since 3.8.13.2
+ * @param  array $editable_roles
+ * @return array
+ */
+function _wpsc_filter_editable_roles( $editable_roles ) {
+	unset( $editable_roles['wpsc_anonymous'] );
+	return $editable_roles;
 }
