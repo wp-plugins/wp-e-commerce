@@ -70,7 +70,11 @@ function wpsc_register_core_theme_files() {
 	wpsc_register_theme_file( 'wpsc-featured_product.php' );
 	wpsc_register_theme_file( 'wpsc-category-list.php' );
 	wpsc_register_theme_file( 'wpsc-category_widget.php' );
-	// Let other plugins register their theme files
+	wpsc_register_theme_file( 'wpsc-account-downloads.php' );
+	wpsc_register_theme_file( 'wpsc-account-edit-profile.php' );
+	wpsc_register_theme_file( 'wpsc-account-purchase-history.php' );
+
+	/* Let other plugins register their theme files */
 	do_action( 'wpsc_register_core_theme_files' );
 }
 
@@ -506,7 +510,7 @@ function wpsc_display_products_page( $query ) {global $wpdb, $wpsc_query,$wp_que
 		$display_type = 'default';
 
 	$saved_display = wpsc_get_customer_meta( 'display_type' );
-	$display_type  = ! empty( $saved_display ) ? $saved_display : wpsc_check_display_type();
+	$display_type  = ! empty( $saved_display ) ? $saved_display : $display_type;
 
 	ob_start();
 	if( 'wpsc-product' == $wp_query->post->post_type && !is_archive() && $wp_query->post_count <= 1 )
@@ -633,12 +637,8 @@ function wpsc_products_page( $content = '' ) {
 		$GLOBALS['nzshpcrt_activateshpcrt'] = true;
 
 		// get the display type for the productspage
-		$display_type = wpsc_check_display_type();
-		if ( get_option( 'show_search' ) && get_option( 'show_advanced_search' ) ) {
-			$saved_display = wpsc_get_customer_meta( 'display_type' );
-			if ( ! empty( $saved_display ) )
-				$display_type = $saved_display;
-		}
+		$saved_display = wpsc_get_customer_meta( 'display_type' );
+		$display_type  = ! empty( $saved_display ) ? $saved_display : wpsc_check_display_type();
 
 		ob_start();
 		wpsc_include_products_page_template($display_type);
