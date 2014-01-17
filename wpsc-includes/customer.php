@@ -504,27 +504,36 @@ function _wpsc_action_update_customer_last_active() {
  * @since  3.8.13
  */
 function _wpsc_is_bot_user() {
-	if ( is_user_logged_in() )
-		return false;
 
-	if ( strpos( $_SERVER['REQUEST_URI'], '?wpsc_action=rss' ) )
+	$is_bot = false;
+
+	if ( is_user_logged_in() ) {
+		return false;
+	}
+
+	if ( strpos( $_SERVER['REQUEST_URI'], '?wpsc_action=rss' ) ) {
 		return true;
+	}
 
 	// Cron jobs are not flesh originated
-	if ( defined('DOING_CRON') && DOING_CRON )
+	if ( defined('DOING_CRON') && DOING_CRON ) {
 		return true;
+	}
 
 	// XML RPC requests are probably from cybernetic beasts
-	if ( defined('XMLRPC_REQUEST') && XMLRPC_REQUEST )
+	if ( defined('XMLRPC_REQUEST') && XMLRPC_REQUEST ) {
 		return true;
+	}
 
 	// coming to login first, after the user logs in we know they are a live being, until then they are something else
-	if ( strpos( $_SERVER['PHP_SELF'], 'wp-login' ) || strpos( $_SERVER['PHP_SELF'], 'wp-register' ) )
+	if ( strpos( $_SERVER['PHP_SELF'], 'wp-login' ) || strpos( $_SERVER['PHP_SELF'], 'wp-register' ) ) {
 		return true;
+	}
 
 	// even web servers talk to themselves when they think no one is listening
-	if ( stripos( $_SERVER['HTTP_USER_AGENT'], 'wordpress' ) !== false )
+	if ( stripos( $_SERVER['HTTP_USER_AGENT'], 'wordpress' ) !== false ) {
 		return true;
+	}
 
 	// the user agent could be google bot, bing bot or some other bot,  one would hope real user agents do not have the
 	// string 'bot|spider|crawler|preview' in them, there are bots that don't do us the kindness of identifying themselves as such,
@@ -539,15 +548,17 @@ function _wpsc_is_bot_user() {
 
 	$pattern = '/(' . implode( '|', $bot_agents_patterns ) . ')/i';
 
-	if ( preg_match( $pattern, $_SERVER['HTTP_USER_AGENT'] ) )
+	if ( preg_match( $pattern, $_SERVER['HTTP_USER_AGENT'] ) ) {
 		return true;
+	}
 
 	// Are we feeding the masses?
-	if ( is_feed() )
+	if ( is_feed() ) {
 		return true;
+	}
 
 	// at this point we have eliminated all but the most obvious choice, a human (or cylon?)
-	return false;
+	return apply_filters( 'wpsc_is_bot_user', false );
 }
 
 /**
@@ -563,8 +574,9 @@ function _wpsc_is_bot_user() {
  * @return int
  */
 function _wpsc_extract_user_count( $view ) {
-	if ( preg_match( '/class="count">\((\d+)\)/', $view, $matches ) ) {
-		return absint( $matches[1] );
+	global $wp_locale;
+	if ( preg_match( '/class="count">\((.+)\)/', $view, $matches ) ) {
+		return absint( str_replace( $wp_locale->number_format['thousands_sep'], '', $matches[1] ) );
 	}
 
 	return 0;
@@ -586,7 +598,7 @@ function _wpsc_filter_views_users( $views ) {
 		$anon_count = _wpsc_extract_user_count( $views['wpsc_anonymous'] );
 		$all_count = _wpsc_extract_user_count( $views['all'] );
 		$new_count = $all_count - $anon_count;
-		$views['all'] = str_replace( "(${all_count})", "(${new_count})", $views['all'] );
+		$views['all'] = preg_replace( '/class="count">\(.+\)/', 'class="count">(' . number_format_i18n( $new_count ) . ')', $views['all'] );
 	}
 
 	unset( $views['wpsc_anonymous'] );
@@ -617,9 +629,14 @@ function _wpsc_action_pre_user_query( $query ) {
 	if ( ! empty( $query->query_vars['role'] ) )
 		return;
 
-	// if the site is multisite, a JOIN is already done
+	// if the site is multisite, we need to do things a bit differently
 	if ( is_multisite() ) {
-		$query->query_where .= " AND CAST($wpdb->usermeta.meta_value AS CHAR) NOT LIKE '%" . like_escape( '"wpsc_anonymous"' ) . "%'";
+		// on Network Admin, a JOIN with usermeta is not possible (some users don't have capabilities set, so we fall back to matching user_login, although this is not ideal)
+		if ( empty( $query->query_vars['blog_id'] ) ) {
+			$query->query_where .= " AND $wpdb->users.user_login NOT LIKE '\_________'";
+		} else {
+			$query->query_where .= " AND CAST($wpdb->usermeta.meta_value AS CHAR) NOT LIKE '%" . like_escape( '"wpsc_anonymous"' ) . "%'";
+		}
 		return;
 	}
 
