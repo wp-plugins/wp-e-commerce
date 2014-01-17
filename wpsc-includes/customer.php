@@ -563,8 +563,9 @@ function _wpsc_is_bot_user() {
  * @return int
  */
 function _wpsc_extract_user_count( $view ) {
-	if ( preg_match( '/class="count">\((\d+)\)/', $view, $matches ) ) {
-		return absint( $matches[1] );
+	global $wp_locale;
+	if ( preg_match( '/class="count">\((.+)\)/', $view, $matches ) ) {
+		return absint( str_replace( $wp_locale->number_format['thousands_sep'], '', $matches[1] ) );
 	}
 
 	return 0;
@@ -586,7 +587,7 @@ function _wpsc_filter_views_users( $views ) {
 		$anon_count = _wpsc_extract_user_count( $views['wpsc_anonymous'] );
 		$all_count = _wpsc_extract_user_count( $views['all'] );
 		$new_count = $all_count - $anon_count;
-		$views['all'] = str_replace( "(${all_count})", "(${new_count})", $views['all'] );
+		$views['all'] = preg_replace( '/class="count">\(.+\)/', 'class="count">(' . number_format_i18n( $new_count ) . ')', $views['all'] );
 	}
 
 	unset( $views['wpsc_anonymous'] );
@@ -617,9 +618,14 @@ function _wpsc_action_pre_user_query( $query ) {
 	if ( ! empty( $query->query_vars['role'] ) )
 		return;
 
-	// if the site is multisite, a JOIN is already done
+	// if the site is multisite, we need to do things a bit differently
 	if ( is_multisite() ) {
-		$query->query_where .= " AND CAST($wpdb->usermeta.meta_value AS CHAR) NOT LIKE '%" . like_escape( '"wpsc_anonymous"' ) . "%'";
+		// on Network Admin, a JOIN with usermeta is not possible (some users don't have capabilities set, so we fall back to matching user_login, although this is not ideal)
+		if ( empty( $query->query_vars['blog_id'] ) ) {
+			$query->query_where .= " AND $wpdb->users.user_login NOT LIKE '\_________'";
+		} else {
+			$query->query_where .= " AND CAST($wpdb->usermeta.meta_value AS CHAR) NOT LIKE '%" . like_escape( '"wpsc_anonymous"' ) . "%'";
+		}
 		return;
 	}
 
