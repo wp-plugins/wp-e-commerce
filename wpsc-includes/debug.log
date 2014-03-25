@@ -1,5 +1,0 @@
-
-[16-Dec-2013 05:05:30] PHP Warning:  Missing argument 3 for WPEC_Upsells_Public::modify_price() in /home2/shirmich/public_html/wp-content/plugins/wpec-upsells/inc/class-wpec-upsells-public.php on line 201
-[16-Dec-2013 05:05:30] PHP Notice:  Undefined variable: cart_item in /home2/shirmich/public_html/wp-content/plugins/wpec-upsells/inc/class-wpec-upsells-public.php on line 203
-[16-Dec-2013 05:05:30] PHP Fatal error:  Call to a member function get_meta() on a non-object in /home2/shirmich/public_html/wp-content/plugins/wpec-upsells/inc/class-wpec-upsells-public.php on line 203
-
