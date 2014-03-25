@@ -152,8 +152,6 @@
 						} else {
 							this.set( resp.obj, { parse: true } );
 						}
-						
-						wpsc_update_product_gallery_tab(resp.obj);
 					},
 					error: function( resp ) {
 						alert( resp.error.messages.join( "\n" ) );
@@ -183,7 +181,6 @@
 			},
 
 			sync: function( method, collection, options ) {
-
 				var data;
 				options = options ? _.clone( options ) : {};
 
@@ -208,7 +205,6 @@
 							items : this.pluck( 'id' ),
 							postId: this.postId
 						}, options.data );
-
 						break;
 
 					case 'create':

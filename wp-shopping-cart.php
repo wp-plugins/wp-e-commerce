@@ -3,7 +3,7 @@
   * Plugin Name: WP e-Commerce
   * Plugin URI: http://getshopped.org/
   * Description: A plugin that provides a WordPress Shopping Cart. See also: <a href="http://getshopped.org" target="_blank">GetShopped.org</a> | <a href="http://getshopped.org/forums/" target="_blank">Support Forum</a> | <a href="http://docs.getshopped.org/" target="_blank">Documentation</a>
-  * Version: 3.8.14-dev
+  * Version: 3.8.13.4
   * Author: Instinct Entertainment
   * Author URI: http://getshopped.org/
   **/
@@ -129,7 +129,6 @@ class WP_eCommerce {
 		$wpdb->wpsc_checkout_forms      = WPSC_TABLE_CHECKOUT_FORMS;
 		$wpdb->wpsc_cart_itemmeta       = WPSC_TABLE_CART_ITEM_META; // required for _get_meta_table()
 		$wpdb->wpsc_cart_item_meta      = WPSC_TABLE_CART_ITEM_META;
-		$wpdb->wpsc_purchase_meta       = WPSC_TABLE_PURCHASE_META;
 		$wpdb->wpsc_product_rating      = WPSC_TABLE_PRODUCT_RATING;
 		$wpdb->wpsc_download_status     = WPSC_TABLE_DOWNLOAD_STATUS;
 		$wpdb->wpsc_submitted_form_data = WPSC_TABLE_SUBMITTED_FORM_DATA;

@@ -3,7 +3,6 @@
 add_action( 'pre_get_posts', '_wpsc_pre_get_posts_reset_taxonomy_globals', 1 );
 add_action( 'template_redirect', 'wpsc_start_the_query', 8 );
 add_action( 'wp', 'wpsc_force_ssl' );
-
 if ( is_ssl() ) {
 	add_filter( 'option_product_list_url',  'wpsc_add_https_to_page_url_options' );
 	add_filter( 'option_shopping_cart_url', 'wpsc_add_https_to_page_url_options' );
@@ -11,15 +10,14 @@ if ( is_ssl() ) {
 	add_filter( 'option_user_account_url',  'wpsc_add_https_to_page_url_options' );
 }
 
+
 add_filter( 'wp_nav_menu_args', 'wpsc_switch_the_query', 99 );
 add_filter( 'request', 'wpsc_filter_query_request' );
 add_filter( 'pre_get_posts', 'wpsc_split_the_query', 8 );
 add_filter( 'parse_query', 'wpsc_mark_product_query', 12 );
 add_filter( 'query_vars', 'wpsc_query_vars' );
-
-if ( get_option( 'product_category_hierarchical_url' ) ) {
+if ( get_option( 'product_category_hierarchical_url' ) )
 	add_filter( 'request', 'wpsc_filter_request' );
-}
 
 /**
  * Fixes for some inconsistencies about $wp_query when viewing WPEC pages.
@@ -184,11 +182,11 @@ function wpsc_start_the_query() {
 				$wpsc_query_vars['wpsc_product_category'] = $wp_query->query_vars['name'];
 		}
 		if ( count( $wpsc_query_vars ) <= 1 ) {
+			$post_type_object = get_post_type_object( 'wpsc-product' );
 			$wpsc_query_vars = array(
 				'post_status' => apply_filters( 'wpsc_product_display_status', array( 'publish' ) ),
 				'post_parent' => 0,
-				'order'       => apply_filters( 'wpsc_product_order', get_option( 'wpsc_product_order', 'ASC' ) ),
-				'post_type'   => apply_filters( 'wpsc_product_post_type', array( 'wpsc-product' ) ),
+				'order'       => apply_filters( 'wpsc_product_order', get_option( 'wpsc_product_order', 'ASC' ) )
 			);
 			if($wp_query->query_vars['preview'])
 				$wpsc_query_vars['post_status'] = 'any';

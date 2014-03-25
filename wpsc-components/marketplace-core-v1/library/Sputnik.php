@@ -111,10 +111,8 @@ class Sputnik {
 
 		foreach ( $cart_contents as $product ) {
 			$download_link = get_post_meta( $product->prodid, '_download_url', true );
-			if ( !empty ( $download_link) ) {
-				$download_link = esc_url( add_query_arg( 'marketplace', Sputnik_API::domain(), $download_link ) );
-				$products .= "\n" . '<a href="' . $download_link . '">Download ' . $product->name . '</a>' . "\n";
-			}
+			$download_link = esc_url( add_query_arg( 'marketplace', Sputnik_API::domain(), $download_link ) );
+			$products .= "\n" . '<a href="' . $download_link . '">Download ' . $product->name . '</a>' . "\n";
 		}
 
 		return $message . $products;
@@ -145,7 +143,7 @@ class Sputnik {
 		die;
 	}
 
-	public static function add_download_link_page( $purchase_log_object, $sessionid, $display_to_screen ) {
+	public function add_download_link_page( $purchase_log_object, $sessionid, $display_to_screen ) {
 		if ( ! $display_to_screen )
 			return;
 
@@ -155,10 +153,8 @@ class Sputnik {
 
 		foreach ( $cart_contents as $product ) {
 			$download_link = get_post_meta( $product->prodid, '_download_url', true );
-			if ( !empty ( $download_link) ) {
-				$download_link = esc_url( add_query_arg( 'marketplace', Sputnik_API::domain(), $download_link ) );
-				$products .= "\n" . '<a href="' . $download_link . '">Download ' . $product->name . '</a>' . "\n";
-			}
+			$download_link = esc_url( add_query_arg( 'marketplace', Sputnik_API::domain(), $download_link ) );
+			$products .= "\n" . '<a href="' . $download_link . '">Download ' . $product->name . '</a>' . "\n";
 		}
 
 		echo $products;

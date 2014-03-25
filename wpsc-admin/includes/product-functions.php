@@ -90,29 +90,20 @@ function wpsc_admin_submit_product( $post_ID, $post ) {
 		}
 	}
 
-	// Update the table rate prices (quantity discounts)
-	if ( isset( $post_data['wpsc-update-quantity-discounts'] ) && wp_verify_nonce( $post_data['wpsc-update-quantity-discounts'], 'update-options' ) ) {
-		$post_data['meta']['_wpsc_product_metadata']['table_rate_price'] = isset( $post_data['table_rate_price'] ) ? $post_data['table_rate_price'] : array();
+	// table rate price
+	$post_data['meta']['_wpsc_product_metadata']['table_rate_price'] = isset( $post_data['table_rate_price'] ) ? $post_data['table_rate_price'] : array();
 
-		// If table_rate_price is empty, set empty table rate price arrays
-		if ( empty( $post_data['meta']['_wpsc_product_metadata']['table_rate_price'] ) ) {
-			$post_data['meta']['_wpsc_product_metadata']['table_rate_price']['table_price'] = array();
-			$post_data['meta']['_wpsc_product_metadata']['table_rate_price']['quantity'] = array();
-		}
+	// if table_rate_price is unticked, wipe the table rate prices
+	if ( empty( $post_data['table_rate_price']['state'] ) ) {
+		$post_data['meta']['_wpsc_product_metadata']['table_rate_price']['table_price'] = array();
+		$post_data['meta']['_wpsc_product_metadata']['table_rate_price']['quantity'] = array();
+	}
 
-		// Remove any rates with no quantity or price
-		if ( ! empty( $post_data['meta']['_wpsc_product_metadata']['table_rate_price']['table_price'] ) ) {
-			foreach ( (array) $post_data['meta']['_wpsc_product_metadata']['table_rate_price']['quantity'] as $key => $value ) {
-				if ( empty( $value ) ) {
-					unset( $post_data['meta']['_wpsc_product_metadata']['table_rate_price']['table_price'][ $key ] );
-					unset( $post_data['meta']['_wpsc_product_metadata']['table_rate_price']['quantity'][ $key ] );
-				}
-			}
-			foreach ( (array) $post_data['meta']['_wpsc_product_metadata']['table_rate_price']['table_price'] as $key => $value ) {
-				if ( empty( $value ) ) {
-					unset( $post_data['meta']['_wpsc_product_metadata']['table_rate_price']['table_price'][ $key ] );
-					unset( $post_data['meta']['_wpsc_product_metadata']['table_rate_price']['quantity'][ $key ] );
-				}
+	if ( ! empty( $post_data['meta']['_wpsc_product_metadata']['table_rate_price']['table_price'] ) ) {
+		foreach ( (array) $post_data['meta']['_wpsc_product_metadata']['table_rate_price']['table_price'] as $key => $value ){
+			if(empty($value)){
+				unset($post_data['meta']['_wpsc_product_metadata']['table_rate_price']['table_price'][$key]);
+				unset($post_data['meta']['_wpsc_product_metadata']['table_rate_price']['quantity'][$key]);
 			}
 		}
 	}
@@ -195,16 +186,10 @@ function wpsc_admin_submit_product( $post_ID, $post ) {
 	// and the custom meta
 	wpsc_update_custom_meta($product_id, $post_data);
 
-	// Update the alternative currencies
-	if ( isset( $post_data['wpsc-update-currency-layers'] ) && wp_verify_nonce( $post_data['wpsc-update-currency-layers'], 'update-options' ) ) {
-		
-		// Clear currencies before re-saving to make sure deleted currencies are removed
-		update_product_meta( $product_id, 'currency', array() );
-
-		if ( ! empty( $post_data['newCurrency'] ) ) {
-			foreach( (array) $post_data['newCurrency'] as $key =>$value ) {
-				wpsc_update_alt_product_currency( $product_id, $value, $post_data['newCurrPrice'][ $key ] );
-			}
+	//and the alt currency
+	if ( ! empty( $post_data['newCurrency'] ) ) {
+		foreach( (array) $post_data['newCurrency'] as $key =>$value ){
+			wpsc_update_alt_product_currency( $product_id, $value, $post_data['newCurrPrice'][$key] );
 		}
 	}
 
@@ -238,11 +223,10 @@ function wpsc_pre_update( $data , $postarr ) {
 		$data['post_status'] = 'inherit';
 	}
 
-	if ( ! empty( $postarr['meta'] ) && ( ! isset( $postarr['meta']['_wpsc_product_metadata']['enable_comments'] ) || $postarr['meta']['_wpsc_product_metadata']['enable_comments'] == 0 || empty( $postarr['meta']['_wpsc_product_metadata']['enable_comments'] ) ) ) {
-		$data["comment_status"] = "closed";
-	} else {
-		$data["comment_status"] = "open";
-	}
+    if ( !empty( $postarr['meta'] ) && ( $postarr['meta']['_wpsc_product_metadata']['enable_comments'] == 0 || empty( $postarr['meta']['_wpsc_product_metadata']['enable_comments'] ) ) )
+        $data["comment_status"] = "closed";
+    else
+        $data["comment_status"] = "open";
 
     //Can anyone explain to me why this is here?
     if ( isset( $sku ) && ( $sku != '' ) )
@@ -779,14 +763,14 @@ function wpsc_ajax_toggle_publish() {
 
 function wpsc_update_custom_meta($product_id, $post_data) {
 
-	if ( isset( $post_data['new_custom_meta'] ) && $post_data['new_custom_meta'] != null ) {
+    if($post_data['new_custom_meta'] != null) {
 	foreach((array)$post_data['new_custom_meta']['name'] as $key => $name) {
 	    $value = $post_data['new_custom_meta']['value'][(int)$key];
 	    if(($name != '') && ($value != '')) {
 		add_post_meta($product_id, $name, $value);
 	    }
 	}
-	}
+    }
 
     if (!isset($post_data['custom_meta'])) $post_data['custom_meta'] = '';
     if($post_data['custom_meta'] != null) {
@@ -805,47 +789,44 @@ function wpsc_update_custom_meta($product_id, $post_data) {
  * @param array the file array from $_FILES
  * @param array the preview file array from $_FILES
  */
-function wpsc_item_process_file( $product_id, $submitted_file, $preview_file = null ) {
-
-	add_filter( 'upload_dir', 'wpsc_modify_upload_directory' );
-
-	$overrides = array( 'test_form' => false );
+function wpsc_item_process_file($product_id, $submitted_file, $preview_file = null) {
+	global $wpdb;
+	add_filter('upload_dir', 'wpsc_modify_upload_directory');
+	$overrides = array('test_form'=>false);
 
 	$time = current_time('mysql');
-	if ( $post = get_post( $product_id ) ) {
+	if ( $post = get_post($product_id) ) {
 		if ( substr( $post->post_date, 0, 4 ) > 0 )
 			$time = $post->post_date;
 	}
 
-	$file = wp_handle_upload( $submitted_file, $overrides, $time );
-
-	if ( isset( $file['error'] ) ) {
+	$file = wp_handle_upload($submitted_file, $overrides, $time);
+	if ( isset($file['error']) )
 		return new WP_Error( 'upload_error', $file['error'] );
-	}
 
-	$name_parts = pathinfo( $file['file'] );
-	$name       = $name_parts['basename'];
+	$name_parts = pathinfo($file['file']);
+	$name = $name_parts['basename'];
 
-	$url     = $file['url'];
-	$type    = $file['type'];
-	$file    = $file['file'];
-	$title   = $name;
+	$url = $file['url'];
+	$type = $file['type'];
+	$file = $file['file'];
+	$title = $name;
 	$content = '';
 
 	// Construct the attachment array
 	$attachment = array(
 		'post_mime_type' => $type,
-		'guid'           => $url,
-		'post_parent'    => $product_id,
-		'post_title'     => $title,
-		'post_content'   => $content,
-		'post_type'      => "wpsc-product-file",
-		'post_status'    => 'inherit'
+		'guid' => $url,
+		'post_parent' => $product_id,
+		'post_title' => $title,
+		'post_content' => $content,
+		'post_type' => "wpsc-product-file",
+		'post_status' => 'inherit'
 	);
 
 	// Save the data
-	$id = wp_insert_attachment( $attachment, $file, $product_id );
-	remove_filter( 'upload_dir', 'wpsc_modify_upload_directory' );
+	$id = wp_insert_post($attachment, $file, $product_id);
+	remove_filter('upload_dir', 'wpsc_modify_upload_directory');
 }
 
 function wpsc_modify_upload_directory($input) {

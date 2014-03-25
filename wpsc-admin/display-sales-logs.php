@@ -240,7 +240,6 @@ class WPSC_Purchase_Log_Page {
 			<td class="amount"><?php echo wpsc_currency_display( wpsc_purchaselog_details_total() ); ?></td> <!-- TOTAL! -->
 		</tr>
 		<?php
-		do_action( 'wpsc_additional_sales_item_info', wpsc_purchaselog_details_id() );
 		endwhile;
 	}
 
@@ -302,12 +301,7 @@ class WPSC_Purchase_Log_Page {
 
 		register_column_headers( 'wpsc_purchase_log_item_details', $columns );
 
-		if ( file_exists( get_stylesheet_directory() . '/wpsc-packing-slip.php' ) ) {
-			include( get_stylesheet_directory() . '/wpsc-packing-slip.php' );
-		} else {
-			include( 'includes/purchase-logs-page/packing-slip.php' );
-		}
-
+		include( 'includes/purchase-logs-page/packing-slip.php' );
 		exit;
 	}
 

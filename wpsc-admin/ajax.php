@@ -15,7 +15,6 @@
 function _wpsc_ajax_verify_nonce( $ajax_action ) {
 	// nonce can be passed with name wpsc_nonce or _wpnonce
 	$nonce = '';
-	
 	if ( isset( $_REQUEST['nonce'] ) )
 		$nonce = $_REQUEST['nonce'];
 	elseif ( isset( $_REQUEST['_wpnonce'] ) )
@@ -381,7 +380,8 @@ function _wpsc_ajax_purchase_log_send_tracking_email() {
 	$message = str_replace( '%trackid%', $trackingid, $message );
 	$message = str_replace( '%shop_name%', get_option( 'blogname' ), $message );
 
-	$email = wpsc_get_buyers_email( $id );
+	$email_form_field = $wpdb->get_var( "SELECT `id` FROM `" . WPSC_TABLE_CHECKOUT_FORMS . "` WHERE `type` IN ('email') AND `active` = '1' ORDER BY `checkout_order` ASC LIMIT 1" );
+	$email = $wpdb->get_var( $wpdb->prepare( "SELECT `value` FROM `" . WPSC_TABLE_SUBMITTED_FORM_DATA . "` WHERE `log_id`=%d AND `form_id` = '$email_form_field' LIMIT 1", $id ) );
 
 	$subject = get_option( 'wpsc_trackingid_subject' );
 	$subject = str_replace( '%shop_name%', get_option( 'blogname' ), $subject );

@@ -540,9 +540,7 @@ function wpsc_update_featured_products() {
 		$status = array_values( $status );
 	}
 
-	$update	= update_option( 'sticky_products', $status );
-
-	do_action( 'wpsc_after_featured_product_update', $update, $status );
+	update_option( 'sticky_products', $status );
 
 	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 		$json_response = array(
