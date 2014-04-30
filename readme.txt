@@ -1,12 +1,12 @@
-=== WP e-Commerce ===
-Contributors: mufasa, garyc40, JustinSainton
+=== WP eCommerce ===
+Contributors: JustinSainton, mufasa, garyc40
 Donate link: http://getshopped.org
 Tags: e-commerce, wp-e-commerce, shop, cart, paypal, authorize, stock control, ecommerce, shipping, tax
 Requires at least: 3.7
-Tested up to: 3.8
-Stable tag: 3.8.13.4
+Tested up to: 3.9
+Stable tag: 3.8.13.3
 
-WP e-Commerce is a free WordPress Shopping Cart Plugin that lets customers buy your products, services and digital downloads online.
+WP eCommerce is a free WordPress Shopping Cart Plugin that lets customers buy your products, services and digital downloads online.
 
 == Description ==
 
@@ -36,7 +36,6 @@ Features:
 * PayPal Payments Standard
 * PayPal Payments Pro
 * PayPal Express Checkout
-* Google Wallet (Level 2)
 * Chronopay
 * PayPal Payflow Pro (available with Gold Cart)
 * Authorize.net (available with Gold Cart)
@@ -59,7 +58,7 @@ Features:
 * New Products widget
 * Cross-sells on product pages
 * Google Sitemap and Google Analytics
-* Uses the popular “Share This” button for easily promoting your products on popular social networking sites
+* Uses the popular â€œShare Thisâ€� button for easily promoting your products on popular social networking sites
 * Integrates with Google Base
 
 = Search Engine Optimization =
@@ -125,12 +124,12 @@ Features:
 * Live updating shopping cart (put it wherever you want)
 
 = Additional Modules =
-* Gold Cart & Grid Module – adds more options and functionality to your store
-* Drop Shop – an incredibly snazzy way for buyers to add products to their cart, via a simple drag n drop process.
-* Mp3 Audio Player – Preview audio clips on your website
-* NextGen Gallery Buy Now Buttons – turns your NextGen gallery into an ecommerce solution
-* Product Slider – Display your products in a new and fancy way
-* Members Only Module – Create pay to view subscription sites
+* Gold Cart & Grid Module â€“ adds more options and functionality to your store
+* Drop Shop â€“ an incredibly snazzy way for buyers to add products to their cart, via a simple drag n drop process.
+* Mp3 Audio Player â€“ Preview audio clips on your website
+* NextGen Gallery Buy Now Buttons â€“ turns your NextGen gallery into an ecommerce solution
+* Product Slider â€“ Display your products in a new and fancy way
+* Members Only Module â€“ Create pay to view subscription sites
 
 For more information visit [http://getshopped.org](http://getshopped.org "http://getshopped.org")
 
@@ -146,13 +145,17 @@ After upgrading from earlier versions look for link "Update Store". This will up
 
 == Changelog ==
 
-= 3.8.13.4 =
-* Fix: Update PayPal payment gateways to use HTTP 1.1
+= 3.8.14 =
+* Fix: Improved visitor profiles performance, new infrastructure does not use WordPress Users
+* New: AJAX API to get and set information about customers
+* New: Visitor API to get and set information about current and past visits
+* Fix: When page caching is being used, probability of empty or superfluous visitor profiles being created drastically diminished
 
 = 3.8.13.3 =
 * Fix: Users disappear in Network Admin -> Users page (for multisite)
 * Fix: User counts are incorrect when there are thousands separators.
 * Fix: "Save Product Files" button doesn't like being clicked on.
+
 
 = 3.8.13.2 =
 * Fix: Anonymous customers should not be visible in admin UI.
@@ -212,7 +215,7 @@ After upgrading from earlier versions look for link "Update Store". This will up
 * Change: Remove nusoap
 * Change: Improvements to Marketing admin panel
 * Change: Improvements to Products List Admin Page
-* Fix: WP e-Commerce pagination breaks WordPress pagination
+* Fix: WP eCommerce pagination breaks WordPress pagination
 * Fix: Wrong thumbnail size in Product Specials widget
 * Fix: Filtering by a category also shows all products in subcategories
 * Fix: admin.js throwing a Parse Error in Safari
@@ -383,7 +386,7 @@ After upgrading from earlier versions look for link "Update Store". This will up
 * Change: Default checkout shipping option to lowest shipping cost of all choices.
 * Fix: "Variation Controls" anchor in metabox leads nowhere.
 * Fix: AJAX code audit (security)
-* Fix: Activating WP e-Commerce on a vanilla WordPress installation with pretty permalinks enabled messes up the rewrite rules.
+* Fix: Activating WP eCommerce on a vanilla WordPress installation with pretty permalinks enabled messes up the rewrite rules.
 * Fix: Add a space after tilde character to avoid confusion in admin product list.
 * Fix: Add new variation sets and terms from Edit Product page doesn't work properly.
 * Fix: Additional description is double escaped in product edit page.
@@ -580,7 +583,7 @@ After upgrading from earlier versions look for link "Update Store". This will up
 * Fix: Fatal error when trying to include a non-existent admin file.
 * Fix: Hide Google Feed information from display
 * Fix: Incompatibility with Genesis framework in Product Edit page.
-* Fix: Make the WP e-Commerce 3.8.x activation/installation routine much more efficient.
+* Fix: Make the WP eCommerce 3.8.x activation/installation routine much more efficient.
 * Fix: Mandatory fields in user_log_functions.php are not properly validated.
 * Fix: Memory improvement for productfeed.
 * Fix: Purchase logs have incorrect time if a timezone is specified in Settings->General.
@@ -726,7 +729,7 @@ After upgrading from earlier versions look for link "Update Store". This will up
 
 == Frequently Asked Questions ==
 
-= How do I customize WP e-Commerce =
+= How do I customize WP eCommerce =
 
 First of all you should check out the Presentation settings which are in the Settings->Store page.
 

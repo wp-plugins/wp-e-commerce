@@ -34,16 +34,50 @@ function wpsc_find_purchlog_status_name( $purchlog_status ) {
  * @param string $return_value either 'name' or 'code' depending on what you want returned
  */
 function wpsc_get_state_by_id( $id, $return_value ) {
-	global $wpdb;
-	$sql = $wpdb->prepare( "SELECT " . esc_sql( $return_value ) . " FROM `" . WPSC_TABLE_REGION_TAX . "` WHERE `id`= %d", $id );
-	$value = $wpdb->get_var( $sql );
+
+	$region = new WPSC_Region( WPSC_Countries::get_country_id_by_region_id( $id ), $id );
+
+	$value = '';
+
+	if ( $return_value == 'name' ) {
+		$value = $region->get_name();
+	} elseif ( $return_value == 'code' ) {
+		$value = $region->get_code();
+	}
+
 	return $value;
 }
 
-function wpsc_country_has_state($country_code){
-	global $wpdb;
-	$country_data = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `".WPSC_TABLE_CURRENCY_LIST."` WHERE `isocode`= %s LIMIT 1", $country_code ), ARRAY_A );
+function wpsc_country_has_state( $country_code ){
+
+	$country_data = WPSC_Countries::get_country( $country_code, true ); // TODO this function does not seem to do what it's name indicates? What's up with that.
 	return $country_data;
+}
+
+/**
+ * Convert time interval to seconds.
+ *
+ * Takes a number an unit of time (hour/day/week) and converts it to seconds.
+ * It allows decimal intervals like 1.5 days.
+ *
+ * @since   3.8.14
+ * @access  public
+ *
+ * @param   int  $time      Stock keeping time.
+ * @param   int  $interval  Stock keeping interval unit (hour/day/week).
+ * @return  int             Seconds.
+ *
+ * @uses  MINUTE_IN_SECONDS, HOUR_IN_SECONDS, DAY_IN_SECONDS, WEEK_IN_SECONDS, YEAR_IN_SECONDS
+ */
+function wpsc_convert_time_interval_to_seconds( $time, $interval ) {
+	$convert = array(
+		'minute' => MINUTE_IN_SECONDS,
+		'hour'   => HOUR_IN_SECONDS,
+		'day'    => DAY_IN_SECONDS,
+		'week'   => WEEK_IN_SECONDS,
+		'year'   => YEAR_IN_SECONDS,
+	);
+	return floor( $time * $convert[ $interval ] );
 }
 
 /**
@@ -130,14 +164,14 @@ function wpsc_get_country_form_id_by_type($type){
 }
 
 function wpsc_get_country( $country_code ) {
-	$country = new WPSC_Country( $country_code, 'isocode' );
-	return $country->get( 'country' );
+	$wpsc_country = new WPSC_Country( $country_code );
+	return $wpsc_country->get_name();
 }
 
 function wpsc_get_region( $region_id ) {
-	global $wpdb;
-	$region = $wpdb->get_var( $wpdb->prepare( "SELECT `name` FROM `" . WPSC_TABLE_REGION_TAX . "` WHERE `id` IN(%d)", $region_id ) );
-	return $region;
+	$country_id = WPSC_Countries::get_country_id_by_region_id( $region_id );
+	$wpsc_region = new WPSC_Region( $country_id, $region_id );
+	return $wpsc_region->get_name();
 }
 
 function nzshpcrt_display_preview_image() {
@@ -206,10 +240,7 @@ function nzshpcrt_display_preview_image() {
 			}
 
 			if ( $use_cache === true ) {
-				$cache_url = WPSC_CACHE_URL;
-				if ( is_ssl ( ) ) {
-					$cache_url = str_replace( "http://", "https://", $cache_url );
-				}
+				$cache_url = set_url_scheme( WPSC_CACHE_URL );
 				header( "Location: " . $cache_url . $cache_filename . $extension );
 				exit( '' );
 			} else {
@@ -909,4 +940,26 @@ function wpsc_get_ajax_spinner() {
 	}
 
 	return apply_filters( 'wpsc_get_ajax_spinner', $url );
+}
+
+function _wpsc_remove_erroneous_files() {
+	$files = array(
+		 WPSC_FILE_PATH . '/wpsc-components/marketplace-core-v1/library/Sputnik/.htaccess',
+		 WPSC_FILE_PATH . '/wpsc-components/marketplace-core-v1/library/Sputnik/error_log',
+		 WPSC_FILE_PATH . '/wpsc-components/marketplace-core-v1/library/Sputnik/functions.php',
+		 WPSC_FILE_PATH . '/wpsc-components/marketplace-core-v1/library/Sputnik/admin-functions.php',
+		 WPSC_FILE_PATH . '/wpsc-components/marketplace-core-v1/library/Sputnik/advanced-cache.php'
+	);
+
+	foreach ( $files as $file ) {
+		if ( is_file( $file ) ) {
+			@unlink( $file );
+		}
+	}
+
+	update_option( 'wpsc_38131_file_check', false );
+}
+
+if ( get_option( 'wpsc_38131_file_check', true ) ) {
+	add_action( 'admin_init', '_wpsc_remove_erroneous_files' );
 }

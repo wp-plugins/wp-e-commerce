@@ -18,6 +18,7 @@ add_filter( 'post_type_link', 'wpsc_product_link', 10, 3 );
  */
 function wpsc_product_link( $permalink, $post, $leavename ) {
 	global $wp_query, $wpsc_page_titles, $wpsc_query, $wp_current_filter;
+
 	$rewritecode = array(
 		'%wpsc_product_category%',
 		$leavename ? '' : '%postname%',
@@ -42,13 +43,16 @@ function wpsc_product_link( $permalink, $post, $leavename ) {
 		$post    = get_post( $post_id );
 	}
 
-	$permalink_structure = get_option( 'permalink_structure' );
+	global $wp_rewrite;
+
+	$our_permalink_structure = $wp_rewrite->root;
 
 	// This may become customiseable later
-	$our_permalink_structure = str_replace( basename( home_url() ), '', $wpsc_page_titles['products'] ) . "/%wpsc_product_category%/%postname%/";
-	// Mostly the same conditions used for posts, but restricted to items with a post type of "wpsc-product "
+	$our_permalink_structure .= str_replace( basename( home_url() ), '', $wpsc_page_titles['products'] ) . "/%wpsc_product_category%/%postname%/";
 
-	if ( '' != $permalink_structure && !in_array( $post->post_status, array( 'draft', 'pending' ) ) ) {
+	// Mostly the same conditions used for posts, but restricted to items with a post type of "wpsc-product "
+	if ( $wp_rewrite->using_permalinks() && ! in_array( $post->post_status, array( 'draft', 'pending' ) ) ) {
+		
 		$product_categories = wpsc_get_product_terms( $post_id, 'wpsc_product_category' );
 		$product_category_slugs = array( );
 		foreach ( $product_categories as $product_category ) {
@@ -116,6 +120,7 @@ function wpsc_product_link( $permalink, $post, $leavename ) {
 
 		$permalink = home_url( $permalink );
 	}
+
 	return apply_filters( 'wpsc_product_permalink', $permalink, $post->ID );
 }
 
@@ -512,7 +517,6 @@ function wpsc_is_in_category() {
  * @todo Cache the results of this somewhere.  It could save quite a few trips
  * to the MySQL server.
  *
- * @author John Beales ( johnbeales.com )
  */
 function wpsc_category_id($category_slug = '') {
 	if(empty($category_slug))
@@ -647,6 +651,10 @@ function wpsc_buy_now_button( $product_id, $replaced_shortcode = false ) {
 			$src     = apply_filters( 'wpsc_buy_now_button_src', _x( 'https://www.paypal.com/en_US/i/btn/btn_buynow_LG.gif', 'PayPal Buy Now Button', 'wpsc' ) );
 			$classes = apply_filters( 'wpsc_buy_now_button_class', "wpsc-buy-now-form wpsc-buy-now-form-{$product_id}" );
 
+            $classes_array = array_map( 'sanitize_html_class', explode( ' ', $classes ) );
+
+            $classes = implode( ' ', $classes_array );
+
 			$button_html = sprintf( '<input%1$s class="wpsc-buy-now-button wpsc-buy-now-button-%2$s" type="image" name="submit" border="0" src="%3$s" alt="%4$s" />',
 				disabled( $has_variants, true, false ),
 				esc_attr( $product_id ),
@@ -656,7 +664,7 @@ function wpsc_buy_now_button( $product_id, $replaced_shortcode = false ) {
 
 			$button_html = apply_filters( 'wpsc_buy_now_button_html', $button_html, $product_id );
 ?>
-			<form class="<?php echo esc_attr( sanitize_html_class( $classes, '' ) ); ?>" id="buy-now-product_<?php echo $product_id; ?>" target="paypal" action="<?php echo esc_url( home_url() ); ?>" method="post">
+			<form class="<?php echo( $classes ); ?>" id="buy-now-product_<?php echo $product_id; ?>" target="paypal" action="<?php echo esc_url( home_url() ); ?>" method="post">
 				<input type="hidden" name="wpsc_buy_now_callback" value="1" />
 				<input type="hidden" name="product_id" value="<?php echo esc_attr( $product_id ); ?>" />
 <?php

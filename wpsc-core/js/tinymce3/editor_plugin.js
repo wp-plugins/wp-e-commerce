@@ -16,7 +16,7 @@
 		init : function(ed, url) {
 			// Register the command so that it can be invoked by using tinyMCE.activeEditor.execCommand('mceExample');
 
-			ed.addCommand('WPSC', function() {
+			ed.addCommand( 'WPSC', function() {
 				ed.windowManager.open({
 					file : ajaxurl + '?action=wpsc_tinymce_window',
 					width : 360 + ed.getLang('WPSC.delta_width', 0),
@@ -91,7 +91,7 @@
 			ed.addCommand('productspage_image', function() {
 				ed.execCommand('mceInsertContent', 0, pb);
 			});
-
+			
 			ed.onInit.add(function() {
 				//ed.dom.loadCSS(url + "/css/content.css");
 				if (ed.theme.onResolveName) {

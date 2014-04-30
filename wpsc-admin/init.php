@@ -414,7 +414,11 @@ function wpsc_delete_purchlog( $purchlog_id='' ) {
 
 	$purchlog_status = $wpdb->get_var( $wpdb->prepare( "SELECT `processed` FROM `" . WPSC_TABLE_PURCHASE_LOGS . "` WHERE `id`= %d", $purchlog_id ) );
 	if ( $purchlog_status == 5 || $purchlog_status == 1 ) {
-		$wpdb->query( $wpdb->prepare( "DELETE FROM `" . WPSC_TABLE_CLAIMED_STOCK . "` WHERE `cart_id` = %d AND `cart_submitted` = '1'", $purchlog_id ) );
+		$claimed_query = new WPSC_Claimed_Stock( array(
+			'cart_id'        => $purchlog_id,
+			'cart_submitted' => 1
+		) );
+		$claimed_query->clear_claimed_stock( 0 );
 	}
 
 	$wpdb->query( $wpdb->prepare( "DELETE FROM `" . WPSC_TABLE_CART_CONTENTS . "` WHERE `purchaseid` = %d", $purchlog_id ) );
@@ -570,7 +574,7 @@ function wpsc_product_files_existing() {
 
 	$output = "<span class='admin_product_notes select_product_note '>" . esc_html__( 'Choose a downloadable file for this product:', 'wpsc' ) . "</span><br>";
 	$output .= "<form method='post' class='product_upload'>";
-	$output .= "<div class='ui-widget-content multiple-select select_product_file'>";
+	$output .= '<div class="ui-widget-content multiple-select select_product_file" style="width:100%">';
 	$num = 0;
 	foreach ( (array)$file_list as $file ) {
 		$num++;
@@ -601,31 +605,6 @@ function wpsc_product_files_existing() {
 if ( isset( $_REQUEST['wpsc_admin_action'] ) && ($_REQUEST['wpsc_admin_action'] == 'product_files_existing') )
 	add_action( 'admin_init', 'wpsc_product_files_existing' );
 
-function wpsc_google_shipping_settings() {
-	if ( isset( $_POST['submit'] ) ) {
-		foreach ( (array)$_POST['google_shipping'] as $key => $country ) {
-			if ( $country == 'on' ) {
-				$google_shipping_country[] = $key;
-				$updated++;
-			}
-		}
-		update_option( 'google_shipping_country', $google_shipping_country );
-		$sendback = wp_get_referer();
-		$sendback = remove_query_arg( 'googlecheckoutshipping', $sendback );
-
-		if ( isset( $updated ) ) {
-			$sendback = add_query_arg( 'updated', $updated, $sendback );
-		}
-
-		wp_redirect( $sendback );
-		exit();
-	}
-}
-
-if ( isset( $_REQUEST['wpsc_admin_action'] ) && ($_REQUEST['wpsc_admin_action'] == 'google_shipping_settings') ) {
-	add_action( 'admin_init', 'wpsc_google_shipping_settings' );
-}
-
 function wpsc_update_variations() {
 	$product_id = absint( $_POST["product_id"] );
 	$product_type_object = get_post_type_object('wpsc-product');
@@ -633,7 +612,7 @@ function wpsc_update_variations() {
 		return;
 
 	//Setup postdata
-	$post_data = array( );
+	$post_data = array();
 	$post_data['edit_var_val'] = isset( $_POST['edit_var_val'] ) ? $_POST["edit_var_val"] : '';
 
 	//Add or delete variations

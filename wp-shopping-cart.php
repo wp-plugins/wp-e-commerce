@@ -2,8 +2,8 @@
 /**
   * Plugin Name: WP e-Commerce
   * Plugin URI: http://getshopped.org/
-  * Description: A plugin that provides a WordPress Shopping Cart. See also: <a href="http://getshopped.org" target="_blank">GetShopped.org</a> | <a href="http://getshopped.org/forums/" target="_blank">Support Forum</a> | <a href="http://docs.getshopped.org/" target="_blank">Documentation</a>
-  * Version: 3.8.13.4
+  * Description: A plugin that provides a WordPress Shopping Cart. See also: <a href="http://getshopped.org" target="_blank">GetShopped.org</a> | <a href="https://wordpress.org/support/plugin/wp-e-commerce/" target="_blank">Support Forum</a> | <a href="http://docs.getshopped.org/" target="_blank">Documentation</a>
+  * Version: 3.8.14-dev
   * Author: Instinct Entertainment
   * Author URI: http://getshopped.org/
   **/
@@ -60,12 +60,12 @@ class WP_eCommerce {
 	 * New WPSC components API.
 	 *
 	 * Allows for modular coupling of different functionalities within WPSC.
-	 * This is the way we'll be introducing cutting-edge APIs
+	 * This is the way we'll be introducing cutting-edge APIs.
 	 *
 	 * @since 3.8.9.5
 	 *
-	 * @param   array $components
-	 * @return  array $components
+	 * @param  array $components
+	 * @return array $components
 	 */
 	public function _register_core_components( $components ) {
 		$components['merchant']['core-v2'] = array(
@@ -127,11 +127,13 @@ class WP_eCommerce {
 		$wpdb->wpsc_currency_list       = WPSC_TABLE_CURRENCY_LIST;
 		$wpdb->wpsc_purchase_logs       = WPSC_TABLE_PURCHASE_LOGS;
 		$wpdb->wpsc_checkout_forms      = WPSC_TABLE_CHECKOUT_FORMS;
-		$wpdb->wpsc_cart_itemmeta       = WPSC_TABLE_CART_ITEM_META; // required for _get_meta_table()
-		$wpdb->wpsc_cart_item_meta      = WPSC_TABLE_CART_ITEM_META;
 		$wpdb->wpsc_product_rating      = WPSC_TABLE_PRODUCT_RATING;
 		$wpdb->wpsc_download_status     = WPSC_TABLE_DOWNLOAD_STATUS;
 		$wpdb->wpsc_submitted_form_data = WPSC_TABLE_SUBMITTED_FORM_DATA;
+		$wpdb->wpsc_cart_itemmeta       = WPSC_TABLE_CART_ITEM_META;
+		$wpdb->wpsc_purchasemeta        = WPSC_TABLE_PURCHASE_META;
+		$wpdb->wpsc_visitors            = WPSC_TABLE_VISITORS;
+		$wpdb->wpsc_visitormeta         = WPSC_TABLE_VISITOR_META;
 	}
 
 	/**
@@ -181,7 +183,11 @@ class WP_eCommerce {
 	 * @uses do_action()        Calls 'wpsc_includes' which runs after WPEC files have been included
 	 */
 	function includes() {
-		require_once( WPSC_FILE_PATH . '/wpsc-includes/wpsc-meta-init.php' );
+		require_once( WPSC_FILE_PATH . '/wpsc-includes/wpsc-meta-util.php'                  );
+		require_once( WPSC_FILE_PATH . '/wpsc-includes/customer.php'                        );
+		require_once( WPSC_FILE_PATH . '/wpsc-includes/wpsc-meta-customer.php'              );
+		require_once( WPSC_FILE_PATH . '/wpsc-includes/wpsc-meta-visitor.php'               );
+		require_once( WPSC_FILE_PATH . '/wpsc-includes/wpsc-meta-cart-item.php'             );
 		require_once( WPSC_FILE_PATH . '/wpsc-core/wpsc-functions.php' );
 		require_once( WPSC_FILE_PATH . '/wpsc-core/wpsc-installer.php' );
 		require_once( WPSC_FILE_PATH . '/wpsc-core/wpsc-includes.php' );
@@ -228,8 +234,10 @@ class WP_eCommerce {
 		// Setup the core WPEC globals
 		wpsc_core_setup_globals();
 
-		// Setup the customer ID just in case to make sure it's set up correctly
 		add_action( 'init', '_wpsc_action_setup_customer', 1 );
+
+		// WPEC is ready to use as soon as WordPress and customer is setup and loaded
+		add_action( 'init', array( &$this, '_wpsc_fire_ready_action' ), 100 );
 
 		// Load the purchase log statuses
 		wpsc_core_load_purchase_log_statuses();
@@ -247,6 +255,11 @@ class WP_eCommerce {
 		do_action( 'wpsc_loaded' );
 	}
 
+	function _wpsc_fire_ready_action() {
+		// WPEC is ready to use as soon as WordPress and customer is setup and loaded
+		do_action( 'wpsc_ready' );
+	}
+
 	/**
 	 * WPEC Activation Hook
 	 *
@@ -257,11 +270,10 @@ class WP_eCommerce {
 	function install() {
 		global $wp_version;
 
-		if ( ( float ) $wp_version < 3.0 ) {
-			 deactivate_plugins( plugin_basename( __FILE__ ) ); // Deactivate ourselves
-			 wp_die( __( 'Looks like you\'re running an older version of WordPress, you need to be running at least WordPress 3.0 to use WP e-Commerce 3.8', 'wpsc' ), __( 'WP e-Commerce 3.8 not compatible', 'wpsc' ), array( 'back_link' => true ) );
+		if ( ! defined( 'WPSC_FILE_PATH' ) ) {
+			define( 'WPSC_FILE_PATH', dirname( __FILE__ ) );
 		}
-		define( 'WPSC_FILE_PATH', dirname( __FILE__ ) );
+
 		require_once( WPSC_FILE_PATH . '/wpsc-core/wpsc-installer.php' );
 		$this->constants();
 		wpsc_install();

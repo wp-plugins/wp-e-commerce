@@ -99,10 +99,6 @@ class wpsc_merchant {
 		$this->collate_cart();
 	}
 
-	function wpsc_merchant( $purchase_id = null, $is_receiving = false ) {
-		$this->__construct( $purchase_id, $is_receiving );
-	}
-
 	/**
 	 * collate_data method, collate purchase data, like addresses, like country
 	 * @access public
@@ -121,7 +117,7 @@ class wpsc_merchant {
 		}
 
 		$email_address       = $wpdb->get_var( "SELECT `value` FROM `" . WPSC_TABLE_CHECKOUT_FORMS . "` AS `form_field` INNER JOIN `" . WPSC_TABLE_SUBMITTED_FORM_DATA . "` AS `collected_data` ON `form_field`.`id` = `collected_data`.`form_id` WHERE `form_field`.`type` IN ( 'email' ) AND `collected_data`.`log_id` IN ( '{$purchase_id}' )" );
-		$currency_code       = $wpdb->get_var( "SELECT `code` FROM `" . WPSC_TABLE_CURRENCY_LIST . "` WHERE `id`='" . get_option( 'currency_type' ) . "' LIMIT 1" );
+		$currency_code       = WPSC_Countries::get_currency_code( get_option( 'currency_type' ) );
 		$collected_form_data = $wpdb->get_results( "SELECT `data_names`.`id`, `data_names`.`unique_name`, `collected_data`.`value` FROM `" . WPSC_TABLE_SUBMITTED_FORM_DATA . "` AS `collected_data` JOIN `" . WPSC_TABLE_CHECKOUT_FORMS . "` AS `data_names` ON `collected_data`.`form_id` = `data_names`.`id` WHERE `log_id` = '" . $purchase_id . "'", ARRAY_A );
 
 		$address_data = array(
@@ -280,19 +276,19 @@ class wpsc_merchant {
 	 * go to transaction results, if this changes and you extend this, your merchant module may go to the wrong place
 	 */
 	function go_to_transaction_results( $session_id ) {
-		global $wpdb, $purchase_log;
+		$purchase_log = new WPSC_Purchase_Log( $this->purchase_id );
 
 		//Now to do actions once the payment has been attempted
-		switch ($purchase_log['processed']) {
-			case 3:
+		switch ( $purchase_log->get( 'processed' ) ) {
+			case WPSC_Purchase_Log::ACCEPTED_PAYMENT:
 				// payment worked
 				do_action('wpsc_payment_successful');
 				break;
-			case 1:
+			case WPSC_Purchase_Log::INCOMPLETE_SALE:
 				// payment declined
 				do_action('wpsc_payment_failed');
 				break;
-			case 2:
+			case WPSC_Purchase_Log::ORDER_RECEIVED:
 				// something happened with the payment
 				do_action('wpsc_payment_incomplete');
 				break;

@@ -152,6 +152,8 @@
 						} else {
 							this.set( resp.obj, { parse: true } );
 						}
+
+						wpsc_update_product_gallery_tab(resp.obj);
 					},
 					error: function( resp ) {
 						alert( resp.error.messages.join( "\n" ) );
@@ -181,6 +183,7 @@
 			},
 
 			sync: function( method, collection, options ) {
+
 				var data;
 				options = options ? _.clone( options ) : {};
 
@@ -205,6 +208,7 @@
 							items : this.pluck( 'id' ),
 							postId: this.postId
 						}, options.data );
+
 						break;
 
 					case 'create':
@@ -345,7 +349,7 @@
 	// hack the Remove thumbnail link so that it refreshes the variation iframe
 	// after the AJAX request is processed
 	WPRemoveThumbnail = function(nonce){
-		$.post(ajaxurl, {
+		$.post( ajaxurl, {
 			action:"set-post-thumbnail", post_id: $('#post_ID').val(), thumbnail_id: -1, _ajax_nonce: nonce, cookie: encodeURIComponent(document.cookie)
 		}, function(str){
 			if ( str == '0' ) {

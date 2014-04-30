@@ -378,9 +378,6 @@ function wpsc_pagination( $totalpages = '', $per_page = '', $current_page = '', 
 			$page_link = trailingslashit( get_option( 'product_list_url' ) );
 			$separator = '';
 		}
-
-		if ( version_compare( get_bloginfo( 'version' ), '3.4', '<' ) )
-			$separator = 'page/';
 	}
 
 	// If there's only one page, return now and don't bother
@@ -425,8 +422,8 @@ function wpsc_pagination( $totalpages = '', $per_page = '', $current_page = '', 
 		if($current_page < $totalpages){
 			while(($i) > $current_page){
 
-				if($count < $num_paged_links && ($count+$current_page) <= $totalpages){
-						$output .= " <a href=\"". esc_url( $page_link .$separator. ($count+$current_page) . '/' .$additional_links ) . "\" title=\"" . sprintf( __('Page %s', 'wpsc'), ($count+$current_page) ) . "\">".($count+$current_page)."</a>";
+				if ( $count < ( $num_paged_links + 1 ) && ( $count + $current_page ) <= $totalpages ) {
+						$output .= " <a href=\"". esc_url( $page_link . $separator . ( $count + $current_page ) . '/' . $additional_links ) . "\" title=\"" . sprintf( __('Page %s', 'wpsc'), ($count+$current_page) ) . "\">".($count+$current_page)."</a>";
 				$i++;
 				}else{
 				break;
@@ -527,12 +524,14 @@ function wpsc_show_stock_availability(){
  * @return string - the product image URL, or the URL of the resized version
  */
 function wpsc_product_image( $attachment_id = 0, $width = null, $height = null ) {
+
 	// Do some dancing around the image size
-	if ( ( ( $width >= 10 ) && ( $height >= 10 ) ) && ( ( $width <= 1024 ) && ( $height <= 1024 ) ) )
+	if ( ( ( $width >= 10 ) && ( $height >= 10 ) ) && ( ( $width <= 1024 ) && ( $height <= 1024 ) ) ) {
 		$intermediate_size = "wpsc-{$width}x{$height}";
+	}
 
 	// Get image url if we have enough info
-	if ( ( $attachment_id > 0 ) && ( !empty( $intermediate_size ) ) ) {
+	if ( $attachment_id > 0 && ! empty( $intermediate_size ) ) {
 
 		// Get all the required information about the attachment
 		$uploads    = wp_upload_dir();
@@ -540,46 +539,58 @@ function wpsc_product_image( $attachment_id = 0, $width = null, $height = null )
 		$file_path  = get_attached_file( $attachment_id );
 
 		// Clean up the meta array
-		foreach ( $image_meta as $meta_name => $meta_value )
-			$image_meta[$meta_name] = maybe_unserialize( array_pop( $meta_value ) );
+		foreach ( $image_meta as $meta_name => $meta_value ) {
+			$image_meta[ $meta_name ] = maybe_unserialize( array_pop( $meta_value ) );
+		}
 
+		$attachment_metadata = isset( $image_meta['_wp_attachment_metadata'] ) ? $image_meta['_wp_attachment_metadata'] : null;
 
-		$attachment_metadata = $image_meta['_wp_attachment_metadata'];
 		// Determine if we already have an image of this size
-		if ( isset( $attachment_metadata['sizes'] ) && (count( $attachment_metadata['sizes'] ) > 0) && ( isset( $attachment_metadata['sizes'][$intermediate_size] ) ) ) {
+		if ( isset( $attachment_metadata['sizes'] ) && count( $attachment_metadata['sizes'] ) && ( isset( $attachment_metadata['sizes'][ $intermediate_size ] ) ) ) {
 			$intermediate_image_data = image_get_intermediate_size( $attachment_id, $intermediate_size );
-			$image_url = $intermediate_image_data['url'];
+			$image_url               = $intermediate_image_data['url'];
 		} else {
 			$image_url = home_url( "index.php?wpsc_action=scale_image&attachment_id={$attachment_id}&width=$width&height=$height" );
 		}
 	// Not enough info so attempt to fallback
 	} else {
 
-		if ( !empty( $attachment_id ) ) {
+		if ( ! empty( $attachment_id ) ) {
 			$image_url = home_url( "index.php?wpsc_action=scale_image&attachment_id={$attachment_id}&width=$width&height=$height" );
 		} else {
 			$image_url = false;
 		}
 
 	}
-	if(empty($image_url) && !empty($file_path)){
-		$image_meta = get_post_meta( $attachment_id, '_wp_attached_file' );
-		if ( ! empty( $image_meta ) )
-			$image_url = $uploads['baseurl'].'/'.$image_meta[0];
-	}
-        if( is_ssl() ) str_replace('http://', 'https://', $image_url);
 
-	return apply_filters( 'wpsc_product_image', $image_url );
+	if ( empty( $image_url ) && ! empty( $file_path ) ) {
+
+		$image_meta = get_post_meta( $attachment_id, '_wp_attached_file' );
+
+		if ( ! empty( $image_meta ) ) {
+			$image_url = $uploads['baseurl'] . '/' . $image_meta[0];
+		}
+	}
+
+	/**
+	 * The filter here and in wpsc_the_product_image() were unfortunately named, as were the functions.
+	 * They do very different things but are named as if they do not.  The onus will be on the
+	 * plugin developer to check if the second parameter is an attachment ID or a product ID.
+	 *
+	 * @since 3.8
+	 */
+	return apply_filters( 'wpsc_product_image', set_url_scheme( $image_url ), $attachment_id );
 }
 
 function wpsc_product_no_image_fallback( $image_url = '' ) {
-	if ( !empty( $image_url ) )
+	if ( ! empty( $image_url ) ) {
 		return $image_url;
-	else
+	} else {
 		return apply_filters( 'wpsc_product_noimage', WPSC_CORE_THEME_URL . 'wpsc-images/noimage.png' );
+	}
 }
-add_filter( 'wpsc_product_image', 'wpsc_product_no_image_fallback' );
 
+add_filter( 'wpsc_product_image', 'wpsc_product_no_image_fallback' );
 
 /**
  * wpsc show pnp function
@@ -748,7 +759,8 @@ function wpsc_product_has_stock( $id = null ) {
 				return true;
 		}
 	} elseif ( $stock > 0 ) {
-		$claimed_stock = $wpdb->get_var("SELECT SUM(`stock_claimed`) FROM `".WPSC_TABLE_CLAIMED_STOCK."` WHERE `product_id` IN($id)");
+		$claimed_query = new WPSC_Claimed_Stock( array( 'product_id' => $id ) );
+		$claimed_stock = $claimed_query->get_claimed_stock_count();
 		if( $stock - $claimed_stock > 0 )
 			return true;
 	}
@@ -829,11 +841,11 @@ function wpsc_product_on_special( $id = 0 ) {
 	if ( ! $id )
 		$id = get_the_ID();
 
-	if ( ! isset( $on_special[$id] ) ) {
+	if ( ! isset( $on_special[ $id ] ) ) {
 		// don't rely on product sales price if it has variations
 		if ( wpsc_product_has_variations( $id ) ) {
 			$sql = $wpdb->prepare("
-				SELECT p.id, CAST(pm.meta_value AS DECIMAL(10, 2)) AS sale_price
+				SELECT COUNT(*)
 				FROM {$wpdb->posts} AS p
 				INNER JOIN {$wpdb->postmeta} AS pm ON pm.post_id = p.id AND pm.meta_key = '_wpsc_special_price' AND pm.meta_value != '0' AND pm.meta_value != ''
 				INNER JOIN {$wpdb->postmeta} AS pm2 ON pm2.post_id = p.id AND pm2.meta_key = '_wpsc_stock' AND pm2.meta_value != '0'
@@ -842,20 +854,19 @@ function wpsc_product_on_special( $id = 0 ) {
 					p.post_type = 'wpsc-product'
 					AND
 					p.post_parent = %d
-				ORDER BY sale_price ASC
 			", $id );
 
-			$results = $wpdb->get_results( $sql );
+			$results = $wpdb->get_var( $sql );
 
-			$on_special[$id] = ! empty( $results );
+			$on_special[ $id ] = ( $results > 0 );
 		} else {
-			$price =  get_product_meta( $id, 'price', true );
-			$special_price = get_product_meta( $id, 'special_price', true );
-			$on_special[$id] = $special_price > 0 && $price > $special_price;
+			$price             = get_product_meta( $id, 'price', true );
+			$special_price     = get_product_meta( $id, 'special_price', true );
+			$on_special[ $id ] = $special_price > 0 && $price > $special_price;
 		}
 	}
 
-	return $on_special[$id];
+	return apply_filters( 'wpsc_product_on_special', $on_special[ $id ], $id );
 }
 
 /**
@@ -946,14 +957,11 @@ function wpsc_the_product_image( $width = '', $height = '', $product_id = '' ) {
 	$src = wp_get_attachment_image_src( $product_thumbnail_id, 'large' );
 	$src = is_array( $src ) ? $src[0] : $src;
 
-	if ( is_ssl() && ! empty( $src ) )
-		$src = str_replace( 'http://', 'https://', $src );
-
 	// WordPress's esc_url() function strips out spaces, so encode them here to ensure they don't get stripped out
 	// Ref: http://core.trac.wordpress.org/ticket/23605
 	$src = str_replace( ' ', '%20', $src );
 
-	return apply_filters( 'wpsc_product_image', $src );
+	return apply_filters( 'wpsc_product_image', set_url_scheme( $src ), $product_id, $product );
 }
 
 /**
@@ -992,15 +1000,18 @@ function wpsc_the_product_thumbnail( $width = null, $height = null, $product_id 
 
 	$thumbnail_id = wpsc_the_product_thumbnail_id( $product_id );
 
-	// If no thumbnail found for item, get it's parent image (props. TJM)
-	if ( ! $thumbnail_id && $product->post_parent )
+	// If no thumbnail found for item, get its parent image
+	if ( ! $thumbnail_id && ( is_a( $product, 'WP_Post' ) && $product->post_parent ) ) {
 		$thumbnail_id = wpsc_the_product_thumbnail_id( $product->post_parent );
+	}
+
+	// if still no thumbnail ID is found, return our fallback function
+	if ( ! $thumbnail_id ) {
+		return wpsc_product_image();
+	}
 
 	if ( ! $page ) {
-		if ( is_single() )
-			$page = 'single';
-		else
-			$page = 'products-page';
+		$page = is_single() ? 'single' : 'products-page';
 	}
 
 	if ( ! $width && ! $height ) {
@@ -1047,9 +1058,14 @@ function wpsc_the_product_thumbnail( $width = null, $height = null, $product_id 
 
 	// Calculate the height based on the ratio of the original dimensions.
 	if ( $height == 0 || $width == 0 ) {
-		$attachment_meta = get_post_meta( $thumbnail_id, '_wp_attachment_metadata', false );
-		$original_width  = $attachment_meta[0]['width'];
-		$original_height = $attachment_meta[0]['height'];
+		$attachment_meta = get_post_meta( $thumbnail_id, '_wp_attachment_metadata', true );
+
+		$original_width  = isset( $attachment_meta['width'] )	? absint( $attachment_meta['width'] )	: 0;
+		$original_height = isset( $attachment_meta['height'] )	? absint( $attachment_meta['height'] )	: 0;
+
+		// bail if either original value is zero. can't divide by zero.
+		if ( $original_width == 0 || $original_height == 0 )
+			return;
 
 		if ( $width != 0 ) {
 			$height = ( $original_height / $original_width ) * $width;
@@ -1063,14 +1079,11 @@ function wpsc_the_product_thumbnail( $width = null, $height = null, $product_id 
 	if ( ! $thumbnail && isset( $thumbnail_id ) )
 		$thumbnail = wpsc_product_image( $thumbnail_id, $width, $height );
 
-	if ( ! empty( $thumbnail ) && is_ssl() )
-		$thumbnail = str_replace( 'http://', 'https://', $thumbnail );
-
 	// WordPress's esc_url() function strips out spaces, so encode them here to ensure they don't get stripped out
 	// Ref: http://core.trac.wordpress.org/ticket/23605
 	$thumbnail = str_replace( ' ', '%20', $thumbnail );
 
-	return $thumbnail;
+	return apply_filters( 'wpsc_the_product_thumbnail', set_url_scheme( $thumbnail ), $product_id, $product );
 }
 
 /**

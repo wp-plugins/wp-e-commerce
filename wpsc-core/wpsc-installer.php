@@ -51,7 +51,7 @@ function wpsc_install() {
 
 	// All code to add new database tables and columns must be above here
 	$wpsc_version       = get_option( 'wpsc_version', 0 );
-	$wpsc_minor_version = get_option( 'wspc_minor_version', 0 );
+	$wpsc_minor_version = get_option( 'wpsc_minor_version', 0 );
 
 	if ( $wpsc_version === false ) {
 		add_option( 'wpsc_version', WPSC_VERSION, '', 'yes' );
@@ -94,7 +94,7 @@ function wpsc_install() {
 		update_option('wpsc_enable_comments',0);
 
 	if('' == get_option('multi_add'))
-		update_option('multi_add',0);
+		update_option('multi_add',1);
 
 	if('' == get_option('hide_addtocart_button'))
 		update_option('hide_addtocart_button',0);
@@ -114,7 +114,6 @@ function wpsc_install() {
 
 	$default_payment_gateways_names = array(
 		'chronopay'						=> '',
-		'google'						=> '',
 		'wpsc_merchant_paypal_express'	=> '',
 		'wpsc_merchant_paypal_pro'		=> '',
 		'wpsc_merchant_paypal_standard'	=> ''
@@ -148,9 +147,6 @@ function wpsc_install() {
 	add_option( 'purch_log_email', '', '', 'yes' );
 	add_option( 'return_email', '', '', 'yes' );
 	add_option( 'terms_and_conditions', '', '', 'yes' );
-
-	add_option( 'google_key', 'none', '', 'yes' );
-	add_option( 'google_id', 'none', '', 'yes' );
 
 	add_option( 'default_brand', 'none', '', 'yes' );
 	add_option( 'wpsc_default_category', 'all', '', 'yes' );
@@ -732,7 +728,7 @@ function wpsc_add_checkout_fields() {
 	( '" . __( 'Postal Code', 'wpsc' ) . "', 'text', '0', '0', '1', '1', 17,'shippingpostcode');";
 
 		$wpdb->query( $sql );
-		$wpdb->query( "INSERT INTO `" . WPSC_TABLE_CHECKOUT_FORMS . "` ( `name`, `type`, `mandatory`, `display_log`, `default`, `active`, `checkout_order`, `unique_name` ) VALUES ( '" . __( 'Phone', 'wpsc' ) . "', 'text', '1', '0', '', '1', '8','billingphone');" );
+		$wpdb->query( "INSERT INTO `" . WPSC_TABLE_CHECKOUT_FORMS . "` ( `name`, `type`, `mandatory`, `display_log`, `default`, `active`, `checkout_order`, `unique_name` ) VALUES ( '" . __( 'Phone', 'wpsc' ) . "', 'text', '0', '0', '', '1', '8','billingphone');" );
 	}
 }
 function wpsc_rename_checkout_column(){

@@ -166,6 +166,7 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table {
 		$total_sql = "
 			SELECT SUM(totalprice)
 			FROM " . WPSC_TABLE_PURCHASE_LOGS . " AS p
+			{$this->joins}
 			WHERE {$total_where}
 		";
 
@@ -238,6 +239,7 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table {
 		$sql = "
 			SELECT DISTINCT YEAR(FROM_UNIXTIME(date)) AS year, MONTH(FROM_UNIXTIME(date)) AS month
 			FROM " . WPSC_TABLE_PURCHASE_LOGS . " AS p
+			{$this->joins}
 			WHERE {$this->where_no_filter}
 			ORDER BY date DESC
 		";
@@ -412,11 +414,32 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table {
 	}
 
 	public function column_customer( $item ) {
-		?>
+
+		$name = '';
+
+		if ( isset( $item->firstname ) ) {
+			$name .= $item->firstname;
+		}
+
+		if ( isset( $item->lastname ) ) {
+			$name .= ' ' . $item->lastname;
+		}
+
+		$name = trim( $name );
+
+		if ( empty( $name ) ) {
+			$name = apply_filters( 'wpsc_purchase_log_list_no_name', __( 'No name provided', 'wpsc' ), $item );
+		}
+
+
+	?>
 		<strong>
-			<a class="row-title" href="<?php echo esc_url( $this->item_url( $item ) ); ?>" title="<?php esc_attr_e( 'View order details', 'wpsc' ) ?>"><?php echo esc_html( $item->firstname . ' ' . $item->lastname ); ?></a>
+			<a class="row-title" href="<?php echo esc_url( $this->item_url( $item ) ); ?>" title="<?php esc_attr_e( 'View order details', 'wpsc' ) ?>"><?php echo esc_html( $name ); ?></a>
 		</strong><br />
-		<small><?php echo make_clickable( $item->email ); ?></small>
+
+		<?php if ( isset( $item->email ) ) : ?>
+			<small><?php echo make_clickable( $item->email ); ?></small>
+		<?php endif; ?>
 		<?php
 	}
 
