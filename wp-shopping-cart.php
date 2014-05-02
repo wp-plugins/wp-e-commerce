@@ -3,7 +3,7 @@
   * Plugin Name: WP e-Commerce
   * Plugin URI: http://getshopped.org/
   * Description: A plugin that provides a WordPress Shopping Cart. See also: <a href="http://getshopped.org" target="_blank">GetShopped.org</a> | <a href="https://wordpress.org/support/plugin/wp-e-commerce/" target="_blank">Support Forum</a> | <a href="http://docs.getshopped.org/" target="_blank">Documentation</a>
-  * Version: 3.8.14-dev
+  * Version: 3.8.14
   * Author: Instinct Entertainment
   * Author URI: http://getshopped.org/
   **/
@@ -268,7 +268,6 @@ class WP_eCommerce {
 	 * @uses wpsc_install()           Performs checks to see if this is a clean install or not
 	 */
 	function install() {
-		global $wp_version;
 
 		if ( ! defined( 'WPSC_FILE_PATH' ) ) {
 			define( 'WPSC_FILE_PATH', dirname( __FILE__ ) );
