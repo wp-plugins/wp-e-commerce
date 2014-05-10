@@ -204,6 +204,17 @@ function wpsc_country_list( $form_id = null, $ajax = null, $selected_country = n
 	}
 
 
+	// if there is only one country to choose from we are going to set that as the shipping country,
+	// later in the UI generation the same thing will happen to make the single country the current
+	// selection
+	$countries = WPSC_Countries::get_countries( false );
+	if ( count( $countries ) == 1 ) {
+		reset( $countries );
+		$id_of_only_country_available = key( $countries );
+		$wpsc_country = new WPSC_Country( $id_of_only_country_available );
+		wpsc_update_customer_meta( $id, $wpsc_country->get_isocode() );
+	}
+
 	$additional_attributes = 'data-wpsc-meta-key="' . $title . '" title="' . $title . '" ' . $js;
 	$output .= "<div id='$html_form_id'>\n\r";
 	$output .= wpsc_get_country_dropdown(
@@ -290,16 +301,22 @@ function wpsc_checkout_billing_state_and_region( $wpsc_checkout = null ) {
 		$style = 'style="display: none;"';
 	}
 
+	$placeholder = $wpsc_country->get( 'region_label' );
+	if ( empty ( $placeholder ) ) {
+		$placeholder = $wpsc_checkout->checkout_item->name;
+	}
+
 	$placeholder = apply_filters(
 									'wpsc_checkout_field_placeholder',
-									apply_filters( 'wpsc_checkout_field_name', $wpsc_checkout->checkout_item->name ),
+									apply_filters( 'wpsc_checkout_field_name', $placeholder ),
 									$wpsc_checkout->checkout_item
 								);
 
-	$output = '<input data-wpsc-meta-key="' . $wpsc_checkout->checkout_item->unique_name. '" title="'
-				. $wpsc_checkout->checkout_item->unique_name
+	$output = '<input data-wpsc-meta-key="' . $wpsc_checkout->checkout_item->unique_name. '" '
+				. ' type="text" '
+					. ' title="'. $wpsc_checkout->checkout_item->unique_name . '" '
 					. $id_attribute
-						. '" class="shipping_region wpsc-visitor-meta" '
+							. ' class="shipping_region wpsc-visitor-meta" '
 							. 'name="collected_data['. $wpsc_checkout->checkout_item->id . ']" '
 								. ' placeholder="'. esc_attr( $placeholder ) . '" '
 									. ' value="' . esc_attr( $billing_state ) . '" '
@@ -325,8 +342,8 @@ function wpsc_checkout_billing_state_and_region( $wpsc_checkout = null ) {
 
 	$output .= '<select '
 					. 'id="' . $region_form_id . '" '
-						. '" class="current_region wpsc-visitor-meta wpsc-region-dropdown" data-wpsc-meta-key="' . $title
-							. '"  title="' . $title
+						. ' class="current_region wpsc-visitor-meta wpsc-region-dropdown" data-wpsc-meta-key="' . $title
+							. '"  title="' . $title . '" '
 								. 'name="collected_data['. $wpsc_checkout->checkout_item->id . ']" '
 									. $style
 										. ">\n\r ";
@@ -412,10 +429,14 @@ function wpsc_checkout_shipping_state_and_region( $wpsc_checkout = null ) {
 
 	$region_list = $wpsc_country->get_regions();
 
+	$placeholder = $wpsc_country->get( 'region_label' );
+	if ( empty ( $placeholder ) ) {
+		$placeholder = $wpsc_checkout->checkout_item->name;
+	}
 
 	$placeholder = apply_filters(
 									'wpsc_checkout_field_placeholder',
-									apply_filters( 'wpsc_checkout_field_name', $wpsc_checkout->checkout_item->name ),
+									apply_filters( 'wpsc_checkout_field_name',  $placeholder ),
 									$wpsc_checkout->checkout_item
 								);
 
@@ -505,3 +526,74 @@ function wpsc_checkout_shipping_state_and_region( $wpsc_checkout = null ) {
 function wpsc_get_base_country() {
 	return get_option( 'base_country' );
 }
+
+/**
+ * Record an error message related to shipping
+ *
+ * @access private
+ *
+ * @since 3.8.14.1
+ *
+ * @param string $message
+ */
+function _wpsc_shipping_add_error_message( $message ) {
+
+	$shipping_error_messages = wpsc_get_customer_meta( 'shipping_error_messages' );
+	if ( empty ( $shipping_error_messages ) && ! is_array( $shipping_error_messages ) ) {
+		$shipping_error_messages = array();
+	}
+
+	$id = md5( $message );
+	$shipping_error_messages[ $id ] = $message;
+
+	wpsc_update_customer_meta( 'shipping_error_messages', $shipping_error_messages );
+}
+
+
+/**
+ * clear shipping error messages
+ *
+ * @since 3.8.14.1
+ *
+ * @access private
+ *
+ */
+function _wpsc_clear_shipping_error_messages() {
+	wpsc_delete_customer_meta( 'shipping_error_messages' );
+}
+
+// clear shipping messages before shipping quotes are recalculated
+add_action(  'wpsc_before_get_shipping_method', '_wpsc_clear_shipping_error_messages' );
+
+
+/**
+ * output shipping error messages
+ *
+ * @since 3.8.14.1
+ *
+ * @access private
+ */
+function _wpsc_shipping_error_messages() {
+	$shipping_error_messages = wpsc_get_customer_meta( 'shipping_error_messages' );
+	?>
+	<div class="wpsc-shipping-error_messages error">
+	<?php
+	if ( ! empty ( $shipping_error_messages ) ) {
+		foreach ( $shipping_error_messages as $id => $message ) {
+			?>
+			<div class="wpsc-shipping-error_message error" id="<?php echo esc_attr( $id );?>">
+			<?php
+				echo esc_html( $message );
+			?>
+			</div>
+			<?php
+		}
+	}
+	?>
+	</div>
+	<?php
+}
+
+// Need to do this after shipping messages have been displayed because in older carts that is where the
+// error messages would be generated by the shipping calculation
+add_action( 'wpsc_before_form_of_shopping_cart', '_wpsc_shipping_error_messages' );

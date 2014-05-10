@@ -465,48 +465,62 @@ class wpsc_checkout {
 
 			$bad_input = false;
 			if ( ( $form_data->mandatory == 1 ) || ( $form_data->type == 'coupon' ) ) {
-				// dirty hack
+
 				if ( $form_data->unique_name == 'billingstate' && empty( $value ) ) {
 
-					$value = wpsc_get_customer_meta( 'billingcountry' );
+					$value = wpsc_get_customer_meta( 'billingregion' );
 					if ( empty( $value ) ) {
 						$any_bad_inputs = true;
 						$bad_input      = true;
+						$country = new WPSC_Country( wpsc_get_customer_meta( 'billingcountry' ) );
+						$name    = $country->get( 'region_label' );
+					}
+				} else if ( $form_data->unique_name == 'shippingstate' && empty( $value ) ) {
+
+					$value = wpsc_get_customer_meta( 'shippingregion' );
+					if ( empty( $value ) ) {
+						$any_bad_inputs = true;
+						$bad_input      = true;
+						$country = new WPSC_Country( wpsc_get_customer_meta( 'shippingcountry' ) );
+						$name    = $country->get( 'region_label' );
+					}
+				} else {
+
+					$name = $form_data->name;
+
+					switch ( $form_data->type ) {
+						case 'email':
+
+							if ( ! preg_match( '/^[a-zA-Z0-9._-]+@[a-zA-Z0-9-.]+\.[a-zA-Z]{2,5}$/', $value ) ) {
+								$any_bad_inputs = true;
+								$bad_input = true;
+							}
+							break;
+
+						case 'delivery_country':
+						case 'country':
+						case 'heading':
+							break;
+
+						case 'select':
+							if ( $value == '-1' ) {
+								$any_bad_inputs = true;
+								$bad_input = true;
+							}
+							break;
+
+						default:
+							if ( empty( $value ) ) {
+								$any_bad_inputs = true;
+								$bad_input = true;
+							}
+
+							break;
 					}
 				}
 
-				switch ( $form_data->type ) {
-					case 'email':
-
-						if ( ! preg_match( '/^[a-zA-Z0-9._-]+@[a-zA-Z0-9-.]+\.[a-zA-Z]{2,5}$/', $value ) ) {
-							$any_bad_inputs = true;
-							$bad_input = true;
-						}
-						break;
-
-					case 'delivery_country':
-					case 'country':
-					case 'heading':
-						break;
-
-					case 'select':
-						if ( $value == '-1' ) {
-							$any_bad_inputs = true;
-							$bad_input = true;
-						}
-						break;
-
-					default:
-						if ( empty( $value ) ) {
-							$any_bad_inputs = true;
-							$bad_input = true;
-						}
-
-						break;
-				}
-
 				if ( $bad_input === true ) {
-					$wpsc_checkout_error_messages[$form_data->id] = sprintf( __( 'Please enter a valid <span class="wpsc_error_msg_field_name">%s</span>.', 'wpsc' ), esc_attr( $form_data->name ) );
+					$wpsc_checkout_error_messages[$form_data->id] = sprintf( __( 'Please enter a valid <span class="wpsc_error_msg_field_name">%s</span>.', 'wpsc' ), strtolower( esc_attr( $name ) ) );
 					$wpsc_customer_checkout_details[$form_data->id] = '';
 				}
 			}

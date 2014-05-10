@@ -4,7 +4,7 @@ Donate link: http://getshopped.org
 Tags: e-commerce, wp-e-commerce, shop, cart, paypal, authorize, stock control, ecommerce, shipping, tax
 Requires at least: 3.7
 Tested up to: 3.9
-Stable tag: 3.8.14
+Stable tag: 3.8.14.1
 
 WP eCommerce is a free, powerful plugin that empowers you to sell anything online, quickly and easily.
 
@@ -35,6 +35,18 @@ Before updating please make a backup of your existing files and database. Just i
 After upgrading from earlier versions look for link "Update Store". This will update your database structure to work with new version.
 
 == Changelog ==
+
+= 3.8.14.1 =
+
+* Fix: For users with older (3.7.x and older) templates copied into their theme directory, we inadvertently broke the visibility of the shipping calculator.
+* Fix: Under similar circumstances, taxes would not properly calculate.
+* Fix: Ensured compatibility with the popular "Weight and Destination" shipping module.  Note: You may need to go to your Target Markets and re-save the values there to properly flush the cache for this compatibility.
+* Fix: Edge case where $0.00 could be returned for a shipping rate.
+* Fix: Race condition on AJAX save while submitting purchase.
+* Fix: Restored proper functionality on digital downloads.
+* Fix: Ensure that UPS and USPS always return proper and expected values.  Incrementally improved error handling here.
+* Fix: Ensure that shipping method is properly retained if checkout page is refreshed.
+* Change: Added "County" as the region label for the UK.
 
 = 3.8.14 =
 * Fix: Improved visitor profiles performance, new infrastructure does not use WordPress Users.
@@ -69,8 +81,7 @@ After upgrading from earlier versions look for link "Update Store". This will up
 * Fix: Resolved issue whereby amounts over 1,000 (in a given currency) would be incorrectly sent to Google Analytics.
 * Fix: Shipping calculator uses information set in user account profile, if set.
 * Fix: When PATHINFO Permalinks ("Almost Pretty"), product pages would 404.
-* Fix: Ensure 3.7.x -> 3.8.x upgrade routine uses wpdb::prepare() properly.99-39
-
+* Fix: Ensure 3.7.x -> 3.8.x upgrade routine uses wpdb::prepare() properly.
 * New: AJAX API to get and set information about customers.
 * New: Visitor API to get and set information about current and past visits.
 * New: Introduced WPSC_Claimed_Stock class.
@@ -681,7 +692,7 @@ After upgrading from earlier versions look for link "Update Store". This will up
 
 First of all, you should check out the Presentation settings which are in the Settings -> Store page.
 
-For advanced users, all of our eCommerce templates and CSS can be moved into your active theme folder for customization. Less advanced users have [several fantastic WP eCommerce consultants](http://getshopped.org/resources/wp-consultants/ "http://getshopped.org/resources/wp-consultants) to get help from.
+For advanced users, all of our eCommerce templates and CSS can be moved into your active theme folder for customization. Less advanced users have [several fantastic WP eCommerce consultants](http://getshopped.org/resources/wp-consultants/) to get help from.
 
 = What payment gateways does WP eCommerce integrate with? =
 

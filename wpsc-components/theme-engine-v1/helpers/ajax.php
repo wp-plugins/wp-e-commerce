@@ -6,6 +6,10 @@ add_action( 'wp_ajax_nopriv_shipping_same_as_billing_update', 'wpsc_update_shipp
 if ( isset( $_GET['termsandconds'] ) && 'true' == $_GET['termsandconds'] )
 	add_action( 'init', 'wpsc_show_terms_and_conditions' );
 
+if ( isset( $_REQUEST['submitwpcheckout_profile'] ) ) {
+	add_action( 'init', 'wpsc_save_user_profile', 10, 0 );
+}
+
 if ( isset( $_REQUEST['wpsc_action'] ) && ($_REQUEST['wpsc_action'] == 'submit_checkout') ) {
 	add_action( 'init', 'wpsc_submit_checkout', 10, 0 );
 }
@@ -563,19 +567,30 @@ function wpsc_populate_also_bought_list() {
 function wpsc_submit_checkout( $collected_data = true ) {
 	global $wpdb, $wpsc_cart, $user_ID, $nzshpcrt_gateways, $wpsc_shipping_modules, $wpsc_gateways;
 
-	$num_items = 0;
-	$use_shipping = 0;
+	if ( $collected_data && isset( $_POST['collected_data'] ) && is_array( $_POST['collected_data'] ) ) {
+		_wpsc_checkout_customer_meta_update( $_POST['collected_data'] );
+	}
+
+	// initialize our checkout status variab;e, we start be assuming
+	// checkout is falid, until we find a reason otherwise
+	$is_valid           = true;
+	$num_items          = 0;
+	$use_shipping       = 0;
 	$disregard_shipping = 0;
 
 	do_action( 'wpsc_before_submit_checkout' );
 
 	$error_messages = wpsc_get_customer_meta( 'checkout_misc_error_messages' );
-	if ( ! is_array( $error_messages ) )
+
+	if ( ! is_array( $error_messages ) ) {
 		$error_messages = array();
+	}
+
 	$wpsc_checkout = new wpsc_checkout();
+
 	$selected_gateways = get_option( 'custom_gateway_options' );
 	$submitted_gateway = isset( $_POST['custom_gateway'] ) ? $_POST['custom_gateway'] : '';
-	$options = get_option( 'custom_shipping_options' );
+
 	if ( $collected_data ) {
 		$form_validity = $wpsc_checkout->validate_forms();
 		extract( $form_validity ); // extracts $is_valid and $error_messages
@@ -611,26 +626,37 @@ function wpsc_submit_checkout( $collected_data = true ) {
 
 		//count number of items, and number of items using shipping
 		$num_items++;
-		if ( $cartitem->uses_shipping != 1 )
+
+		if ( $cartitem->uses_shipping != 1 ) {
 			$disregard_shipping++;
-		else
+		} else {
 			$use_shipping++;
+		}
 
 	}
 
-	if ( array_search( $submitted_gateway, $selected_gateways ) !== false )
+	// check to see if the current gateway is in the list of available gateways
+	if ( array_search( $submitted_gateway, $selected_gateways ) !== false ) {
 		wpsc_update_customer_meta( 'selected_gateway', $submitted_gateway );
-	else
+	} else {
 		$is_valid = false;
+	}
 
 	if ( $collected_data ) {
-		if ( get_option( 'do_not_use_shipping' ) == 0 && ($wpsc_cart->selected_shipping_method == null || $wpsc_cart->selected_shipping_option == null) && ( $num_items != $disregard_shipping ) ) {
-			$error_messages[] = __( 'Please confirm the shipping method selection, then we can process your order.', 'wpsc' );
-			$is_valid = false;
-		}
-		if ( (get_option( 'do_not_use_shipping' ) != 1) && (in_array( 'ups', (array)$options )) && ! wpsc_get_customer_meta( 'shipping_zip' ) && ( $num_items != $disregard_shipping ) ) {
-				wpsc_update_customer_meta( 'category_shipping_conflict', __( 'Please enter a Zipcode and click calculate to proceed', 'wpsc' ) );
+
+		// Test for required shipping information
+		if ( wpsc_core_shipping_enabled() && ( $num_items != $disregard_shipping ) ) {
+			// for shipping to work we need a method, option and a quote
+			if ( ! $wpsc_cart->shipping_method_selected() || ! $wpsc_cart->shipping_quote_selected() ) {
+				$error_messages[] = __( 'Please select one of the available shipping options, then we can process your order.', 'wpsc' );
 				$is_valid = false;
+			}
+
+			// if we don't have a valid zip code ( the function also checks if we need it ) we have an error
+			if ( ! wpsc_have_valid_shipping_zipcode() ) {
+					wpsc_update_customer_meta( 'category_shipping_conflict', __( 'Please enter a Zipcode and click calculate to proceed', 'wpsc' ) );
+					$is_valid = false;
+			}
 		}
 	}
 
@@ -1062,5 +1088,84 @@ function _wpsc_ajax_get_cart( $die = true, $cart_messages = array() ) {
 		die();
 	} else {
 		return $return;
+	}
+}
+
+
+/**
+ * Update the customer mata values that are passed to the application from the checkout form POST
+ *
+ * With the submit checkout we should get an array of all the checkout values.  These values should already
+ * be stored as customer meta, bet there are cases where the submit processing may arrive before or in parallel
+ * with the request to update meta.  There is also value in cehcking to be sure the meta stored is what is coming
+ * with the POST as it preserves non-js compatibility and being able to use the submit action as an API
+ *
+ * @since  3.8.14.1
+ *
+ * @access private
+ *
+ * @param  array $checkout_post_data
+ *
+ * @return none
+ */
+function _wpsc_checkout_customer_meta_update( $checkout_post_data ) {
+	global $wpdb;
+
+	if ( empty ( $checkout_post_data ) || ! is_array( $checkout_post_data ) ) {
+		return;
+	}
+
+	$id = wpsc_get_current_customer_id();
+
+	$form_sql  = 'SELECT * FROM `' . WPSC_TABLE_CHECKOUT_FORMS . '` WHERE `active` = "1" ORDER BY `checkout_set`, `checkout_order`;';
+	$form_data = $wpdb->get_results( $form_sql, ARRAY_A );
+
+	foreach ( $form_data as $index => $form_field ) {
+		if (  isset( $checkout_post_data[$form_field['id']] ) ) {
+
+			$meta_key   = $form_field['unique_name'];
+			$meta_value = $checkout_post_data[$form_field['id']];
+
+			switch ( $form_field['type'] ) {
+				case 'delivery_country':
+					if ( is_array( $meta_value ) && count( $meta_value ) == 2 ) {
+						wpsc_update_visitor_meta( $id , 'shippingcountry', $meta_value[0] );
+						wpsc_update_visitor_meta( $id, 'shippingregion', $meta_value[1] );
+					} else {
+						if ( is_array( $meta_value ) ) {
+							$meta_value = $meta_value[0];
+						}
+						wpsc_update_visitor_meta( $id, 'shippingcountry', $meta_value );
+						wpsc_update_visitor_meta( $id, 'shippingregion', '' );
+					}
+
+					break;
+
+				case 'country':
+					if ( is_array( $meta_value ) && count( $meta_value ) == 2 ) {
+						wpsc_update_visitor_meta( $id, 'billingcountry', $meta_value[0] );
+						wpsc_update_visitor_meta( $id, 'billingregion', $meta_value[1] );
+					} else {
+						if ( is_array( $meta_value ) ) {
+							$meta_value = $meta_value[0];
+						}
+
+						wpsc_update_visitor_meta( $id, 'billingcountry', $meta_value );
+						wpsc_update_visitor_meta( $id, 'billingregion', '' );
+					}
+
+					break;
+
+				default:
+					wpsc_update_visitor_meta( $id, $meta_key, $meta_value );
+					break;
+			}
+		}
+	}
+}
+
+function wpsc_save_user_profile() {
+	if ( isset( $_POST['collected_data'] ) && is_array( $_POST['collected_data'] ) ) {
+		_wpsc_checkout_customer_meta_update( $_POST['collected_data'] );
 	}
 }

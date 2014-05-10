@@ -419,7 +419,7 @@ function _wpsc_replace_visitor_meta_keys( $replacements ) {
 	}
 
 	if ( $total_count_updated > 0 ) {
-		wp_cache_flush();
+		wpsc_core_flush_temporary_data();
 	}
 
 	return $total_count_updated;
@@ -523,7 +523,7 @@ function _wpsc_meta_migrate_anonymous_user_cron() {
 		$response = wp_remote_post( admin_url( 'admin-ajax.php' ) . '?action=wpsc_migrate_anonymous_user' , array(  'blocking' => true, ) );
 		wp_schedule_single_event( time() + 30 , 'wpsc_migrate_anonymous_user_cron' );
 	} else {
-		wp_cache_flush();
+		wpsc_core_flush_temporary_data();
 	}
 }
 
@@ -721,7 +721,35 @@ function _wpsc_has_visitor_location_changed( $visitor_id = false ) {
 	}
 }
 
+/**
+ * Tries to turn an arbitrary value into a valid bool looking at the contents, including for strings like false and no, ...
+ *
+ * @param varies $value      value to boolify
+ *
+ * @return boolean true or false
+ */
+function _wpsc_make_value_into_bool( $value ) {
+	if ( ! is_bool( $value ) ) {
+		if ( empty( $value ) ) {
+			$value = false;
+		} elseif ( is_numeric( $value ) ) {
+			$value = (bool) $value;
+		} elseif ( is_string( $value ) ) {
+			$value = strtolower( $value );
+			if ( $value == 'no' || $value == 'false' ) {
+				$value = false;
+			} else {
+				$value = true;
+			}
+		} elseif ( is_array( $value ) ) {
+			$value = ! empty( $value );
+		} else {
+			$value = (bool) $value;
+		}
+	}
 
+	return $value;
+}
 
 /**
  * when visitor meta is updated we need to check if the shipping same as billing
@@ -741,7 +769,9 @@ function _wpsc_vistor_shipping_same_as_billing_meta_update( $meta_value, $meta_k
 
 	// if the shipping same as billing option is being checked then copy meta from billing to shipping
 	if ( $meta_key == 'shippingSameBilling' ) {
-		if ( $meta_value == 1 ) {
+		$meta_value = _wpsc_make_value_into_bool( $meta_value );
+
+		if ( $meta_value ) {
 
 			$checkout_names = wpsc_checkout_unique_names();
 

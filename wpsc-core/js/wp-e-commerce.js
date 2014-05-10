@@ -71,6 +71,21 @@ function wpsc_var_get( name ) {
 }
 
 /**
+ * Checks to determine whether or not an element is fully visible
+ *
+ * @since  3.8.14.1
+ * @param  jQuery object el Element being checked for visibility.
+ * @return boolean          Whether or not element is visible.
+ */
+function wpsc_element_is_visible( el ) {
+	var top   = jQuery( window ).scrollTop(),
+	bottom    = top + jQuery( window ).height(),
+	elTop     = el.offset().top;
+
+	return ( (elTop >= top ) && ( elTop <= bottom ) && ( elTop <= bottom ) && ( elTop >= top ) ) && el.is( ':visible' );
+}
+
+/**
  * change the value of a localized WPeC var
  *
  * @since 3.8.14
@@ -226,13 +241,50 @@ function wpsc_update_customer_meta( response ) {
 
 				if ( element_meta_key != element_that_caused_change_event ) {
 					if ( jQuery(this).is(':checkbox') ) {
-						var boolean_meta_value = meta_value == "1";
+						var boolean_meta_value = wpsc_string_to_boolean( meta_value );
 						if ( boolean_meta_value ) {
 							jQuery( this ).attr( 'checked', 'checked' );
 						} else {
 							jQuery( this ).removeAttr( 'checked' );
 						}
+					} else if ( jQuery(this).hasClass('wpsc-region-dropdown') ) {
+						// we are going to skip updating the region value because the select is dependant on
+						// the value of other meta, specifically the billing or shipping country.
+						// rather than enforce a field order in the response we will take care of it by doing
+						// a second pass through the updates looking for only the region drop downs
+						;
+					} else if ( jQuery(this).hasClass('wpsc-country-dropdown') ) {
+						var current_value = jQuery( this ).val();
+						if ( current_value != meta_value ) {
+							jQuery( this ).val( meta_value );
+
+							// if we are updating a country drop down we need to make sure that
+							// the correct regions are in the list before we change the value
+							wpsc_update_regions_list_to_match_country( jQuery( this ) );
+						}
 					} else {
+						var current_value = jQuery( this ).val();
+						if ( current_value != meta_value ) {
+							jQuery( this ).val( meta_value );
+						}
+					}
+				}
+			});
+		});
+
+		// this second pass through the properties only looks for region drop downs, their
+		// contents is dependant on other meta values so we do these after everything else has
+		jQuery.each( customer_meta,  function( meta_key, meta_value ) {
+
+			// if there are other fields on the current page that are used to change the same meta value then
+			// they need to be updated
+			var selector = '[data-wpsc-meta-key="' + meta_key + '"]';
+
+			jQuery( selector ).each( function( index, value ) {
+				var element_meta_key = wpsc_get_element_meta_key( this );
+
+				if ( element_meta_key != element_that_caused_change_event ) {
+					if ( jQuery(this).hasClass('wpsc-region-dropdown') ) {
 						var current_value = jQuery( this ).val();
 						if ( current_value != meta_value ) {
 							jQuery( this ).val( meta_value );
@@ -261,9 +313,10 @@ function wpsc_check_for_shipping_recalc_needed( response ) {
 
 			if ( ! jQuery( '#shipping_quotes_need_recalc').length ) {
 
-				form.before( '<div id="shipping_quotes_need_recalc">' + msg + '</div>' );
+				form.before( '<div id="shipping_quotes_need_recalc" style="display:none">' + msg + '</div>' );
+				jQuery( '#shipping_quotes_need_recalc' ).show( 375 );
 
-				if ( wpsc_ajax.hasOwnProperty( 'slide_to_shipping_error' ) && wpsc_ajax.slide_to_shipping_error ) {
+				if ( wpsc_ajax.hasOwnProperty( 'slide_to_shipping_error' ) && wpsc_ajax.slide_to_shipping_error && ! wpsc_element_is_visible( jQuery( '#shipping_quotes_need_recalc' ) ) ) {
 					jQuery( 'html, body' ).animate({
 						scrollTop : jQuery( '#checkout_page_container' ).offset().top
 					}, 600 );
@@ -272,10 +325,10 @@ function wpsc_check_for_shipping_recalc_needed( response ) {
 			}
 
 			jQuery( 'input:radio[name=shipping_method]' ).prop('checked', false).attr('disabled',true);
-			jQuery( 'input:radio[name=shipping_method]' ).closest( 'tr' ).hide();
-			jQuery( 'tr.wpsc_shipping_header' ).hide();
-			jQuery( '.wpsc_checkout_table_totals' ).hide();
-			jQuery( '.total_tax' ).closest( 'table' ).hide();
+			jQuery( 'input:radio[name=shipping_method]' ).closest( 'tr' ).hide( 275 );
+			jQuery( 'tr.wpsc_shipping_header' ).hide( 275 );
+			jQuery( '.wpsc_checkout_table_totals' ).hide( 275 );
+			jQuery( '.total_tax' ).closest( 'table' ).hide( 275 );
 		}
 	}
 
@@ -433,7 +486,7 @@ function wpsc_meta_item_change() {
 	jQuery( selector ).each( function( index, value ) {
 		if ( element_that_changed_meta_value != this ) {
 			if ( jQuery(this).is(':checkbox') ) {
-				var boolean_meta_value = meta_value == "1";
+				var boolean_meta_value =  wpsc_string_to_boolean( meta_value );
 				if ( boolean_meta_value ) {
 					jQuery( this ).attr( 'checked', 'checked' );
 				} else {
@@ -595,10 +648,11 @@ function wpsc_update_regions_list_to_match_country( country_select ) {
 	var region_select      = wpsc_country_region_element( country_select );
 	var all_region_selects = wpsc_get_wpsc_meta_elements( region_meta_key );
 	var country_code       = wpsc_get_value_from_wpsc_meta_element( country_select );
+	var region             = wpsc_get_value_from_wpsc_meta_element( region_meta_key );
 
 	if ( wpsc_country_has_regions( country_code ) ) {
 		var select_a_region_message = wpsc_no_region_selected_message( country_code );
-		var regions = wpsc_country_regions( country_code )
+		var regions = wpsc_country_regions( country_code );
 		all_region_selects.empty();
 		all_region_selects.append( new Option( select_a_region_message, '' ) );
 		for ( var region_code in regions ) {
@@ -606,6 +660,10 @@ function wpsc_update_regions_list_to_match_country( country_select ) {
 			  var region_name = regions[region_code];
 			  all_region_selects.append( new Option( region_name, region_code ) );
 		  }
+		}
+
+		if ( region ) {
+			all_region_selects.val( region );
 		}
 
 		region_select.show();
@@ -619,6 +677,10 @@ function wpsc_update_regions_list_to_match_country( country_select ) {
 	wpsc_copy_meta_value_to_similiar( country_select );
 }
 
+function wpsc_string_to_boolean( string ) {
+	return a.trim( string ) !== '';
+}
+
 /*
  * Load the region dropdowns based on changes to the country dropdowns
  *
@@ -627,7 +689,7 @@ function wpsc_update_regions_list_to_match_country( country_select ) {
  */
 function wpsc_change_regions_when_country_changes() {
 	wpsc_copy_meta_value_to_similiar( jQuery( this ) );
-	wpsc_update_regions_list_to_match_country( jQuery( this ) )
+	wpsc_update_regions_list_to_match_country( jQuery( this ) );
 	return true;
 }
 
@@ -635,7 +697,6 @@ function wpsc_copy_meta_value_to_similiar( element ) {
 
 	var element_meta_key = wpsc_get_element_meta_key( element ),
 		meta_value = element.val(),
-		element_html = element.html(),
 		current_value;
 
 	// if there are other fields on the current page that are used to change the same meta value then
@@ -646,16 +707,12 @@ function wpsc_copy_meta_value_to_similiar( element ) {
 		if ( this != element) {
 
 			if ( jQuery(this).is(':checkbox') ) {
-				var boolean_meta_value = meta_value == "1";
+				var boolean_meta_value =  wpsc_string_to_boolean( meta_value );
 				if ( boolean_meta_value ) {
 					jQuery( this ).attr( 'checked', 'checked' );
 				} else {
 					jQuery( this ).removeAttr( 'checked' );
 				}
-			} if ( jQuery(this).is('select') ) {
-				current_value = jQuery( this ).val();
-				jQuery( this ).html( element_html );
-				jQuery( this ).val( meta_value );
 			} else {
 				current_value = jQuery( this ).val();
 				if ( current_value != meta_value ) {
@@ -706,8 +763,6 @@ function wpsc_show_checkout_shipping_fields() {
 }
 
 function wpsc_setup_region_dropdowns() {
-
-	var country_elements = wpsc_get_wpsc_meta_elements( 'billingcountry' ) ;
 
 	wpsc_get_wpsc_meta_elements( 'billingcountry' ).each( function( index, value ){
 		 wpsc_update_regions_list_to_match_country( jQuery( this ) );
@@ -785,7 +840,7 @@ function wpsc_current_destination_country() {
 }
 
 function wpsc_no_region_selected_message( country_code ) {
-	var label = wpsc_country_region_label( country_code )
+	var label = wpsc_country_region_label( country_code );
 	var format = wpsc_var_get( 'no_region_selected_format' );
 	var message = format.replace("%s",label);
 	return message;
@@ -859,13 +914,12 @@ function wpsc_get_value_from_wpsc_meta_element( meta ) {
 
 	if ( element.is(':checkbox') ) {
 		if ( element.is(':checked') ) {
-			meta_value = 1;
+			meta_value = element.val();
 		} else {
-			meta_value = 0;
+			meta_value = '';
 		}
 	} else if ( element.is('select') ) {
 		meta_value = element.find( 'option:selected' ).val();
-		var select_meta_value = element.val();
 	} else 	{
 		meta_value = element.val();
 	}
@@ -886,7 +940,7 @@ function wpsc_country_region_element( country ) {
 		country = wpsc_get_wpsc_meta_element( country );
 	}
 
-	var country_id = country.attr('id')
+	var country_id = country.attr('id');
 	var region_id = country_id + "_region";
 	var region_select = jQuery( "#" + region_id );
 
@@ -912,7 +966,6 @@ function wpsc_checkout_item_active( $checkout_item ) {
 
 
 function wpsc_billing_country_has_regions() {
-	var billing_country_active = wpsc_checkout_item_active( 'billingcountry' );
 	var has_regions = false;
 
 	var country_code = wpsc_billing_country();
@@ -926,7 +979,6 @@ function wpsc_billing_country_has_regions() {
 
 function wpsc_billing_country() {
 	var billing_country_active = wpsc_checkout_item_active( 'billingcountry' );
-	var has_regions = false;
 
 	var country_code;
 
@@ -942,7 +994,6 @@ function wpsc_billing_country() {
 
 function wpsc_shipping_country() {
 	var shipping_country_active = wpsc_checkout_item_active( 'shippingcountry' );
-	var has_regions = false;
 
 	var country_code;
 
@@ -957,7 +1008,6 @@ function wpsc_shipping_country() {
 
 
 function wpsc_shipping_country_has_regions() {
-	var shipping_country_active = wpsc_checkout_item_active( 'shippingcountry' );
 	var has_regions = false;
 
 	var country_code = wpsc_shipping_country();
@@ -1009,6 +1059,7 @@ jQuery(document).ready(function ($) {
 	}
 
 	// setup checkout form and make sure visibility of form elements is what it should be
+	wpsc_setup_region_dropdowns();
 	wpsc_adjust_checkout_form_element_visibility();
 	wpsc_update_location_elements_visibility();
 	wpsc_countries_lists_handle_restrictions();

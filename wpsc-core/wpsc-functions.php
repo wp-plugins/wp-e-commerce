@@ -728,3 +728,151 @@ function wpsc_core_get_checkout() {
 function wpsc_core_get_db_version() {
 	return intval( get_option( 'wpsc_db_version', 0 ) );
 }
+
+/**
+ * get the current WPeC database version
+ *
+ * @return int current database version
+ */
+function wpsc_core_shipping_enabled() {
+	$shipping_disabled = get_option( 'do_not_use_shipping', -1 );
+
+	if ( $shipping_disabled === -1 ) {
+		// if shipping enabled comes back as -1 we want to set it to the default value, this is
+		// because unset WordPress options are not cached.  That means if this option isn't in the database
+		// we could make a trip to the database every time this option is looked at.  This variable
+		// can be tested many times per page view, so let's make it clean
+		update_option( 'do_not_use_shipping', false );
+		$shipping_disabled = false;
+	}
+
+	$shipping_disabled = _wpsc_make_value_into_bool( $shipping_disabled );
+
+	return ! $shipping_disabled;
+}
+
+/**
+ *  flush all WPeC temporary stored data
+ *
+ * WordPress generallay has two places it stores temporary data, the object cache and the transient store.  When
+ * an object cache is configured for WordPress transients are stored in the object cache.  When there isn't an
+ * object cache available transients are stored in the WordPress options table.  When clearing temporary data
+ * we need to consider both places.
+ *
+ * @since 3.8.14.1
+ *
+ */
+function wpsc_core_flush_temporary_data() {
+
+	//
+	/**
+	 * Tell the the rest of the WPeC world it's time to flush all cache data
+	 *
+	 * @since 3.8.14.1
+	 *
+	 * no params
+	 */
+	do_action( 'wpsc_core_flush_transients' );
+
+	$our_saved_transients = _wpsc_remembered_transients();
+
+	// strip off the WordPress transient prefix to get the transient name used when storing the transient, then delete it
+	foreach ( $our_saved_transients as $transient_name => $timestamp ) {
+		delete_transient( $transient_name );
+	}
+
+	/**
+	 * Tell the the rest of the WPeC world we have just flushed all temporary data,
+	 *
+	 * @since 3.8.14.1
+	 *
+	 * no params
+	 */
+	do_action( 'wpsc_core_flushed_transients' );
+}
+
+/**
+ * Rememeber whenever WPeC saves data in a transient
+ *
+ * @param string $transient
+ * @param varies|null $value
+ * @param int|null $expiration
+ * @return array[string]|false  names of transients saved, false when nothing has been stored
+ */
+function _wpsc_remembered_transients( $transient = '', $value = null, $expiration = null ) {
+	static $wpsc_transients = false;
+
+	if ( $wpsc_transients === false ) {
+
+		// get our saved transients
+		$wpsc_transients = get_option( __FUNCTION__,  false );
+
+		if ( $wpsc_transients === false ) {
+			// look at the database and see if there are WPeC transients in the options table.  Note that it is possible to track these,
+			// using WordPress hooks, but because we need to check for transients that are stored by prior releases of WPeC we go right
+			// at the database.
+			global $wpdb;
+
+			$wpsc_transients_from_db = $wpdb->get_col( 'SELECT option_name FROM ' . $wpdb->options . ' WHERE `option_name` LIKE "\_transient\_wpsc\_%"' );
+
+			$wpsc_transients = array();
+
+			// strip off the WordPress transient prefix to get the transient name used when storing the transient, then delete it
+			foreach ( $wpsc_transients_from_db as $index => $transient_name ) {
+				$transient_name = substr( $transient_name, strlen( '_transient_' ) );
+				$wpsc_transients[$transient_name] = time();
+			}
+
+			// we are all initialized, save our known transients list for later
+			update_option( __FUNCTION__, $wpsc_transients );
+		}
+	}
+
+	// if we are setting a transient, and it is one of ours, and we havn't seen it before, save the name
+	if ( ! empty ( $transient ) ) {
+		if ( strpos( $transient, 'wpsc_' ) === 0 ||  strpos( $transient, '_wpsc_' ) === 0 ) {
+			if ( ! isset( $wpsc_transients[$transient] ) ) {
+				$wpsc_transients[$transient] = time();
+				update_option( __FUNCTION__, $wpsc_transients );
+			}
+		}
+	}
+
+	return $wpsc_transients;
+}
+
+add_action( 'setted_transient', '_wpsc_remembered_transients' , 10, 3 );
+
+/**
+ * When we change versions, aggressively clear temporary data and WordPress cache.
+ *
+ * @since 3.8.14.1
+ *
+ * @access private
+ */
+function _wpsc_clear_wp_cache_on_version_change() {
+
+	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+		return;
+	}
+
+	$version_we_last_stored = get_option( __FUNCTION__, false );
+
+	if ( $version_we_last_stored != WPSC_VERSION ) {
+
+		// version changed, clear temporary data
+		wpsc_core_flush_temporary_data();
+
+		// version changed, flush the object cache
+		wp_cache_flush();
+
+		if ( false === $version_we_last_stored ) {
+			// first time through we create the autoload option, we will read it every time
+			add_option( __FUNCTION__, WPSC_VERSION, null, true );
+		} else {
+			update_option( __FUNCTION__, WPSC_VERSION );
+		}
+	}
+}
+
+add_action( 'admin_init', '_wpsc_clear_wp_cache_on_version_change', 1 );

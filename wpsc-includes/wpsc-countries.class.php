@@ -881,6 +881,11 @@ class WPSC_Countries {
 			self::restore();
 		}
 
+		// respect the notification that temporary data has been flushed, clear our own cache and ite will rebuild the
+		// country data structures on the next request
+		add_action( 'wpsc_core_flush_temporary_data', array( __CLASS__, 'clear_cache' ) );
+
+		// save our class data when processing is done
 		add_action( 'shutdown', array( __CLASS__, 'save' ) );
 		self::$_initialized = true;
 	}
@@ -1049,7 +1054,7 @@ class WPSC_Countries {
 				}
 			}
 
-			set_transient( self::transient_name(), $mydata, WEEK_IN_SECONDS * 13 );
+			set_transient( self::transient_name(), $mydata );
 
 			self::$_dirty = false;
 		}
@@ -1088,7 +1093,9 @@ class WPSC_Countries {
 		}
 
 		if ( ! $has_data && ( $data !== false ) ) {
-			self::clear_cache();
+			delete_transient( self::transient_name() );
+		} else {
+			self::$_initialized = true;
 		}
 
 		self::$_dirty = false;
