@@ -52,7 +52,7 @@ function wpsc_product_link( $permalink, $post, $leavename ) {
 
 	// Mostly the same conditions used for posts, but restricted to items with a post type of "wpsc-product "
 	if ( $wp_rewrite->using_permalinks() && ! in_array( $post->post_status, array( 'draft', 'pending' ) ) ) {
-		
+
 		$product_categories = wpsc_get_product_terms( $post_id, 'wpsc_product_category' );
 		$product_category_slugs = array( );
 		foreach ( $product_categories as $product_category ) {
@@ -60,7 +60,7 @@ function wpsc_product_link( $permalink, $post, $leavename ) {
 		}
 		// If the product is associated with multiple categories, determine which one to pick
 		if ( count( $product_categories ) == 0 ) {
-			$category_slug = 'uncategorized';
+			$category_slug = apply_filters( 'wpsc_uncategorized_product_category', 'uncategorized' );
 		} elseif ( count( $product_categories ) > 1 ) {
 			if ( (isset( $wp_query->query_vars['products'] ) && $wp_query->query_vars['products'] != null) && in_array( $wp_query->query_vars['products'], $product_category_slugs ) ) {
 				$product_category = $wp_query->query_vars['products'];
@@ -235,6 +235,7 @@ function wpsc_print_category_id() {
 */
 function wpsc_print_category_classes($category_to_print = false, $echo = true) {
 	global $wp_query, $wpdb;
+	$result = '';
 
 	//if we are in wpsc category page then get the current category
 	$curr_cat = false;
@@ -259,11 +260,16 @@ function wpsc_print_category_classes($category_to_print = false, $echo = true) {
 		elseif ( in_array($category_to_print['term_id'], $curr_cat_parents) )
 			$result = ' wpsc-cat-ancestor ';
 	}
-	if( isset($result) )
-		if($echo)
+
+	$result = apply_filters( 'wpsc_print_category_classes', $result, $category_to_print );
+
+	if ( ! empty ( $result ) ) {
+		if ( $echo ) {
 			echo $result;
-		else
+		} else {
 			return $result;
+		}
+	}
 }
 
 /**
