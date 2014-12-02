@@ -12,10 +12,10 @@ class Sputnik_Pointers {
 
 	    $dismissed = explode( ',', (string) get_user_meta( get_current_user_id(), 'dismissed_wp_pointers', true ) );
 
-	    if ( ! in_array( 'wpsc_marketplace_pointer', $dismissed ) ) {
-	        $enqueue = true;
-	        add_action( 'admin_print_footer_scripts', array( __CLASS__, 'print_footer_scripts' ) );
-	    }
+		if ( ! in_array( 'wpsc_marketplace_pointer', $dismissed ) && current_user_can( 'install_plugins' ) ) {
+			$enqueue = true;
+			add_action( 'admin_print_footer_scripts', array( __CLASS__, 'print_footer_scripts' ) );
+		}
 
 	    if ( $enqueue ) {
 	        // Enqueue pointers
@@ -25,9 +25,9 @@ class Sputnik_Pointers {
 	}
 
 	public static function print_footer_scripts() {
-   		$content  = '<h3>' . __( 'New Feature: WPeC Add-Ons' ) . '</h3>';
-		$content .= '<p>' .  __( 'Ever wanted to be able to find an extension for your e-commerce store, purchase, install and activate it right from WordPress? Now you can!', 'wpsc' ) . '</p>';
-		$content .= '<p>' .  __( 'Find the latest and greatest free and premium plugins from the WP E-Commerce community in our <a href="' . Sputnik_Admin::build_url() . '">Add-Ons page</a>.', 'wpsc' ) . '</p>';
+   		$content  = '<h3>' . __( 'New Feature: WPeC Extensions' ) . '</h3>';
+		$content .= '<p>' .  __( 'Ever wanted to be able to find an extension for your WP eCommerce store and purchase, install and activate it right from WordPress? Now you can!', 'wpsc' ) . '</p>';
+		$content .= '<p>' .  __( 'Find the latest and greatest free and premium plugins from the WP eCommerce community in our <a href="' . Sputnik_Admin::build_url() . '">Extensions Marketplace</a>.', 'wpsc' ) . '</p>';
 	?>
 	<script type="text/javascript">// <![CDATA[
 	jQuery(document).ready(function($) {

@@ -399,7 +399,7 @@ class wpsc_merchant_paypal_standard extends wpsc_merchant {
 			'timeout'     => 20,
 			'body'        => $received_values,
 			'httpversion' => '1.1',
-			'user-agent'  => ( 'WP e-Commerce/' . WPSC_PRESENTABLE_VERSION )
+			'user-agent'  => ( 'WP eCommerce/' . WPSC_PRESENTABLE_VERSION )
 		);
 
 		$response = wp_remote_post( $paypal_url, $options );
@@ -902,7 +902,7 @@ function form_paypal_multiple() {
 		<tr>
 			<td colspan='2'>
 				<p class='description'>
-				" . sprintf( __( "For more help configuring Paypal Standard, please read our documentation <a href='%s'>here</a>", 'wpsc' ), esc_url( 'http://docs.getshopped.org/documentation/paypal-payments-standard/' ) ) . "
+				" . sprintf( __( "For more help configuring Paypal Standard, please read our documentation <a href='%s'>here</a>", 'wpsc' ), esc_url( 'http://docs.wpecommerce.org/documentation/paypal-payments-standard/' ) ) . "
 				</p>
 			</td>
 		</tr>\n";

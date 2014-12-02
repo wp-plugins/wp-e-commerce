@@ -288,7 +288,7 @@ class WPSC_Country {
 	 *
 	 * @since 3.8.14
 	 *
-	 * @return varies 	value of the property
+	 * @return varies 	value of the property. Returns NULL for nonexistent property.
 	 */
 	public function get( $key ) {
 
@@ -342,7 +342,6 @@ class WPSC_Country {
 
 		return $this;
 	}
-
 
 	/**
 	 * get a region that is in this country

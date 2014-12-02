@@ -57,13 +57,15 @@ class WPSC_Update {
 	}
 
 	public function run( $function, $message = '' ) {
-		if ( $message )
+
+		if ( $message ) {
 			echo "<p>{$message}</p>";
+		}
 
 		if ( empty( $this->stages[$function] ) ) {
 			call_user_func( 'wpsc_' . $function );
-			$this->stages[$function] = true;
-			set_transient( 'wpsc_update_progress', $this->stages, 604800 );
+			$this->stages[ $function ] = true;
+			set_transient( 'wpsc_update_progress', $this->stages, WEEK_IN_SECONDS );
 		}
 	}
 }
@@ -116,7 +118,8 @@ class WPSC_Update_Progress {
 
 	private function print_eta() {
 		echo '<div class="eta">';
-		_e( 'Estimated time left:', 'wpsc' ) . ' ';
+		_e( 'Estimated time left:', 'wpsc' );
+		echo ' ';
 		if ( $this->eta == 0 )
 			_e( 'Under a minute', 'wpsc' );
 		else
@@ -180,7 +183,8 @@ function wpsc_update_step( $i, $total ) {
 		$processed = $i - $count + 1;
 		$eta = floor( ( $total - $i ) * ( $now - $start ) / ( $processed * 60 ) );
 		echo '<div class="eta">';
-		_e( 'Estimated time left:', 'wpsc' ) . ' ';
+		_e( 'Estimated time left:', 'wpsc' );
+		echo ' ';
 		if ( $eta == 0 )
 			_e( 'Under a minute', 'wpsc' );
 		else

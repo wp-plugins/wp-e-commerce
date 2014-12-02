@@ -7,11 +7,11 @@ class Sputnik_API {
 	protected static $auth = null;
 
 	/**
-	 * For sites like GetShopped that will distribute Sputnik with a plugin to sell WP plugins,
+	 * For sites like WPeCommerce.org that will distribute Sputnik with a plugin to sell WP plugins,
 	 * we override the domain. This is because we need to ensure Baikonur receives the Saas domain,
 	 * not the end-user domain. Only relevant where Sputnik is available to an end-user, not a Saas.
 	 */
-	protected static $domain_override = 'http://getshopped.org';
+	protected static $domain_override = 'https://wpecommerce.org';
 
 	public static function get_all($page = 1, $params = null) {
 		$url = '/';
@@ -22,17 +22,22 @@ class Sputnik_API {
 		return self::request($url, $params);
 	}
 
-	public static function search($query, $page = 1) {
-		$url = '/search';
-		if ($page !== 1) {
-			$url = sprintf('/search/page/%d', $page);
+    public static function search( $query, $params = null, $page = 1 ) {
+		$url = '/';
+
+		if ( $page !== 1 ) {
+			$url = sprintf( '/page/%d', $page );
 		}
-		$params = array(
-			'query' => $query
+
+		$extra = array(
+	    	'query'     => $query
 		);
 
-		return self::request($url, $params);
-	}
+		$params = array_merge( $params, $extra );
+
+		return self::request( $url, $params );
+    }
+
 
 	public static function get_single($name, $user = 0) {
 		$params = array(
@@ -118,7 +123,7 @@ class Sputnik_API {
 	<head>
 		<title><?php _e( 'Redirecting ...', 'wpsc' ); ?></title>
 		<script type="text/javascript">
-			parent.location = '<?php echo esc_js( $return_url ); ?>';
+			parent.location = '<?php echo wp_validate_redirect( $return_url ); ?>';
 			window.close();
 		</script>
 	</head>
@@ -186,38 +191,43 @@ class Sputnik_API {
 		return $response;
 	}
 
-
 	/* Helper Methods */
 	public static function request($url, $params = null, $args = array()) {
-		if ( ! empty( $params ) )
+
+		if ( ! empty( $params ) ) {
 			$url = add_query_arg( $params, $url );
+		}
 
-		$defaults = array('method' => 'GET');
-		$args = wp_parse_args($args, $defaults);
+		$defaults = array( 'method' => 'GET' );
 
-		if (strpos($url, 'http') !== 0) {
+		$args = wp_parse_args( $args, $defaults );
+
+		if ( strpos( $url, 'http' ) !== 0 ) {
 			$url = Sputnik::API_BASE . $url;
 		}
 
-		$args['timeout'] = 25;
-
+		$args['timeout']                = 25;
+		$args['headers']['user-agent']  = 'WP eCommerce Marketplace: ' . WPSC_VERSION;
 		$args['headers']['X-WP-Domain'] = self::domain();
 
 		$request = wp_remote_request( $url, $args );
 
-		if (is_wp_error($request)) {
-			throw new Exception($request->get_error_message());
+		if ( is_wp_error( $request ) ) {
+			throw new Exception( $request->get_error_message() );
 		}
 
-		if ($request['response']['code'] != 200) {
+		if ( $request['response']['code'] != 200 ) {
 			throw new Exception($request['body'], $request['response']['code']);
 		}
+
 		$result = json_decode($request['body']);
 
 		if ($result === null) {
 			throw new Exception($request['body'], $request['response']['code']);
 		}
+
 		$request['body'] = $result;
+
 
 		return $request;
 	}

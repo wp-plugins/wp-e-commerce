@@ -1,6 +1,6 @@
 <?php
 /**
- * WP e-Commerce Settings Page API.
+ * WP eCommerce Settings Page API.
  *
  * Third-party plugin / theme developers can add their own tabs to WPEC store settings page.
  *
@@ -578,6 +578,12 @@ final class WPSC_Settings_Page {
 				update_option( 'wpsc_ga_tracking_id', esc_attr( $_POST['wpsc_ga_tracking_id'] ) );
 			else
 				update_option( 'wpsc_ga_tracking_id', '' );
+
+			if ( isset( $_POST['wpsc_ga_use_universal'] ) && $_POST['wpsc_ga_use_universal'] == '1' ) {
+				update_option( 'wpsc_ga_use_universal', 1 );
+			} else {
+				update_option( 'wpsc_ga_use_universal', 0 );
+			}
 
 		}
 

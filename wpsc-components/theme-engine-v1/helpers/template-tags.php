@@ -618,6 +618,7 @@ function wpsc_the_product_price( $no_decimals = false, $only_normal_price = fals
 		$from_text = apply_filters( 'wpsc_product_variation_text', $from_text );
 		$output = wpsc_product_variation_price_from( $product_id, array(
 			'from_text'         => $from_text,
+			'no_decimals'       => $no_decimals,
 			'only_normal_price' => $only_normal_price,
 		) );
 	} else {
@@ -630,7 +631,7 @@ function wpsc_the_product_price( $no_decimals = false, $only_normal_price = fals
 				$price = $special_price;
 		}
 
-		if ( true == $no_decimals ) {
+		if ( $no_decimals ) {
 			$price = explode( ".", $price );
 			$price = array_shift( $price );
 		}
@@ -917,7 +918,7 @@ function wpsc_product_has_supplied_file() {
  * wpsc product postage and packaging function
  * @return string - currently only valid for flat rate
  */
-function wpsc_product_postage_and_packaging() {
+function wpsc_product_postage_and_packaging( $id = null ) {
 	if ( isset( $id ) && is_numeric( $id ) && ($id > 0) )
 		$id = absint( $id );
 	else
@@ -989,6 +990,13 @@ function wpsc_check_display_type(){
  *
  * @return string - the URL to the thumbnail image
  */
+/**
+ * wpsc product thumbnail function
+ *
+ * Show the thumbnail image for the product
+ *
+ * @return string - the URL to the thumbnail image
+ */
 function wpsc_the_product_thumbnail( $width = null, $height = null, $product_id = 0, $page = false ) {
 	$thumbnail = false;
 	$display = wpsc_check_display_type();
@@ -1034,14 +1042,22 @@ function wpsc_the_product_thumbnail( $width = null, $height = null, $product_id 
 
 			if ( ! $custom_thumbnail ) {
 				$custom_thumbnail = 'medium-single-product';
+			}
+
+			$src = wp_get_attachment_image_src( $thumbnail_id, $custom_thumbnail );
+
+			if ( ! $src ) {
+				$custom_thumbnail = 'medium-single-product';
 				$current_size = image_get_intermediate_size( $thumbnail_id, $custom_thumbnail );
 				$settings_width  = get_option( 'single_view_image_width' );
 				$settings_height = get_option( 'single_view_image_height' );
 
-				if ( ! $current_size || ( $current_size['width'] != $settings_width && $current_size['height'] != $settings_height ) )
+				if ( ! $current_size || ( $current_size['width'] != $settings_width && $current_size['height'] != $settings_height ) ) {
 					_wpsc_regenerate_thumbnail_size( $thumbnail_id, $custom_thumbnail );
+				}
+
+				$src = wp_get_attachment_image_src( $thumbnail_id, $custom_thumbnail );
 			}
-			$src = wp_get_attachment_image_src( $thumbnail_id, $custom_thumbnail );
 
 			if ( ! empty( $src ) && is_string( $src[0] ) )
 				$thumbnail = $src[0];
@@ -1652,8 +1668,7 @@ function wpsc_the_product_price_display( $args = array() ) {
 	// if the product has no variations, these amounts are straight forward...
 	$old_price           = wpsc_product_normal_price( $id );
 	$current_price       = wpsc_the_product_price( false, false, $id );
-	$you_save            = wpsc_you_save( 'type=amount' ) . '! (' . wpsc_you_save() . '%)';
-	$you_save_percentage = wpsc_you_save();
+	$you_save            = wpsc_you_save( array( 'type' => 'amount', 'product_id' => $id, ) );
 
 	$show_old_price = $show_you_save = wpsc_product_on_special( $id );
 

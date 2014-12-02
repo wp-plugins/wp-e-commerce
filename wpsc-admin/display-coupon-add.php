@@ -50,6 +50,7 @@
 							<input name="add_start" id="add_start" type="text" class="regular-text pickdate" style="width: 100px"/>
 							<span class="description"><?php _e( 'End: ', 'wpsc' ); ?></span>
 							<input name="add_end" id="add_end" type="text" class="regular-text pickdate" style="width: 100px"/>
+							<p class="description"><?php _e( 'If date fields are left empty, there will be no expiration on this coupon.', 'wpsc' ); ?></p>
 						</td>
 					</tr>
 
@@ -124,7 +125,7 @@
 
 				</tbody>
 			</table>
-
+			<?php wp_nonce_field( 'wpsc_coupon', 'wpsc-coupon-add' ); ?>
 			<?php submit_button( __( 'Add Coupon', 'wpsc' ), 'primary', 'add_coupon' ); ?>
 
 		</form>

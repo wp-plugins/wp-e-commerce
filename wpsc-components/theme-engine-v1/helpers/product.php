@@ -179,6 +179,21 @@ function wpsc_parent_category_image($show_thumbnails , $category_image , $width,
 /// category template tags start here
 
 /**
+ * Returns true if you're on a tag that is a WPeC tag
+ *
+ * @since 3.9
+ *
+ * @uses is_tax()           Returns true/false given taxonomy and takes second parameter of term
+ * @param string|array|int  $term   optional    The term you could be checking for
+ * @return bool             True if you are on a product_tag false if not
+ */
+function wpsc_is_in_tag( $term = '' ) {
+
+	return is_tax( 'product_tag', $term );
+
+}
+
+/**
 * wpsc starts category query function
 * gets passed the query and makes it into a global variable, then starts capturing the html for the category loop
 */
@@ -500,16 +515,17 @@ function wpsc_category_url($category_id, $permalink_compatibility = false) {
 }
 
 
-function wpsc_is_in_category() {
-  global $wpdb, $wp_query;
-  $is_in_category = false;
-  if(isset($wp_query->query_vars['wpsc_product_category'] ) && !empty($wp_query->query_vars['wpsc_product_category'])) {
-    $is_in_category = true;
-  } else if(isset($_GET['wpsc_product_category']) && !empty($_GET['wpsc_product_category'])) {
-    $is_in_category = true;
-  }
+/**
+ * Returns true if you're on a category that is a WPeC category
+ *
+ * @uses is_tax()           Returns true/false given taxonomy and takes second parameter of term
+ * @param string|array|int  $term   optional    The term you could be checking for
+ * @return bool             True if you are on a wpsc_product_category false if not
+ */
+function wpsc_is_in_category( $term = '' ) {
 
-  return $is_in_category;
+	return is_tax( 'wpsc_product_category', $term );
+
 }
 
 
@@ -542,24 +558,6 @@ function wpsc_category_id($category_slug = '') {
 		return false;
 	}
 }
-
-
-/**
-* wpsc_category_image function, Gets the category image or returns false
-* @param integer category ID, can be 0
-* @return string url to the category image
-*/
-function wpsc_category_image($category_id = null) {
-	if($category_id < 1)
-		$category_id = wpsc_category_id();
-	$category_image = wpsc_get_categorymeta($category_id, 'image');
-	$category_path = WPSC_CATEGORY_DIR.basename($category_image);
-	$category_url = WPSC_CATEGORY_URL.basename($category_image);
-	if(file_exists($category_path) && is_file($category_path))
-		return $category_url;
-	return false;
-}
-
 
 /**
 * wpsc_category_description function, Gets the category description
@@ -617,7 +615,7 @@ function wpsc_show_category_thumbnails(){
  * @return bool - whether to show category description or not
  */
 function wpsc_show_category_description(){
-	return get_option('wpsc_category_description');
+	return get_option( 'wpsc_category_description' );
 }
 
 /**
@@ -627,14 +625,15 @@ function wpsc_show_category_description(){
  */
 function wpsc_buy_now_button( $product_id, $replaced_shortcode = false ) {
 
-	$product_id = absint($product_id);
+	$product_id = absint( $product_id );
 
 	$product            = get_post( $product_id );
 	$supported_gateways = array( 'wpsc_merchant_paypal_standard', 'paypal_multiple' );
 	$selected_gateways  = get_option( 'custom_gateway_options' );
 
-	if ( $replaced_shortcode )
+	if ( $replaced_shortcode ) {
 		ob_start();
+	}
 
 	if ( in_array( 'wpsc_merchant_paypal_standard', (array) $selected_gateways ) ) {
 		if ( $product_id > 0 ) {
@@ -653,7 +652,7 @@ function wpsc_buy_now_button( $product_id, $replaced_shortcode = false ) {
 				$handling = $shipping;
 			}
 
-			$has_variants = wpsc_product_has_variations( $product_id );
+			$has_variants = wpsc_product_has_variations( $product_id ) || ! wpsc_product_has_stock( $product_id );
 
 			$src     = apply_filters( 'wpsc_buy_now_button_src', _x( 'https://www.paypal.com/en_US/i/btn/btn_buynow_LG.gif', 'PayPal Buy Now Button', 'wpsc' ) );
 			$classes = apply_filters( 'wpsc_buy_now_button_class', "wpsc-buy-now-form wpsc-buy-now-form-{$product_id}" );
@@ -685,9 +684,9 @@ function wpsc_buy_now_button( $product_id, $replaced_shortcode = false ) {
 ?>
 				<?php if ( get_option( 'multi_add' ) ) : ?>
 					<label for="quantity"><?php esc_html_e( 'Quantity', 'wpsc' ); ?></label>
-					<input type="text" size="4" id="quantity" name="quantity" value="" /><br />
+					<input type="text" size="4" id="quantity" class="wpsc-buy-now-quantity" name="quantity" value="" /><br />
 				<?php else: ?>
-					<input type="hidden" name="quantity" value="1" />
+					<input type="hidden" name="quantity" class="wpsc-buy-now-quantity" value="1" />
 				<?php endif ?>
 				<?php echo $button_html; ?>
 				<img alt='' border='0' width='1' height='1' src='<?php echo esc_url( _x( 'https://www.paypal.com/en_US/i/scr/pixel.gif', 'PayPal Pixel', 'wpsc' ) ); ?>' />
@@ -695,8 +694,9 @@ function wpsc_buy_now_button( $product_id, $replaced_shortcode = false ) {
 			<?php
 		}
 	}
-	if ( $replaced_shortcode )
+	if ( $replaced_shortcode ) {
 		return ob_get_clean();
+	}
 }
 
 /**

@@ -19,6 +19,8 @@ function _wpsc_db_upgrade_11() {
  */
 function _wpsc_fix_united_kingdom() {
 
+	$legacy_ok_country_was_visible = true;
+
 	if ( $wpsc_country = WPSC_Countries::get_country( 'UK' ) ) {
 
 		$legacy_ok_country_was_visible = $wpsc_country->is_visible();
@@ -59,7 +61,6 @@ function _wpsc_fix_united_kingdom() {
 	}
 
 }
-
 
 /**
  * Sets meta for countries that no longer exist in their former notation to be considered legacy.

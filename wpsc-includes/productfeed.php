@@ -1,20 +1,15 @@
 <?php
 
-
 function wpsc_feed_publisher() {
 
 	// If the user wants a product feed, then hook-in the product feed function
-	if ( isset($_GET["rss"]) && ($_GET["rss"] == "true") &&
-	     ($_GET["action"] == "product_list") ) {
-
+	if ( isset( $_GET['rss']) && ( $_GET["rss"] == "true" ) &&
+	     ( $_GET["action"] == "product_list" ) ) {
     		add_action( 'wp', 'wpsc_generate_product_feed' );
-
   	}
-
 }
 
-add_action('init', 'wpsc_feed_publisher');
-
+add_action( 'init', 'wpsc_feed_publisher' );
 
 function wpsc_generate_product_feed() {
 
@@ -23,6 +18,7 @@ function wpsc_generate_product_feed() {
     set_time_limit(0);
 
     $xmlformat = '';
+
     if ( isset( $_GET['xmlformat'] ) ) {
     	$xmlformat = $_GET['xmlformat'];
     }
@@ -72,17 +68,17 @@ function wpsc_generate_product_feed() {
 	echo "  <channel>\n\r";
 	echo "    <title><![CDATA[" . sprintf( _x( '%s Products', 'XML Feed Title', 'wpsc' ), get_option( 'blogname' ) ) . "]]></title>\n\r";
 	echo "    <link>" . admin_url( 'admin.php?page=' . WPSC_DIR_NAME . '/display-log.php' ) . "</link>\n\r";
-	echo "    <description>" . _x( 'This is the WP e-Commerce Product List RSS feed', 'XML Feed Description', 'wpsc' ) . "</description>\n\r";
-	echo "    <generator>" . _x( 'WP e-Commerce Plugin', 'XML Feed Generator', 'wpsc' ) . "</generator>\n\r";
+	echo "    <description>" . _x( 'This is the WP eCommerce Product List RSS feed', 'XML Feed Description', 'wpsc' ) . "</description>\n\r";
+	echo "    <generator>" . _x( 'WP eCommerce Plugin', 'XML Feed Generator', 'wpsc' ) . "</generator>\n\r";
 	echo "    <atom:link href='$self' rel='self' type='application/rss+xml' />\n\r";
 
 	$products = get_posts( $args );
 
-	while ( count ( $products ) ) {
+	while ( count( $products ) ) {
 
-		foreach ($products as $post) {
+		foreach ( $products as $post ) {
 
-			setup_postdata($post);
+			setup_postdata( $post );
 
 			$purchase_link = get_permalink($post->ID);
 
@@ -93,11 +89,25 @@ function wpsc_generate_product_feed() {
 			echo "      <title><![CDATA[".get_the_title()."]]></title>\n\r";
 			echo "      <link>$purchase_link</link>\n\r";
 			echo "      <description><![CDATA[".apply_filters ('the_content', get_the_content())."]]></description>\n\r";
-			echo "      <guid>$purchase_link</guid>\n\r";
+
+			if ( 'google' === $xmlformat ) {
+
+				$sku  = get_post_meta( $post->ID, '_wpsc_sku', true );
+				$g_id = ! empty( $sku ) ? $sku : $post->ID;
+				$g_id = apply_filters( 'wpsc_google_product_feed_product_id', $g_id, $post );
+
+				if ( strlen( $g_id ) > 50 ) {
+					$g_id = substr( $g_id, 0, 50 );
+				}
+
+				echo "      <g:id>$g_id</g:id>\n\r";
+			} else {
+				echo "      <guid>$purchase_link</guid>\n\r";
+			}
 
 			$image_link = wpsc_the_product_thumbnail() ;
 
-			if ($image_link !== FALSE) {
+			if ( $image_link !== false ) {
 
 				if ( $xmlformat == 'google' ) {
 					echo "      <g:image_link><![CDATA[$image_link]]></g:image_link>\n\r";

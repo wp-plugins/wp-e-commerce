@@ -53,15 +53,15 @@ function wpsc_core_constants() {
 
 	// Define Plugin version
 	if ( ! defined( 'WPSC_VERSION' ) ) {
-		define( 'WPSC_VERSION'            , '3.8.14.4' );
+		define( 'WPSC_VERSION'            , '3.9' );
 	}
 
 	if ( ! defined( 'WPSC_MINOR_VERSION' ) ) {
-		define( 'WPSC_MINOR_VERSION'      , 'aa9c5c4f95' );
+		define( 'WPSC_MINOR_VERSION'      , '7b172ca71a' );
 	}
 
 	if ( ! defined( 'WPSC_PRESENTABLE_VERSION' ) ) {
-		define( 'WPSC_PRESENTABLE_VERSION', '3.8.14.4' );
+		define( 'WPSC_PRESENTABLE_VERSION', '3.9' );
 	}
 
 	// Define a salt to use when we hash, WPSC_SALT may be defined for us in our config file, so check first
@@ -74,7 +74,7 @@ function wpsc_core_constants() {
 	}
 
 	// Define the current database version
-	define( 'WPSC_DB_VERSION', 13 );
+	define( 'WPSC_DB_VERSION', 14 );
 
 	// Define Debug Variables for developers, if they haven't already been defined
 	if ( ! defined( 'WPSC_DEBUG' ) ) {
@@ -90,7 +90,7 @@ function wpsc_core_constants() {
 	define( 'WPSC_CORE_IMAGES_PATH', WPSC_FILE_PATH . '/wpsc-core/images' );
 
 	// JS URL
-	define( 'WPSC_CORE_JS_URL',  WPSC_URL . '/wpsc-core/js' );
+	define( 'WPSC_CORE_JS_URL' , WPSC_URL . '/wpsc-core/js' );
 	define( 'WPSC_CORE_JS_PATH', WPSC_FILE_PATH . '/wpsc-core/js' );
 
 	// Require loading of deprecated functions for now. We will ween WPEC off
@@ -99,8 +99,7 @@ function wpsc_core_constants() {
 		define( 'WPEC_LOAD_DEPRECATED', true );
 	}
 
-	// Do not require loading of deprecated js
-	// of this in future versions.
+	// Do not require loading of deprecated JS of this in future versions.
 	if ( ! defined( 'WPEC_LOAD_DEPRECATED_JS' ) ) {
 		define( 'WPEC_LOAD_DEPRECATED_JS', false );
 	}

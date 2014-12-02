@@ -36,8 +36,11 @@ $nzshpcrt_gateways[$num] = array(
  */
 class wpsc_merchant_paypal_pro extends wpsc_merchant {
 
-	var $name              = '';
-	var $paypal_ipn_values = array( );
+	public $name                 = '';
+	public $paypal_ipn_values    = array();
+	public $local_currency_code  = '';
+	public $paypal_currency_code = '';
+	public $rate                 = '';
 
 	function __construct( $purchase_id = null, $is_receiving = false ) {
 		$this->name = __( 'PayPal Pro 2.0', 'wpsc' );
@@ -195,7 +198,9 @@ class wpsc_merchant_paypal_pro extends wpsc_merchant {
 
 		// parse the response body
 
-		$error_data = array( );
+		$error_data      = array();
+		$parsed_response = array();
+
 		if ( is_wp_error( $response ) ) {
 			$error_data[0]['error_code'] = null;
 			$error_data[0]['error_message'] = __( 'There was a problem connecting to the payment gateway.', 'wpsc' );
@@ -262,7 +267,7 @@ class wpsc_merchant_paypal_pro extends wpsc_merchant {
 			'timeout'    => 20,
 			'body'       => $received_values,
 			'httpversion' => '1.1',
-			'user-agent' => ('WP e-Commerce/' . WPSC_PRESENTABLE_VERSION)
+			'user-agent' => ('WP eCommerce/' . WPSC_PRESENTABLE_VERSION)
 		);
 
 		$response = wp_remote_post( $paypal_url, $options );
@@ -494,7 +499,7 @@ function form_paypal_pro() {
 	<tr>
 		<td colspan='2'>
 			<p class='description'>
-				" . sprintf( __( "For more help configuring Paypal Pro, please read our documentation <a href='%s'>here</a>", 'wpsc' ), esc_url( 'http://docs.getshopped.org/documentation/paypal-payments-pro/' ) ) . "
+				" . sprintf( __( "For more help configuring Paypal Pro, please read our documentation <a href='%s'>here</a>", 'wpsc' ), esc_url( 'http://docs.wpecommerce.org/documentation/paypal-payments-pro/' ) ) . "
 				</p>
 		</td>
 	</tr>";

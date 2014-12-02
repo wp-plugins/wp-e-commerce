@@ -227,7 +227,6 @@ function wpsc_country_list( $form_id = null, $ajax = null, $selected_country = n
 													'placeholder'           => __( 'Please select a country', 'wpsc' ),
 												)
 										);
-	$output .= '</div>';
 	$output .= "</div>\n\r";
 	return $output;
 }
@@ -537,14 +536,13 @@ function wpsc_get_base_country() {
  * @param string $message
  */
 function _wpsc_shipping_add_error_message( $message ) {
-
 	$shipping_error_messages = wpsc_get_customer_meta( 'shipping_error_messages' );
 	if ( empty ( $shipping_error_messages ) && ! is_array( $shipping_error_messages ) ) {
 		$shipping_error_messages = array();
 	}
 
 	$id = md5( $message );
-	$shipping_error_messages[ $id ] = $message;
+	$shipping_error_messages[$id] = $message;
 
 	wpsc_update_customer_meta( 'shipping_error_messages', $shipping_error_messages );
 }

@@ -412,6 +412,88 @@ function _wpsc_ajax_purchase_log_send_tracking_email() {
 }
 
 /**
+ * Do purchase log action link via AJAX
+ *
+ * @since   3.9.0
+ * @access  private
+ *
+ * @return  array|WP_Error  $return  Response args if successful, WP_Error if otherwise
+ */
+function _wpsc_ajax_purchase_log_action_link() {
+
+	if ( isset( $_POST['log_id'] ) && isset( $_POST['purchase_log_action_link'] ) && isset( $_POST['purchase_log_action_nonce'] ) ) {
+
+		$log_id = absint( $_POST['log_id'] );
+		$purchase_log_action_link = sanitize_key( $_POST['purchase_log_action_link'] );
+
+		// Verify action nonce
+		if ( wp_verify_nonce( $_POST['purchase_log_action_nonce'], 'wpsc_purchase_log_action_ajax_' . $purchase_log_action_link ) ) {
+
+			// Expected to receive success = true by default, or false on error.
+			$return = apply_filters( 'wpsc_purchase_log_action_ajax-' . $purchase_log_action_link, array( 'success' => null ), $log_id );
+
+		} else {
+			$return = _wpsc_error_invalid_nonce();
+		}
+
+		if ( ! is_wp_error( $return ) ) {
+			$return['log_id'] = $log_id;
+			$return['purchase_log_action_link'] = $purchase_log_action_link;
+			$return['success'] = isset( $return['success'] ) ? (bool) $return['success'] : null;
+		}
+
+		return $return;
+
+	}
+
+	return new WP_Error( 'wpsc_ajax_invalid_purchase_log_action', __( 'Purchase log action failed.', 'wpsc' ) );
+
+}
+
+/**
+ * Handle AJAX clear downloads lock purchase log action
+ *
+ * The _wpsc_ajax_purchase_log_action_link() function which triggers this function is nonce
+ * and capability checked in _wpsc_ajax_handler().
+ *
+ * @since   3.9.0
+ * @access  private
+ *
+ * @param  array  $response  AJAX response.
+ * @param  int    $log_id    Purchase log ID.
+ */
+function wpsc_purchase_log_action_ajax_downloads_lock( $response, $log_id ) {
+
+	$response['success'] = wpsc_purchlog_clear_download_items( $log_id );
+
+	return $response;
+
+}
+add_action( 'wpsc_purchase_log_action_ajax-downloads_lock', 'wpsc_purchase_log_action_ajax_downloads_lock', 10, 2 );
+
+
+/**
+ * Handle AJAX email receipt purchase log action
+ *
+ * The _wpsc_ajax_purchase_log_action_link() function which triggers this function is nonce
+ * and capability checked in _wpsc_ajax_handler().
+ *
+ * @since   3.9.0
+ * @access  private
+ *
+ * @param  array  $response  AJAX response.
+ * @param  int    $log_id    Purchase log ID.
+ */
+function wpsc_purchase_log_action_ajax_email_receipt( $response, $log_id ) {
+
+	$response['success'] = wpsc_purchlog_resend_email( $log_id );
+
+	return $response;
+
+}
+add_action( 'wpsc_purchase_log_action_ajax-email_receipt', 'wpsc_purchase_log_action_ajax_email_receipt', 10, 2 );
+
+/**
  * Delete an attached downloadable file via AJAX.
  *
  * @since 3.8.9

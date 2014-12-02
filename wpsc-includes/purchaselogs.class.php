@@ -80,9 +80,11 @@ function wpsc_purchlogitem_trackhistory() {
 
 	if ( ( 'nzpost' == $purchlogitem->extrainfo->shipping_method ) && ! empty( $purchlogitem->extrainfo->track_id ) ) {
 
-		$output = '<ul>';
+		$output  = '<ul>';
+		$outputs = array();
+
 		foreach ( ( array ) $_SESSION ['wpsc_nzpost_parsed'] [0] ['children'] [0] ['children'] [1] ['children'] as $history ) {
-			$outputs [] = '<li>' . $history ['children'] [0] ['tagData'] . ' : ' . $history ['children'] [1] ['tagData'] . ' </li>';
+			$outputs[] = '<li>' . $history ['children'] [0] ['tagData'] . ' : ' . $history ['children'] [1] ['tagData'] . ' </li>';
 		}
 
 		$outputs = array_reverse( $outputs );
@@ -144,11 +146,11 @@ function wpsc_purchlogs_get_weight( $id = '', $out_unit = 'pound' ) {
 
 	foreach ( ( array ) $thepurchlogitem->allcartcontent as $cartitem ) {
 		$product_meta = get_product_meta( $cartitem->prodid, 'product_metadata', true );
-		if ( ! empty( $product_meta ['weight'] ) && ! empty( $product_meta['weight_unit'] ) ) {
+		if ( ! empty( $product_meta ['weight'] ) ) {
 
-			$converted_weight = wpsc_convert_weight( $product_meta['weight'], $product_meta['weight_unit'], $out_unit, true );
+			$converted_weight = wpsc_convert_weight( $product_meta ['weight'], $product_meta['weight_unit'], $out_unit, true );
 
-			$weight      += $converted_weight * $cartitem->quantity;
+			$weight += $converted_weight * $cartitem->quantity;
 			$items_count += $cartitem->quantity;
 		}
 	}
@@ -350,12 +352,12 @@ function wpsc_purchaselog_details_discount() {
 
 function wpsc_purchaselog_details_date() {
    global $purchlogitem;
-   return date_i18n( apply_filters( 'wpsc_single_purchase_log_date_format', get_option( 'date_format' ) ), $purchlogitem->extrainfo->date );
+   return date_i18n( apply_filters( 'wpsc_single_purchase_log_date_format', get_option( 'date_format' ) ), $purchlogitem->extrainfo->date + ( get_option( 'gmt_offset' ) * HOUR_IN_SECONDS ) );
 }
 
 function wpsc_purchaselog_details_date_time() {
    global $purchlogitem;
-   return date_i18n( apply_filters( 'wpsc_single_purchase_log_date_time_format', get_option( 'date_format' ) . ' g:ia' ), $purchlogitem->extrainfo->date );
+   return date_i18n( apply_filters( 'wpsc_single_purchase_log_date_time_format', get_option( 'date_format' ) . ' g:ia' ),   $purchlogitem->extrainfo->date + ( get_option( 'gmt_offset' ) * HOUR_IN_SECONDS ) );
 }
 
 function wpsc_purchaselog_details_total() {
@@ -641,18 +643,16 @@ function wpsc_purchlogs_have_downloads_locked() {
    }
 }
 
-/* Start Order Notes (by Ben) */
-
+/**
+ * Display Purchase Log Notes
+ *
+ * @return  string  Notes.
+ */
 function wpsc_display_purchlog_notes() {
-   global $purchlogitem;
-   if ( isset( $purchlogitem->extrainfo->notes ) ) {
-	  return $purchlogitem->extrainfo->notes;
-   } else {
-	  return false;
-   }
+	global $purchlogitem;
+	$purchase_log = new WPSC_Purchase_Log( $purchlogitem->purchlogid );
+	return $purchase_log->get( 'notes' );
 }
-
-/* End Order Notes (by Ben) */
 
 /**
  * WP eCommerce purchaselogs AND purchaselogs_items class
@@ -681,11 +681,14 @@ class wpsc_purchaselogs {
    var $currentstatus = -1;
    var $purch_status_count;
    var $allpurchaselogstatuses;
+   var $purchstatus;
    //calculation of totals
    var $totalAmount;
    //used for csv
    var $current_start_timestamp;
    var $current_end_timestamp;
+   var $start_timestamp;
+   var $end_timestamp;
 
 	/* Constructor function */
 	function wpsc_purchaselogs() {
@@ -803,6 +806,8 @@ class wpsc_purchaselogs {
 	  $this->earliest_year = date( "Y", $this->earliest_timestamp );
 
 	  $j = 0;
+	  $date_list = array();
+
 	  for ( $year = $this->current_year; $year >= $this->earliest_year; $year-- ) {
 		 for ( $month = 12; $month >= 1; $month-- ) {
 			$this->start_timestamp = mktime( 0, 0, 0, $month, 1, $year );
@@ -909,9 +914,15 @@ class wpsc_purchaselogs {
    function the_purch_item_name() {
 	  global $wpdb;
 	  $i = 0;
+
 	  if ( $this->form_data == null ) {
 		 $this->getall_formdata();
 	  }
+
+	  $emailformid = 0;
+	  $fNameformid = 0;
+	  $lNameformid = 0;
+
 	  foreach ( (array)$this->form_data as $formdata ) {
 		 if ( in_array( 'billingemail', $formdata ) ) {
 			$emailformid = $formdata['id'];
@@ -927,14 +938,19 @@ class wpsc_purchaselogs {
 
 	  $sql = "SELECT value FROM " . WPSC_TABLE_SUBMITTED_FORM_DATA . " WHERE log_id=" . $this->purchitem->id . " AND form_id=" . $emailformid;
 	  $email = $wpdb->get_var( $sql );
+
 	  $sql = "SELECT value FROM " . WPSC_TABLE_SUBMITTED_FORM_DATA . " WHERE log_id=" . $this->purchitem->id . " AND form_id=" . $fNameformid;
 	  $fname = $wpdb->get_var( $sql );
+
 	  $sql = "SELECT value FROM " . WPSC_TABLE_SUBMITTED_FORM_DATA . " WHERE log_id=" . $this->purchitem->id . " AND form_id=" . $lNameformid;
 	  $lname = $wpdb->get_var( $sql );
+
 	  $namestring = esc_html( $fname ) . ' ' . esc_html( $lname ) . ' (<a href="mailto:' . esc_attr( $email ) . '?subject=Message From ' . home_url() . '">' . esc_html( $email ) . '</a>) ';
+
 	  if ( $fname == '' && $lname == '' && $email == '' ) {
 		 $namestring = __('N/A', 'wpsc');
 	  }
+
 	  return $namestring;
    }
 

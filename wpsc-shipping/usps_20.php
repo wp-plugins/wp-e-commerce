@@ -686,9 +686,11 @@ class ash_usps {
 		$this->_clean_response( $response );
 
 		$services = $wpec_ash_xml->get( "Service", $response );
+
 		if ( empty( $services ) ) {
 			return array();
 		}
+
 		foreach ( $services as $service ) {
 			$service_name = $this->_get_service( "SvcDescription", $service );
 			$temp_rate = $wpec_ash_xml->get( "Postage", $service );

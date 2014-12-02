@@ -469,7 +469,7 @@ class WPSC_Countries {
 			uasort( $countries, array( __CLASS__, '_compare_countries_by_id' ) );
 		}
 
-		return $countries;
+		return apply_filters( 'wpsc_get_countries', $countries );
 	}
 
 	/**
@@ -514,7 +514,7 @@ class WPSC_Countries {
 			$countries_list[] = $country;
 		}
 
-		return $countries_list;
+		return apply_filters( 'wpsc_get_countries_array', $countries_list );
 	}
 
 	/**
@@ -672,7 +672,7 @@ class WPSC_Countries {
 	 *
 	 * @since 3.8.14
 	 *
-	 * @param int $region_id region idnetifier
+	 * @param int $region_id region identifier
 	 *
 	 * @return int|boolean country identifier, false on failure
 	 */
@@ -688,7 +688,7 @@ class WPSC_Countries {
 		}
 
 		if ( ! $region_id ) {
-			_wpsc_doing_it_wrong( 'WPSC_Countries::getcountry_id_by_region_id', __( 'Function "get_country_id_by_region_id" requires an integer $region_id', 'wpsc' ), '3.8.14' );
+			_wpsc_doing_it_wrong( 'WPSC_Countries::get_country_id_by_region_id', __( 'Function "get_country_id_by_region_id" requires an integer $region_id', 'wpsc' ), '3.8.14' );
 			return false;
 		}
 

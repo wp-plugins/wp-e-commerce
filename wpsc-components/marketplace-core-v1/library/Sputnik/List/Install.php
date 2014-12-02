@@ -55,7 +55,7 @@ class Sputnik_List_Install extends WP_List_Table {
 
 				case 'search':
 					$term = isset( $_REQUEST['s'] ) ? stripslashes( $_REQUEST['s'] ) : '';
-					$api = Sputnik_API::search($term);
+					$api = Sputnik_API::search( urlencode( $term ), array( 'browse' => $tab ), $paged );
 					break;
 
 				case 'account':
@@ -106,7 +106,7 @@ class Sputnik_List_Install extends WP_List_Table {
 
 		echo '<p>';
 		if ( $tab == 'purchased' )
-			printf( __( "You haven't purchased any add-ons yet. <a href='%s'>Browse our add-on collection.</a>", 'wpsc' ), Sputnik_Admin::build_url() );
+			printf( __( "You haven't purchased any extensions yet. <a href='%s'>Browse our extensions marketplace.</a>", 'wpsc' ), Sputnik_Admin::build_url() );
 		else
 			_e( 'No plugins match your request.', 'wpsc' );
 		echo '</p>';
@@ -151,7 +151,6 @@ class Sputnik_List_Install extends WP_List_Table {
 	}
 
 	public function display_grid() {
-		extract( $this->_args );
 
 		$this->display_tablenav( 'top' );
 ?>
@@ -246,10 +245,14 @@ class Sputnik_List_Install extends WP_List_Table {
 
 		foreach ( (array) $this->items as $plugin ) {
 			$plugin->title = wp_kses( $plugin->name, $plugins_allowedtags );
-			//Limit description to 400char, and remove any HTML.
-			$plugin->description = strip_tags( $plugin->description );
-			if ( strlen( $plugin->description ) > 400 )
+
+			//Limit description to 400char, and sanitize.
+			$plugin->description = wp_kses( $plugin->description, $plugins_allowedtags );
+
+			if ( strlen( $plugin->description ) > 400 ) {
 				$plugin->description = mb_substr( $plugin->description, 0, 400 ) . '&#8230;';
+			}
+
 			//remove any trailing entities
 			$plugin->description = preg_replace( '/&[^;\s]{0,6}$/', '', $plugin->description );
 			//strip leading/trailing & multiple consecutive lines
@@ -260,16 +263,16 @@ class Sputnik_List_Install extends WP_List_Table {
 			$plugin->version = wp_kses( $plugin->version, $plugins_allowedtags );
 			$plugin->price = sprintf('$%.2f', $plugin->price);
 			if ($plugin->price === '$0.00') {
-				$plugin->price = _x('Free', 'plugin price', 'wpsc' );
+				$plugin->price = _x( 'Free', 'plugin price', 'wpsc' );
 			}
 
-			$plugin->author = $plugin->author;
-			if (!empty($plugin->author))
+			if ( ! empty( $plugin->author ) ) {
 				$plugin->author = ' <cite>' . sprintf( __( 'By %s', 'wpsc' ), $plugin->author ) . '.</cite>';
+			}
 
 			$plugin->author = wp_kses( $plugin->author, $plugins_allowedtags );
 
-			switch ($this->view) {
+			switch ( $this->view ) {
 				case 'list':
 					self::display_row($plugin, $style);
 					break;
@@ -301,7 +304,7 @@ class Sputnik_List_Install extends WP_List_Table {
 					break;
 				case 'install':
 					if ( $status['url'] ) {
-						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 700, 'height' => 550), $status['url']);
+						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 800, 'height' => 600), $status['url']);
 						$purchase_link = '<a class="button install" href="' . $status['url'] . '" title="'
 							. esc_attr(sprintf(__( 'Install %s', 'wpsc' ), $name)) . '">' . __('Install', 'wpsc' ) . '</a>';
 					}
@@ -312,7 +315,7 @@ class Sputnik_List_Install extends WP_List_Table {
 					break;
 				case 'update_available':
 					if ( $status['url'] ) {
-						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 700, 'height' => 550), $status['url']);
+						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 800, 'height' => 600), $status['url']);
 						$purchase_link = '<a class="button install" href="' . $status['url'] . '" title="'
 							. esc_attr(sprintf(__( 'Update to version %s', 'wpsc' ), $status['version'])) . '">' . __('Update', 'wpsc' ) . '</a>';
 					}
@@ -361,7 +364,7 @@ class Sputnik_List_Install extends WP_List_Table {
 
 	protected static function display_as_grid($plugin, $style) {
 
-		$name = strip_tags( $plugin->name . ' v.' . $plugin->version );
+		$name = strip_tags( $plugin->name );
 		$action_links = array();
 		$action_links[] = '<a href="' . Sputnik_Admin::build_url(array('info' => $plugin->slug, 'TB_iframe' => true))
 							. '" class="thickbox button info" title="' .
@@ -381,7 +384,7 @@ class Sputnik_List_Install extends WP_List_Table {
 					break;
 				case 'install':
 					if ( $status['url'] ) {
-						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 700, 'height' => 550), $status['url']);
+						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 800, 'height' => 600), $status['url']);
 						$purchase_link = '<a class="button install status" href="' . $status['url'] . '" title="'
 							. esc_attr(sprintf(__( 'Install %s', 'wpsc' ), $name)) . '">' . __('Install', 'wpsc' ) . '</a>';
 					}
@@ -392,7 +395,7 @@ class Sputnik_List_Install extends WP_List_Table {
 					break;
 				case 'update_available':
 					if ( $status['url'] ) {
-						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 700, 'height' => 550), $status['url']);
+						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 800, 'height' => 600), $status['url']);
 						$purchase_link = '<a class="button install" href="' . $status['url'] . '" title="'
 							. esc_attr(sprintf(__( 'Update to version %s', 'wpsc' ), $status['version'])) . '">' . __('Update', 'wpsc' ) . '</a>';
 					}
@@ -411,28 +414,30 @@ class Sputnik_List_Install extends WP_List_Table {
 
 		$action_links = apply_filters( 'sputnik_install_grid_action_links', $action_links, $plugin );
 
-		$thumb = false;
-		if ( empty( $plugin->thumb ) )
-			$thumb = WPSC_CORE_THEME_URL . '/wpsc-images/noimage.png';
-		else
+		$thumb = '';
+
+		if ( ! empty( $plugin->thumb ) ) {
 			$thumb = $plugin->thumb;
+		}
+
+		$thumb = apply_filters( 'wpsc_marketplace_plugin_thumbnail_img_src', $thumb, $plugin );
 ?>
 	<div>
 		<div class="sputnik-plugin<?php if ( ! empty( $plugin->thumb ) ) echo ' has-thumb'; ?>">
 			<div class="sputnik-card">
-<?php
-				if ( $thumb !== false ):
-?>
+				<h4><?php echo $name ?><span class="price"><?php echo $plugin->price ?></span></h4>
+
+				<?php
+					if ( ! empty( $thumb ) ) :
+				?>
 				<div class="sputnik-plugin-thumb">
-					<img src="<?php echo esc_url($thumb) ?>" alt="<?php echo esc_attr($name) ?> Thumbnail">
+					<img src="<?php echo esc_url( $thumb ) ?>" alt="<?php echo esc_attr( $name ) ?> Thumbnail">
 				</div>
-<?php
-				endif;
-?>
+				<?php
+					endif;
+				?>
 				<div class="sputnik-plugin-details">
-					<h4><?php echo $name ?></h4>
-					<span class="price"><?php echo $plugin->price ?></span>
-					<p><?php echo $plugin->description ?></p>
+					<p><?php echo $plugin->description; ?></p>
 					<?php if ( isset( $plugin->rating ) && isset( $plugin->rating->count ) ): ?>
 						<div class="footer" style="display:none">
 							<div class="star-holder" title="<?php printf( _n( '(based on %s rating)', '(based on %s ratings)', $plugin->rating->count, 'wpsc' ), number_format_i18n( $plugin->rating->count ) ) ?>">
@@ -454,10 +459,10 @@ class Sputnik_List_Install extends WP_List_Table {
 					<?php endif; ?>
 				</div>
 			</div>
-		</div>
-		<div class="sputnik-plugin-actions">
-			<?php if ( !empty( $action_links ) ) echo implode( ' ', $action_links ); ?>
-			<?php echo $purchase_link; ?>
+			<div class="sputnik-plugin-actions">
+				<?php if ( !empty( $action_links ) ) echo implode( ' ', $action_links ); ?>
+				<?php echo $purchase_link; ?>
+			</div>
 		</div>
 	</div>
 <?php

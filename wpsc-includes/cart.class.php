@@ -42,6 +42,7 @@ class wpsc_cart {
 
 	public $selected_shipping_method = null;
 	public $selected_shipping_option = null;
+	public $shipping_option          = null;
 	public $selected_shipping_amount = null;
 
 	public $coupon;
@@ -95,7 +96,8 @@ class wpsc_cart {
 		$this->wpsc_refresh_cart_items();
 		$this->unique_id = sha1( uniqid( rand(), true ) );
 
-   		add_action( 'wpsc_visitor_location_changing', array( &$this, 'shopper_location_changing' ), 10, 2);
+		add_action( 'wpsc_visitor_location_changing', array( &$this, 'shopper_location_changing' ), 10, 2);
+		add_filter( 'wpsc_default_shipping_quote', array ($this, 'set_default_shipping_quote' ), 10, 3 );
     }
 
     /*
@@ -370,10 +372,10 @@ class wpsc_cart {
 		$this->shipping_methods      = get_option( 'custom_shipping_options' );
 		$this->shipping_method_count = count( $this->shipping_methods );
 
-		$do_not_use_shipping = get_option( 'do_not_use_shipping', false );
+		$use_shipping = ! get_option( 'do_not_use_shipping', false );
 		$ready_to_calculate_shipping = apply_filters( 'wpsc_ready_to_calculate_shipping', true, $this );
 
-		if ( ! $do_not_use_shipping ) {
+		if ( $use_shipping ) {
 
 			if ( $this->shipping_method_count > 0 && $ready_to_calculate_shipping ) {
 				do_action( 'wpsc_before_get_shipping_method', $this );
@@ -427,12 +429,12 @@ class wpsc_cart {
 	function get_shipping_option() {
 		global $wpdb, $wpsc_shipping_modules;
 
-		if ( ! isset( $wpsc_shipping_modules[$this->selected_shipping_method] ) ) {
-			$wpsc_shipping_modules[$this->selected_shipping_method] = '';
-		}
-
 		if ( ( count( $this->shipping_quotes ) < 1 ) && is_callable( array( $wpsc_shipping_modules[$this->selected_shipping_method], 'getQuote'  ) ) ) {
 			$this->shipping_quotes = $wpsc_shipping_modules[$this->selected_shipping_method]->getQuote();
+		}
+
+		if ( ! isset( $wpsc_shipping_modules[$this->selected_shipping_method] ) ) {
+			$wpsc_shipping_modules[$this->selected_shipping_method] = '';
 		}
 
 		if ( count( $this->shipping_quotes ) < 1 ) {
@@ -521,7 +523,7 @@ class wpsc_cart {
 				default : // Everywhere else!
 					$tax_region = get_option( 'base_region' );
 					if ( $country->has_regions() ) {
-						if ( get_option( 'base_region' ) == $region ) {
+						if ( get_option( 'base_region' ) == $tax_region ) {
 							$add_tax = true;
 						}
 					} else {
@@ -565,6 +567,11 @@ class wpsc_cart {
 		$add_item        = false;
 		$edit_item       = false;
 		$variation_check = true;
+
+		$parameters = wp_parse_args( $parameters, array(
+			'quantity'         => 0,
+			'variation_values' => null
+		) );
 
 		if ( wpsc_product_has_variations( $product_id ) && is_null( $parameters['variation_values'] ) ) {
 			$variation_check = false;
@@ -900,8 +907,8 @@ class wpsc_cart {
 		$taxes_total = $wpec_taxes_controller->wpec_taxes_calculate_total();
 		$this->total_tax = $taxes_total ['total'];
 
-		if ( isset( $taxes_total ['rate'] ) )
-			$this->tax_percentage = $taxes_total ['rate'];
+		if ( isset( $taxes_total['rate'] ) )
+			$this->tax_percentage = $taxes_total['rate'];
 
 		return apply_filters( 'wpsc_calculate_total_tax', $this->total_tax, $this );
 	}
@@ -1211,6 +1218,21 @@ class wpsc_cart {
 		$this->shipping_quote_count = count( $this->shipping_quotes );
 	}
 
+	/**
+	 * If there is only one quote, set it as the default.
+	 *
+	 * @param string     $selected_option  The currently selected rate.
+	 * @param array      $shipping_quotes  Array of all available shipping quotes.
+	 * @param WPSC_Cart  $wpsc_cart        The WPSC_Cart object.
+	 */
+	function set_default_shipping_quote( $selected_option, $shipping_quotes, $wpsc_cart ) {
+		if ( count( $shipping_quotes ) == 1 ) {
+			reset( $shipping_quotes );
+			$selected_option = key( $shipping_quotes );
+		}
+		return $selected_option;
+	}
+
 	function google_shipping_quotes() {
 		if ( defined( 'WPEC_LOAD_DEPRECATED' ) && WPEC_LOAD_DEPRECATED ) {
 			/*
@@ -1272,8 +1294,9 @@ class wpsc_cart {
 
 	function rewind_shipping_quotes() {
 		$this->current_shipping_quote = - 1;
+
 		if ( $this->shipping_quote_count > 0 ) {
-			$this->shipping_quote = $this->shipping_quotes [0];
+			$this->shipping_quote = $this->shipping_quotes[0];
 		}
 	}
 
@@ -1303,7 +1326,7 @@ class wpsc_cart {
  *
  * @link   https://github.com/wp-e-commerce/WP-e-Commerce/issues/1552
  *
- * @since  3.8.14.4
+ * @since  3.9.0
  * @access private
  *
  * @return void

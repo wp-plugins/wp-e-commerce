@@ -30,7 +30,6 @@ class wpsc_cart_item {
 	public $quantity = 1;
 	public $provided_price;
 
-
 	//values from the database
 	public $product_name;
 	public $category_list = array();
@@ -47,6 +46,12 @@ class wpsc_cart_item {
 	public $thumbnail_image;
 	public $custom_tax_rate = null;
 	public $meta = array();
+	public $stock = 1;
+	public $tax_rate = 0.00;
+	public $has_limited_stock = false;
+	public $uses_shipping = 1;
+	public $file_id = null;
+	public $is_downloadable = false;
 
 	private $item_meta = array();
 
@@ -72,7 +77,7 @@ class wpsc_cart_item {
 	}
 
 	/**
-	 * Add cart item meta value
+	 * Delete cart item meta value
 	 *
 	 * @access public
 	 * @param meta key name
@@ -97,7 +102,7 @@ class wpsc_cart_item {
 	 * @param meta key value
 	 * @return previous meta value if it existed, null otherwise
 	 */
-	function update_meta($key,$value=null) {
+	function update_meta( $key, $value = null ) {
 
 		if ( ! isset( $value ) ) {
 			$result = $this->delete_meta( $key );
@@ -168,6 +173,11 @@ class wpsc_cart_item {
 		// The cart is in the cart item, which is in the cart, which is in the cart item, which is in the cart, which is in the cart item...
 		$this->cart = &$cart;
 
+		$parameters = wp_parse_args( $parameters, array(
+			'is_customisable' => false,
+			'file_data'       => null
+		) );
+
 		foreach ( $parameters as $name => $value ) {
 			$this->$name = $value;
 		}
@@ -178,7 +188,7 @@ class wpsc_cart_item {
 		$this->product_variations =& $this->variation_values;
 
 		if ( $parameters['is_customisable'] == true && $parameters['file_data'] != null ) {
-			$this->save_provided_file( $this->file_data );
+			$this->save_provided_file( $parameters['file_data'] );
 		}
 
 		$this->refresh_item();
@@ -317,10 +327,8 @@ class wpsc_cart_item {
 		) );
 
 		if(count($product_files) > 0) {
-			$this->file_id = null;
 			$this->is_downloadable = true;
 		} else {
-			$this->file_id = null;
 			$this->is_downloadable = false;
 		}
 
@@ -660,8 +668,49 @@ function wpsc_cart_item_refresh_coupon() {
 	$coupon = wpsc_get_customer_meta( 'coupon' );
 
 	if ( ! empty( $coupon ) ) {
+
 		wpsc_coupon_price( $coupon );
 	}
 }
 
 add_action( 'wpsc_refresh_item', 'wpsc_cart_item_refresh_coupon' );
+
+/**
+ * Filters the gateway count to return zero if a free cart is present.
+ *
+ * @access private
+ * @param  int     $count Number of active gateways.
+ *
+ * @since  3.9.0
+ * @return int     $count
+ */
+function _wpsc_free_checkout_gateway_count( $count ) {
+
+	if ( wpsc_is_free_cart() ) {
+		$count = 0;
+	}
+
+	return $count;
+}
+
+add_filter( 'wpsc_gateway_count', '_wpsc_free_checkout_gateway_count', 15 );
+
+/**
+ * Filters the custom gateway field to return an empty string if a free cart is present.
+ *
+ * @access private
+ * @param  string     $value Custom gateway field.
+ *
+ * @since  3.9.0
+ * @return string     $value
+ */
+function _wpsc_free_checkout_hidden_field( $value ) {
+
+	if ( wpsc_is_free_cart() ) {
+		$value = '';
+	}
+
+	return $value;
+}
+
+add_filter( 'wpsc_gateway_hidden_field_value', '_wpsc_free_checkout_hidden_field' , 15 );

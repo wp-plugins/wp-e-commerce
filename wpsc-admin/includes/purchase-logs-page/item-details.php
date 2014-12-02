@@ -137,21 +137,12 @@
 							<input type='hidden' name='wpsc_admin_action' value='purchlogs_update_notes' />
 							<input type="hidden" name="wpsc_purchlogs_update_notes_nonce" id="wpsc_purchlogs_update_notes_nonce" value="<?php echo wp_create_nonce( 'wpsc_purchlogs_update_notes' ); ?>" />
 							<input type='hidden' name='purchlog_id' value='<?php echo $this->log_id; ?>' />
-							<p>
-								<textarea name="purchlog_notes" rows="3" wrap="virtual" id="purchlog_notes" style="width:100%;"><?php
-									if ( isset( $_POST['purchlog_notes'] ) ) {
-										echo esc_textarea( stripslashes( $_POST['purchlog_notes'] ) );
-									} else {
-										echo wpsc_display_purchlog_notes();
-									}
-								?></textarea>
-							</p>
-							<p><input class="button" type="submit" name="button" id="button" value="<?php _e( 'Update Notes', 'wpsc' ); ?>" /></p>
+							<p><textarea name="purchlog_notes" rows="3" wrap="virtual" id="purchlog_notes" style="width:100%;"><?php echo esc_textarea( wpsc_display_purchlog_notes() ); ?></textarea></p>
+							<div><input class="button" type="submit" name="button" id="button" value="<?php _e( 'Update Notes', 'wpsc' ); ?>" /></div>
 						</form>
 					</div>
 				</div>
 			</div>
-			<!-- End Order Notes (by Ben) -->
 
 			<?php $this->purchase_logs_checkout_fields(); ?>
 			<?php do_action( 'wpsc_purchlogitem_metabox_end', $this->log_id ); ?>
@@ -159,22 +150,16 @@
 		</div>
 	</div>
 
-	<div id='wpsc_purchlogitems_links'>
+	<div id="wpsc_purchlogitems_links">
 		<h3><?php esc_html_e( 'Actions', 'wpsc' ); ?></h3>
 		<?php do_action( 'wpsc_purchlogitem_links_start' ); ?>
-		<?php if ( wpsc_purchlogs_have_downloads_locked() != false ): ?>
-			<img src='<?php echo WPSC_CORE_IMAGES_URL; ?>/lock_open.png' alt='<?php _e( 'clear lock icon', 'wpsc' ); ?>' />&ensp;<a href='<?php echo esc_url( add_query_arg( 'wpsc_admin_action', 'clear_locks' ) ); ?>'><?php echo wpsc_purchlogs_have_downloads_locked(); ?></a><br /><br class='small' />
-		<?php endif; ?>
-		<img src='<?php echo WPSC_CORE_IMAGES_URL; ?>/printer.png' alt='<?php _e( 'printer icon', 'wpsc' ); ?>' />&ensp;<a target="_blank" href='<?php echo add_query_arg( 'c', 'packing_slip' ); ?>'><?php esc_html_e( 'View Packing Slip', 'wpsc' ); ?></a>
-		<br /><br class='small' />
-		<img src='<?php echo WPSC_CORE_IMAGES_URL; ?>/email_go.png' alt='<?php _e( 'email icon', 'wpsc' ); ?>' />&ensp;<a href='<?php echo add_query_arg( 'email_buyer_id', $this->log_id ); ?>'><?php esc_html_e('Resend Receipt to Buyer', 'wpsc'); ?></a>
-
-		<br /><br class='small' />
-		<a class='submitdelete' title='<?php echo esc_attr(__( 'Remove this log', 'wpsc' )); ?>' href='<?php echo wp_nonce_url("admin.php?wpsc_admin_action=delete_purchlog&amp;purchlog_id=".$this->log_id, 'delete_purchlog_' .$this->log_id); ?>' onclick="if ( confirm(' <?php echo esc_js(sprintf( __("You are about to delete this log '%s'\n 'Cancel' to stop, 'OK' to delete.",'wpsc'),  wpsc_purchaselog_details_date() )) ?>') ) { return true;}return false;"><img src='<?php echo WPSC_CORE_IMAGES_URL . "/cross.png"; ?>' alt='<?php _e( 'delete icon', 'wpsc' ); ?>' />               &nbsp;<?php _e('Remove this record', 'wpsc') ?></a>
-
-		<br /><br class='small' />&emsp;&ensp;    <a href='<?php echo esc_attr( wp_get_referer() ); ?>'><?php _e('Go Back', 'wpsc'); ?></a>
-		<br /><br />
+		<ul>
+			<?php
+			require_once( WPSC_FILE_PATH . '/wpsc-admin/includes/purchase-log-action-links.php' );
+			$action_links = new WPSC_Purchase_Log_Action_Links( $this->log_id );
+			$action_links->display_link_list_items();
+			?>
+		</ul>
 	</div>
-	<br />
 
 </div>

@@ -79,6 +79,17 @@ function wpsc_print_term_list_levels_script() {
 }
 
 /**
+ * Determines whether or not a current user has the capability to do administrative actions in the store.
+ *
+ * @since  3.8.14.4
+ *
+ * @return  bool  Whether or not current user can administrate the store.
+ */
+function wpsc_is_store_admin() {
+	return current_user_can( apply_filters( 'wpsc_store_admin_capability', 'manage_options' ) );
+}
+
+/**
  * wpsc_core_load_checkout_data()
  *
  * @return none
@@ -564,6 +575,23 @@ function wpsc_serialize_shopping_cart() {
 }
 
 add_action( 'shutdown', 'wpsc_serialize_shopping_cart' );
+
+/**
+ * Changes default "Enter title here" placeholder
+ *
+ * @param string $title Default Title Placeholder
+ * @return string $title New Title Placeholder
+ */
+function wpsc_change_title_placeholder( $title ) {
+	$screen = get_current_screen();
+
+	if  ( 'wpsc-product' == $screen->post_type ) {
+		$title =  __( 'Enter product title here', 'wpsc' );
+	}
+	return $title;
+}
+
+add_filter( 'enter_title_here', 'wpsc_change_title_placeholder' );
 
 /**
  * wpsc_get_page_post_names function.

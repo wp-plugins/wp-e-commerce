@@ -95,7 +95,7 @@ class Sputnik_Admin {
 			return;
 		}
 ?>
-	<div class="error"><p><?php _e('The following plugins are disabled:', 'sputnik') ?></p>
+	<div class="error"><p><?php _e('The following plugins are disabled:', 'wpsc') ?></p>
 	<ul>
 <?php
 		foreach ($invalid as $plugin) {
@@ -104,10 +104,10 @@ class Sputnik_Admin {
 			}
 			switch ($plugin['sputnik_error']) {
 				case 'not_purchased':
-					$error = __('Not purchased', 'sputnik');
+					$error = __('Not purchased', 'wpsc');
 					break;
 				default:
-					$error = __('Unknown error', 'sputnik');
+					$error = __('Unknown error', 'wpsc');
 					break;
 			}
 ?>
@@ -127,7 +127,7 @@ class Sputnik_Admin {
 		if (empty($data['Sputnik ID'])) {
 			return $meta;
 		}
-		echo '<a class="sputnik-plugin-row-note" href="' . self::build_url() . '"><span class="powered">' . __('Powered by WPEConomy', 'sputnik') . '</span><span class="corner"></span></a>';
+		echo '<a class="sputnik-plugin-row-note" href="' . self::build_url() . '"><span class="powered">' . __( 'Powered by WPEConomy', 'wpsc' ) . '</span><span class="corner"></span></a>';
 		return $meta;
 	}
 
@@ -136,6 +136,8 @@ class Sputnik_Admin {
 		if ( ! wpsc_is_store_admin() ) {
 			return;
 		}
+
+		add_filter( 'admin_body_class', array( __CLASS__, 'admin_body_class' ) );
 
 		if (self::$page === 'dash') {
 			self::$list_table = new Sputnik_List_Install();
@@ -151,16 +153,28 @@ class Sputnik_Admin {
 		add_action('sputnik_messages', array(__CLASS__, 'admin_notices'));
 	}
 
+	public static function admin_body_class( $classes ) {
+		return $classes . 'plugin-install-php';
+	}
+
 	public static function load_page() {
 		//Sputnik_API::auth_or_redirect();
 	}
 
 	public static function styles() {
-		wp_enqueue_style('sputnik', plugins_url( 'static/sputnik.css', Sputnik::$path . '/wpsc-marketplace' ), false, '20110924');
+		wp_enqueue_style('sputnik', plugins_url( 'static/sputnik.css', Sputnik::$path . '/wpsc-marketplace' ), false, '20141202');
+	?>
+		<style type="text/css">
+			span#wpsc-extensions-menu-link {
+				font-weight: bold;
+				color: <?php self::get_marketplace_link_color(); ?>;
+			}
+		</style>
+	<?php
 	}
 
 	public static function scripts() {
-		wp_enqueue_script('sputnik_js', plugins_url( 'static/sputnik.js', Sputnik::$path . '/wpsc-marketplace' ), array('jquery', 'common'), '20110924' );
+		wp_enqueue_script('sputnik_js', plugins_url( 'static/sputnik.js', Sputnik::$path . '/wpsc-marketplace' ), array('jquery', 'common'), '20141202' );
 	}
 
 	public static function connect_notice() {
@@ -179,14 +193,14 @@ class Sputnik_Admin {
 					<?php _e( '<strong>WPEConomy is now installed!</strong> &#8211; Get started by linking with your account!', 'wpsc' ); ?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
 					<?php _e( "If you haven't created an account yet, don't worry, you will be prompted to do so.", 'wpsc') ?>
 				</p>
-				<a href="<?php echo esc_html( $oauth_url ); ?>" class="thickbox button button-primary thickbox`"><?php _e( 'Link your account now', 'sputnik' ); ?></a>
+				<a href="<?php echo esc_html( $oauth_url ); ?>" class="thickbox button button-primary thickbox`"><?php _e( 'Link your account now', 'wpsc' ); ?></a>
 			</div>
 <?php
 	}
 
 	public static function admin_notices() {
 		if ( isset( $_GET['payment_cancelled'] ) ) {
-			self::print_message( __( 'Payment cancelled.', 'sputnik' ) );
+			self::print_message( __( 'Payment cancelled.', 'wpsc' ) );
 		}
 	}
 
@@ -213,11 +227,12 @@ class Sputnik_Admin {
 	}
 
 	public static function menu() {
-		$hooks[] = add_submenu_page( 'edit.php?post_type=wpsc-product', _x('Add-Ons', 'page title', 'sputnik'), _x('Add-Ons', 'menu title', 'sputnik'), 'install_plugins', 'sputnik', array(__CLASS__, 'page') );
+		$hooks[] = add_submenu_page( 'edit.php?post_type=wpsc-product', _x( 'Extensions', 'page title', 'wpsc' ), _x( '<span id="wpsc-extensions-menu-link">Extensions</span>', 'menu title', 'wpsc' ), 'install_plugins', 'sputnik', array( __CLASS__, 'page' ) );
 		$hooks[] = 'plugin-install.php';
-		foreach ($hooks as $hook) {
-			add_action("admin_print_styles-$hook", array(__CLASS__, 'page_styles'));
-			add_action("admin_print_scripts-$hook", array(__CLASS__, 'page_scripts'));
+
+		foreach ( $hooks as $hook ) {
+			add_action( "admin_print_styles-$hook" , array( __CLASS__, 'page_styles' ) );
+			add_action( "admin_print_scripts-$hook", array( __CLASS__, 'page_scripts' ) );
 		}
 	}
 
@@ -240,34 +255,45 @@ class Sputnik_Admin {
 
 	public static function page_styles() {
 		self::$page_is_current = true;
-		wp_enqueue_style('sputnik-page', plugins_url( 'static/admin.css', Sputnik::$path . '/wpsc-marketplace' ), array('thickbox'), '20110924');
-		?>
-		<style type-"text/css">
-		#sputnik-page .icon32 {
-			background: url(<?php echo WPSC_CORE_IMAGES_URL; ?>/icon32.png) no-repeat left center;
+		wp_enqueue_style('wpsc-marketplace-page', plugins_url( 'static/admin.css', Sputnik::$path . '/wpsc-marketplace' ), array( 'thickbox' ), '20141109' );
+	}
+
+	public static function get_marketplace_link_color() {
+		global $_wp_admin_css_colors;
+
+		$_color = get_user_option( 'admin_color' );
+
+		if ( empty( $_color ) || ! isset( $_wp_admin_css_colors[ $_color ] ) ) {
+			$_color = 'fresh';
 		}
-		</style>
-		<?php
+
+		$color = $_wp_admin_css_colors[ $_color ];
+
+		if ( in_array( $_color, array( 'blue', 'coffee', 'ectoplasm', 'ocean', 'sunrise' ) ) ) {
+			echo isset( $color->icon_colors['focus'] ) ? $color->icon_colors['focus'] : '';
+		} else {
+			echo isset( $color->colors[ 3 ] ) ? $color->colors[ 3 ] : '';
+		}
 	}
 
 	public static function page_scripts() {
-		wp_enqueue_script('jquery-masonry', plugins_url( 'static/jquery.masonry.js', Sputnik::$path . '/wpsc-marketplace' ), array('jquery'), '20110901' );
+		wp_enqueue_script( 'jquery-masonry' );
 		wp_enqueue_script( 'paypal', 'https://www.paypalobjects.com/js/external/dg.js' );
-		wp_enqueue_script('sputnik_js', plugins_url( 'static/admin.js', Sputnik::$path . '/wpsc-marketplace' ), array( 'jquery', 'jquery-masonry', 'thickbox', 'paypal' ), '20110924' );
+		wp_enqueue_script( 'wpsc-marketplace-js', plugins_url( 'static/admin.js', Sputnik::$path . '/wpsc-marketplace' ), array( 'jquery', 'jquery-masonry', 'thickbox', 'paypal' ), '20141109' );
 
 		$l10n = array(
-			'plugin_information' => __('Plugin Information:', 'sputnik'),
-			'ays' => __('Are you sure you want to install this plugin?', 'sputnik')
+			'plugin_information' => __( 'Plugin Information:', 'wpsc' ),
+			'ays'                => __( 'Are you sure you want to install this plugin?', 'wpsc' )
 		);
 
 		if ( ! empty( $_REQUEST['oauth_buy'] ) ) {
-			$plugin = Sputnik::get_plugin( $_REQUEST['oauth_buy'] );
-			$status = self::install_status( $plugin );
-			$l10n['buy_id'] = $plugin->slug;
+			$plugin           = Sputnik::get_plugin( $_REQUEST['oauth_buy'] );
+			$status           = self::install_status( $plugin );
+			$l10n['buy_id']   = $plugin->slug;
 			$l10n['buy_href'] = $status['url'];
 		}
 
-		wp_localize_script('sputnik_js', 'sputnikL10n', $l10n );
+		wp_localize_script( 'wpsc-marketplace-js', 'sputnikL10n', $l10n );
 	}
 
 	public static function page() {
@@ -318,7 +344,7 @@ class Sputnik_Admin {
 			}
 		} catch (Exception $e) {
 			status_header(500);
-			iframe_header( __('Plugin Install', 'sputnik') );
+			iframe_header( __('Plugin Install', 'wpsc') );
 			echo $e->getMessage();
 			iframe_footer();
 			die();
@@ -332,12 +358,12 @@ class Sputnik_Admin {
 									'img' => array('src' => array(), 'class' => array(), 'alt' => array()));
 
 		$plugins_section_titles = array(
-			'description'  => _x('Description',  'Plugin installer section title', 'sputnik'),
-			'installation' => _x('Installation', 'Plugin installer section title', 'sputnik'),
-			'faq'          => _x('FAQ',          'Plugin installer section title', 'sputnik'),
-			'screenshots'  => _x('Screenshots',  'Plugin installer section title', 'sputnik'),
-			'changelog'    => _x('Changelog',    'Plugin installer section title', 'sputnik'),
-			'other_notes'  => _x('Other Notes',  'Plugin installer section title', 'sputnik')
+			'description'  => _x('Description',  'Plugin installer section title', 'wpsc'),
+			'installation' => _x('Installation', 'Plugin installer section title', 'wpsc'),
+			'faq'          => _x('FAQ',          'Plugin installer section title', 'wpsc'),
+			'screenshots'  => _x('Screenshots',  'Plugin installer section title', 'wpsc'),
+			'changelog'    => _x('Changelog',    'Plugin installer section title', 'wpsc'),
+			'other_notes'  => _x('Other Notes',  'Plugin installer section title', 'wpsc')
 		);
 
 		//Sanitize HTML
@@ -368,7 +394,7 @@ class Sputnik_Admin {
 
 		global $body_id;
 		$body_id = 'sputnik-plugin-information';
-		iframe_header( __('Plugin Install', 'sputnik') );
+		iframe_header( __('Plugin Install', 'wpsc') );
 ?>
 		<div class="alignleft fyi">
 			<h1><?php echo $api->name ?></h1>
@@ -380,21 +406,21 @@ class Sputnik_Admin {
 				case 'purchase':
 				default:
 					if ( $status['url'] )
-						echo '<a href="' . $status['url'] . '" target="_parent" id="' . $plugin . '" class="button-primary buy">' . sprintf(__('<span>$%.2f</span> Buy &amp; Install', 'sputnik'), $api->price) . '</a>';
+						echo '<a href="' . $status['url'] . '" target="_parent" id="' . $plugin . '" class="button-primary buy">' . sprintf(__('<span>$%.2f</span> Buy &amp; Install', 'wpsc'), $api->price) . '</a>';
 					break;
 				case 'install':
 					if ( $status['url'] )
-						echo '<a href="' . $status['url'] . '" class="button-primary install" title="' . __('You have already purchased, install now', 'sputnik') . '">' . __('Install Now', 'sputnik') . '</a>';
+						echo '<a href="' . $status['url'] . '" class="button-primary install" title="' . __('You have already purchased, install now', 'wpsc') . '">' . __('Install Now', 'wpsc') . '</a>';
 					break;
 				case 'update_available':
 					if ( $status['url'] )
-						echo '<a href="' . $status['url'] . '" class="button-primary install">' . __('Install Update Now', 'sputnik') .'</a>';
+						echo '<a href="' . $status['url'] . '" class="button-primary install">' . __('Install Update Now', 'wpsc') .'</a>';
 					break;
 				case 'newer_installed':
-					echo '<a>' . sprintf(__('Newer Version (%s) Installed', 'sputnik'), $status['version']) . '</a>';
+					echo '<a>' . sprintf(__('Newer Version (%s) Installed', 'wpsc'), $status['version']) . '</a>';
 					break;
 				case 'latest_installed':
-					echo '<a>' . __('Latest Version Installed', 'sputnik') . '</a>';
+					echo '<a>' . __('Latest Version Installed', 'wpsc') . '</a>';
 					break;
 			}
 ?>
@@ -426,43 +452,43 @@ class Sputnik_Admin {
 		echo "</ul>\n";
 		echo "</div>\n";
 ?>
-			<h2 class="mainheader"><?php /* translators: For Your Information */ _e('FYI', 'sputnik') ?></h2>
+			<h2 class="mainheader"><?php /* translators: For Your Information */ _e('FYI', 'wpsc') ?></h2>
 			<ul>
 	<?php if ( ! empty($api->version) ) : ?>
-				<li><strong><?php _e('Version:', 'sputnik') ?></strong> <?php echo $api->version ?></li>
+				<li><strong><?php _e('Version:', 'wpsc') ?></strong> <?php echo $api->version ?></li>
 	<?php endif; if ( ! empty($api->author) ) : ?>
-				<li><strong><?php _e('Author:', 'sputnik') ?></strong> <?php echo $api->author ?></li>
+				<li><strong><?php _e('Author:', 'wpsc') ?></strong> <?php echo $api->author ?></li>
 	<?php endif; if ( ! empty($api->last_updated) ) : ?>
-				<li><strong><?php _e('Last Updated:', 'sputnik') ?></strong> <span title="<?php echo $api->last_updated ?>"><?php
-								printf( __('%s ago', 'sputnik'), human_time_diff(strtotime($api->last_updated)) ) ?></span></li>
+				<li><strong><?php _e('Last Updated:', 'wpsc') ?></strong> <span title="<?php echo $api->last_updated ?>"><?php
+								printf( __('%s ago', 'wpsc'), human_time_diff(strtotime($api->last_updated)) ) ?></span></li>
 	<?php endif; if ( ! empty($api->requires) ) : ?>
-				<li><strong><?php _e('Requires WordPress Version:', 'sputnik') ?></strong> <?php printf(__('%s or higher', 'sputnik'), $api->requires) ?></li>
+				<li><strong><?php _e('Requires WordPress Version:', 'wpsc') ?></strong> <?php printf(__('%s or higher', 'wpsc'), $api->requires) ?></li>
 	<?php endif; if ( ! empty($api->tested) ) : ?>
-				<li><strong><?php _e('Compatible up to:', 'sputnik') ?></strong> <?php echo $api->tested ?></li>
+				<li><strong><?php _e('Compatible up to:', 'wpsc') ?></strong> <?php echo $api->tested ?></li>
 	<?php endif; if ( ! empty($api->requires_wpec) ) : ?>
-				<li><strong><?php _e('Requires WPeC Version:', 'sputnik') ?></strong> <?php printf(__('%s or higher', 'sputnik'), $api->requires_wpec) ?></li>
+				<li><strong><?php _e('Requires WPeC Version:', 'wpsc') ?></strong> <?php printf(__('%s or higher', 'wpsc'), $api->requires_wpec) ?></li>
 	<?php endif; if ( ! empty($api->tested_wpec) ) : ?>
-				<li><strong><?php _e('Compatible up to WPEC Version:', 'sputnik') ?></strong> <?php echo $api->tested_wpec ?></li>
+				<li><strong><?php _e('Compatible up to WPEC Version:', 'wpsc') ?></strong> <?php echo $api->tested_wpec ?></li>
 	<?php endif; if ( ! empty($api->downloaded) ) : ?>
-				<li><strong><?php _e('Downloaded:', 'sputnik') ?></strong> <?php printf(_n('%s time', '%s times', $api->downloaded, 'sputnik'), number_format_i18n($api->downloaded)) ?></li>
+				<li><strong><?php _e('Downloaded:', 'wpsc') ?></strong> <?php printf(_n('%s time', '%s times', $api->downloaded, 'wpsc'), number_format_i18n($api->downloaded)) ?></li>
 	<?php endif; if ( ! empty($api->homepage) ) : ?>
-				<li><a target="_blank" href="<?php echo $api->homepage ?>"><?php _e('Plugin Homepage  &#187;', 'sputnik') ?></a></li>
+				<li><a target="_blank" href="<?php echo $api->homepage ?>"><?php _e('Plugin Homepage  &#187;', 'wpsc') ?></a></li>
 	<?php endif; ?>
 			</ul>
 		</div>
 		<div id="section-holder" class="wrap">
 		<?php
 			if ( !empty($api->tested) && version_compare( substr($GLOBALS['wp_version'], 0, strlen($api->tested)), $api->tested, '>') )
-				echo '<div class="updated"><p>' . __('<strong>Warning:</strong> This plugin has <strong>not been tested</strong> with your current version of WordPress.', 'sputnik') . '</p></div>';
+				echo '<div class="updated"><p>' . __('<strong>Warning:</strong> This plugin has <strong>not been tested</strong> with your current version of WordPress.', 'wpsc') . '</p></div>';
 
 			else if ( !empty($api->requires) && version_compare( substr($GLOBALS['wp_version'], 0, strlen($api->requires)), $api->requires, '<') )
-				echo '<div class="updated"><p>' . __('<strong>Warning:</strong> This plugin has <strong>not been marked as compatible</strong> with your version of WordPress.', 'sputnik') . '</p></div>';
+				echo '<div class="updated"><p>' . __('<strong>Warning:</strong> This plugin has <strong>not been marked as compatible</strong> with your version of WordPress.', 'wpsc') . '</p></div>';
 
 			else if ( !empty($api->requires_wpec) && version_compare( substr( WPSC_VERSION, 0, strlen($api->requires_wpec)), $api->requires_wpec, '<') )
-				echo '<div class="updated"><p>' . __('<strong>Warning:</strong> This plugin has <strong>not been marked as compatible</strong> with your version of WP E-Commerce.', 'sputnik') . '</p></div>';
+				echo '<div class="updated"><p>' . __('<strong>Warning:</strong> This plugin has <strong>not been marked as compatible</strong> with your version of WP eCommerce.', 'wpsc') . '</p></div>';
 
 			else if ( !empty($api->tested_wpec) && version_compare( substr( WPSC_VERSION, 0, strlen($api->tested_wpec)), $api->tested_wpec, '<') )
-				echo '<div class="updated"><p>' . __('<strong>Warning:</strong> This plugin has <strong>not been tested</strong> with your version of WP E-Commerce.', 'sputnik') . '</p></div>';
+				echo '<div class="updated"><p>' . __('<strong>Warning:</strong> This plugin has <strong>not been tested</strong> with your version of WP eCommerce.', 'wpsc') . '</p></div>';
 
 			foreach ( $api->sections as $section_name => $content ) {
 				if ( isset( $plugins_section_titles[ $section_name ] ) )
@@ -588,9 +614,8 @@ class Sputnik_Admin {
 				'oauth'     => 'request',
 				'oauth_buy' => $api->slug,
 				'TB_iframe' => true,
-				'height'    => 550,
-				'width'     => 640,
-				'modal'     => 'true'
+				'height'    => 600,
+				'width'     => 800
 			) );
 
 		return compact('status', 'url', 'version');
@@ -599,8 +624,8 @@ class Sputnik_Admin {
 	protected static function header( $account ) {
 		if ($account !== false) {
 			$tabs = array(
-				'dash' => __('Store', 'sputnik'),
-				'account' => __('Your Account', 'sputnik'),
+				'dash' => __('Store', 'wpsc'),
+				'account' => __('Your Account', 'wpsc'),
 			);
 			$hrefs = array(
 				'dash' => self::build_url(),
@@ -611,25 +636,9 @@ class Sputnik_Admin {
 		}
 ?>
 		<div class="wrap" id="sputnik-page">
-			<?php screen_icon(); ?>
-			<h2>Marketplace <?php self::account_link(); ?>
-		</h2>
+			<h2><?php _e( 'Marketplace', 'wpsc' ); ?></h2>
 <?php
 		do_action('sputnik_messages');
-	}
-
-	protected static function footer() {?>
-			<div id="sputnik-footer">
-				<p class="logo-holder"><a href="http://wpeconomy.org/" class="renku-logo-no-img">Marketplace Powered by WPEconomy</a></p>
-				<nav><p><a href="http://www.wpeconomy.org/documentation/developers/">Developer Tools</a> | <a href="http://twitter.com/WPEconomy">@WPEconomy</a> | <a href="http://www.wpeconomy.org/documentation/marketplace/faqs/">FAQ</a></p></nav>
-			</div>
-		</div>
-<?php
-	}
-
-	protected static function account_link() {
-		if ( Sputnik::account_is_linked() && 'dash' == self::$page )
-			echo '<a href="edit.php?post_type=wpsc-product&amp;page=sputnik-account" class="add-new-h2">Your Account</a>';
 	}
 
 	protected static function other_pages() {
@@ -645,7 +654,7 @@ class Sputnik_Admin {
 				delete_option('sputnik_oauth_request');
 			}
 			elseif ( $e->getCode() !== 1 ) {
-				echo '<p>' . sprintf(__('Problem: %s', 'sputnik'), $e->getMessage() ). '</p>';
+				echo '<p>' . sprintf(__('Problem: %s', 'wpsc'), $e->getMessage() ). '</p>';
 			}
 		}
 
@@ -659,35 +668,34 @@ class Sputnik_Admin {
 					<?php echo get_avatar($account->email) ?>
 					<p class="lead-in">Logged in as</p>
 					<h3><?php echo esc_html($account->name) ?></h3>
-					<p><?php printf(__('<a href="%s">Log out</a> of your account', 'sputnik'), self::build_url(array('oauth' => 'reset'))) ?></p>
+					<p><?php printf(__('<a href="%s">Log out</a> of your account', 'wpsc'), self::build_url(array('oauth' => 'reset'))) ?></p>
 				</div>
 				<div class="block">
 					<p>Email: <code><?php echo $account->email ?></code></p>
 					<?php if ( $tab != 'purchased' ): ?>
-						<p class="stat"><?php printf(__('<strong>%d</strong> <abbr title="Plugins you can install right now">Available</abbr>', 'sputnik'), count( self::$list_table->items )) ?></p>
+						<p class="stat"><?php printf(__('<strong>%d</strong> <abbr title="Plugins you can install right now">Available</abbr>', 'wpsc'), count( self::$list_table->items )) ?></p>
 					<?php endif; ?>
-					<p class="stat"><?php printf(__('<strong>%d</strong> <abbr title="Plugins you have bought from the store">Purchased</abbr>', 'sputnik'), count( $account->purchased ) ) ?></p>
+					<p class="stat"><?php printf(__('<strong>%d</strong> <abbr title="Plugins you have bought from the store">Purchased</abbr>', 'wpsc'), count( $account->purchased ) ) ?></p>
 				</div>
 			</div>
 			<?php
 		}
 		self::$list_table->views();
 		self::$list_table->display();
-		self::footer();
 	}
 
 	/**
 	 * Output the main landing page for the Sputnik administration screen.
 	 */
 	protected static function dashboard() { ?>
-		<p><?php _e('Some text about WPEconomy goes here! This will eventually be replaced with a dashboard-like interface, including latest news, etc.', 'sputnik'); ?></p>
+		<p><?php _e('Some text about WPEconomy goes here! This will eventually be replaced with a dashboard-like interface, including latest news, etc.', 'wpsc'); ?></p>
 
-		<h4><?php _e('Search', 'sputnik') ?></h4>
-		<p class="install-help"><?php _e('Search for plugins by keyword.', 'sputnik') ?></p>
+		<h4><?php _e('Search', 'wpsc') ?></h4>
+		<p class="install-help"><?php _e('Search for plugins by keyword.', 'wpsc') ?></p>
 		<?php Sputnik_Admin::search_form(); ?>
 
 		<h4><?php _e('Popular tags') ?></h4>
-		<p class="install-help"><?php _e('You may also browse based on the most popular tags on the store:', 'sputnik') ?></p>
+		<p class="install-help"><?php _e('You may also browse based on the most popular tags on the store:', 'wpsc') ?></p>
 <?php
 		echo '<p class="popular-tags">';
 
@@ -704,7 +712,7 @@ class Sputnik_Admin {
 					'count' => $tag->count
 				);
 			}
-			echo wp_generate_tag_cloud($tags, array( 'single_text' => __('%s plugin', 'sputnik'), 'multiple_text' => __('%s plugins', 'sputnik') ) );
+			echo wp_generate_tag_cloud($tags, array( 'single_text' => __('%s plugin', 'wpsc'), 'multiple_text' => __('%s plugins', 'wpsc') ) );
 		}
 		catch (Exception $e) {
 			echo $e->getMessage();
@@ -732,8 +740,7 @@ class Sputnik_Admin {
 			}
 			else {
 				self::header('Account', $account);
-				echo '<p>' . sprintf(__('Problem: %s', 'sputnik'), $e->getMessage()) . '</p>';
-				self::footer();
+				echo '<p>' . sprintf(__('Problem: %s', 'wpsc'), $e->getMessage()) . '</p>';
 
 				return;
 			}
@@ -746,26 +753,25 @@ class Sputnik_Admin {
 				<?php echo get_avatar($account->email) ?>
 				<p class="lead-in">Logged in as</p>
 				<h3><?php echo esc_html($account->name) ?></h3>
-				<p><?php printf(__('<a href="%s">Log out</a> of your account', 'sputnik'), self::build_url(array('oauth' => 'reset'))) ?></p>
+				<p><?php printf(__('<a href="%s">Log out</a> of your account', 'wpsc'), self::build_url(array('oauth' => 'reset'))) ?></p>
 			</div>
 			<div class="block">
 				<p>Email: <code><?php echo $account->email ?></code></p>
-				<p class="stat"><?php printf(__('<strong>%d</strong> <abbr title="Plugins you can install right now">Available</abbr>', 'sputnik'), count($account->purchased)) ?></p>
-				<p class="stat"><?php printf(__('<strong>%d</strong> <abbr title="Plugins you have bought from the store">Purchased</abbr>', 'sputnik'), count(self::$list_table->items)) ?></p>
+				<p class="stat"><?php printf(__('<strong>%d</strong> <abbr title="Plugins you can install right now">Available</abbr>', 'wpsc'), count($account->purchased)) ?></p>
+				<p class="stat"><?php printf(__('<strong>%d</strong> <abbr title="Plugins you have bought from the store">Purchased</abbr>', 'wpsc'), count(self::$list_table->items)) ?></p>
 			</div>
 		</div>
 
 <?php
 		self::$list_table->views();
 		self::$list_table->display();
-		self::footer();
 	}
 
 	protected static function auth() {
 		$oauth_url    = self::build_url(array('oauth' => 'request', 'TB_iframe' => true));
 
 		if ( isset( $_GET['auth'] ) && $_GET['auth'] == 'denied' ) {
-			self::print_message( __( 'Authorization cancelled.', 'sputnik' ) );
+			self::print_message( __( 'Authorization cancelled.', 'wpsc' ) );
 		}
 	}
 
@@ -809,7 +815,7 @@ class Sputnik_Admin {
 		$install_url = add_query_arg('_wpnonce', wp_create_nonce('sputnik_install-plugin_' . $product_slug), $install_url);
 		$install_url = add_query_arg(array('TB_iframe' => true), $install_url);
 
-		self::iframe_closer( self::build_url(array('run-installer' => urlencode($install_url))), __( 'Installing ... ', 'sputnik' ) );
+		self::iframe_closer( self::build_url( array('run-installer' => urlencode( $install_url ) ) ), __( 'Installing ... ', 'wpsc' ) );
 	}
 
 	/**
@@ -822,19 +828,19 @@ class Sputnik_Admin {
 
 		$cancelled_url = self::build_url( array( 'payment_cancelled' => true ) );
 
-		self::iframe_closer( $cancelled_url, __( 'Payment Cancelled', 'sputnik' ) );
+		self::iframe_closer( $cancelled_url, __( 'Payment Cancelled', 'wpsc' ) );
 	}
 
 	protected static function install($id) {
 
-		include ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+		include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
 		try {
 			$api = Sputnik::get_plugin($id);
 		}
 		catch (Exception $e) {
 			status_header(500);
-			iframe_header( __('Plugin Install', 'sputnik') );
+			iframe_header( __('Plugin Install', 'wpsc') );
 			echo $e->getMessage();
 			iframe_footer();
 			die();
@@ -846,7 +852,7 @@ class Sputnik_Admin {
 		}
 
 		if ( ! current_user_can('install_plugins') )
-			wp_die(__('You do not have sufficient permissions to install plugins for this site.', 'sputnik'));
+			wp_die(__('You do not have sufficient permissions to install plugins for this site.', 'wpsc'));
 
 		include_once(ABSPATH . 'wp-admin/includes/plugin-install.php');
 
@@ -854,44 +860,42 @@ class Sputnik_Admin {
 
 		global $body_id;
 		$body_id = 'sputnik-install';
-		iframe_header( __('Plugin Install', 'sputnik') );
+		iframe_header( __('Plugin Install', 'wpsc') );
 
-		$title = sprintf( __('Installing Plugin: %s', 'sputnik'), $api->name . ' ' . $api->version );
+		$title = sprintf( __('Installing Plugin: %s', 'wpsc'), $api->name . ' ' . $api->version );
 		$nonce = 'sputnik_install-plugin_' . $id;
 		$url = 'update.php?action=install-plugin&plugin=' . $id;
 		if ( isset($_GET['from']) )
 			$url .= '&from=' . urlencode(stripslashes($_GET['from']));
 
-		$type = 'web'; //Install plugin type, From Web or an Upload.erro
+		$type = 'web'; //Install plugin type, From Web or an Upload.
 
-		ini_set( 'display_errors', '1' );
-		error_reporting( E_ALL );
-
-		if ( in_array( 'theme', $api->categories ) )
+		if ( in_array( 'theme', $api->categories ) ) {
 			$upgrader = new Sputnik_ThemeUpgrader( new Sputnik_Upgrader_Skin( compact('title', 'url', 'nonce', 'plugin', 'api') ) );
-		else
+		} else {
 			$upgrader = new Sputnik_Upgrader( new Sputnik_Upgrader_Skin( compact('title', 'url', 'nonce', 'plugin', 'api') ) );
+		}
 
-		$upgrader->install($api->download_link);
+		$upgrader->install( $api->download_link );
 
 		iframe_footer();
 		die();
 	}
 
 	protected static function upgrade($file) {
-		include ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+		include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
 		try {
 			$data = Sputnik::get_from_file($file);
 			if ($data === null) {
-				throw new Exception(__('Plugin not found', 'sputnik'));
+				throw new Exception(__('Plugin not found', 'wpsc'));
 			}
 			$id = $data['Sputnik ID'];
 			$api = Sputnik::get_plugin($id);
 		}
 		catch (Exception $e) {
 			status_header(500);
-			iframe_header( __('Update Plugin', 'sputnik') );
+			iframe_header( __('Update Plugin', 'wpsc') );
 			echo $e->getMessage();
 			iframe_footer();
 			die();
@@ -903,7 +907,7 @@ class Sputnik_Admin {
 		}
 
 		if ( ! current_user_can('install_plugins') )
-			wp_die(__('You do not have sufficient permissions to install plugins for this site.', 'sputnik'));
+			wp_die(__('You do not have sufficient permissions to install plugins for this site.', 'wpsc'));
 
 		include_once(ABSPATH . 'wp-admin/includes/plugin-install.php');
 
@@ -911,9 +915,9 @@ class Sputnik_Admin {
 
 		global $body_id;
 		$body_id = 'sputnik-upgrade';
-		iframe_header( __('Update Plugin', 'sputnik') );
+		iframe_header( __('Update Plugin', 'wpsc') );
 
-		$title = sprintf( __('Updating Plugin: %s', 'sputnik'), $api->name . ' ' . $api->version );
+		$title = sprintf( __('Updating Plugin: %s', 'wpsc'), $api->name . ' ' . $api->version );
 		$nonce = 'sputnik_upgrade-plugin_' . $id;
 		$url = 'update.php?action=upgrade-plugin&plugin=' . $id;
 		if ( isset($_GET['from']) )
@@ -955,7 +959,7 @@ class Sputnik_Admin {
 	 */
 	public static function iframe_closer( $redirect_url, $title = null ) {
 		if (empty($title)) {
-			$title = __('Redirecting...', 'sputnik');
+			$title = __('Redirecting...', 'wpsc');
 		}
 ?>
 <!DOCTYPE html><html>

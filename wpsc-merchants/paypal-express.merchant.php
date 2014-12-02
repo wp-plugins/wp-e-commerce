@@ -122,7 +122,7 @@ class wpsc_merchant_paypal_express extends wpsc_merchant {
 			'timeout' => 20,
 			'body' => $received_values,
 			'httpversion' => '1.1',
-			'user-agent' => ('WP e-Commerce/'.WPSC_PRESENTABLE_VERSION)
+			'user-agent' => ('WP eCommerce/'.WPSC_PRESENTABLE_VERSION)
 		);
 
 		$response = wp_remote_post( $paypal_url, $options );
@@ -574,7 +574,7 @@ function form_paypal_express() {
 	<tr>
 		<td colspan='2'>
 			<p class='description'>
-	 		" . sprintf( __( "For more help configuring Paypal Express, please read our documentation <a href='%s'>here</a>", 'wpsc' ), esc_url( 'http://docs.getshopped.org/documentation/paypal-express-checkout/' ) ) . "
+	 		" . sprintf( __( "For more help configuring Paypal Express, please read our documentation <a href='%s'>here</a>", 'wpsc' ), esc_url( 'http://docs.wpecommerce.org/documentation/paypal-express-checkout/' ) ) . "
 	 		</p>
 		</td>
    	</tr>\n";

@@ -48,7 +48,7 @@ abstract class WPSC_Purchase_Log_Notification {
 			'coupon_code'     => $this->purchase_log->get( 'discount_data'   ),
 			'transaction_id'  => $this->purchase_log->get( 'transactid'      ),
 			'purchase_log_id' => $this->purchase_log->get( 'id'              ),
-			'payment_method'  => $this->purchase_log->get( 'gateway'         ),
+			'payment_method'  => $this->purchase_log->get( 'gateway_name'    ),
 			'shipping_method' => $this->purchase_log->get( 'shipping_method' ),
 			'shipping_option' => $this->purchase_log->get( 'shipping_option' ),
 			'discount_amount' => $discount,
@@ -269,13 +269,21 @@ abstract class WPSC_Purchase_Log_Notification {
 		return apply_filters( 'wpsc_purchase_log_notification_headers', $headers, $this );
 	}
 
-	public function send() {
-		if ( empty( $this->address ) )
-			return;
+	public function get_attachments() {
+		return apply_filters( 'wpsc_purchase_log_notification_attachments', array(), $this );
+	}
 
-		$headers = $this->get_email_headers();
+	public function send() {
+
+		if ( empty( $this->address ) ) {
+			return;
+		}
+
+		$headers     = $this->get_email_headers();
+		$attachments = $this->get_attachments();
+
 		add_action( 'phpmailer_init', array( $this, '_action_phpmailer_init_multipart' ), 10, 1 );
-		$email_sent = wp_mail( $this->address, $this->title, $this->html_message, $headers );
+		$email_sent = wp_mail( $this->address, $this->title, $this->html_message, $headers, $attachments );
 		remove_action( 'phpmailer_init', array( $this, '_action_phpmailer_init_multipart' ), 10, 1 );
 
 		return $email_sent;
@@ -290,13 +298,16 @@ class WPSC_Purchase_Log_Customer_Notification extends WPSC_Purchase_Log_Notifica
 	public function get_raw_message() {
 		$raw_message = '';
 
-		if ( ! $this->purchase_log->is_transaction_completed() )
+		if ( ! $this->purchase_log->is_transaction_completed() ) {
 			$raw_message = __( 'Thank you, your purchase is pending. You will be sent an email once the order clears.', 'wpsc' ) . "\n\r";
+		}
 
 		$raw_message .= get_option( 'wpsc_email_receipt' );
 		$raw_message = $this->maybe_add_discount( $raw_message );
+
 		// pre-3.8.9 filter hook
 		$raw_message = apply_filters( 'wpsc_transaction_result_message', $raw_message );
+
 		return apply_filters( 'wpsc_purchase_log_customer_notification_raw_message', $raw_message, $this );
 	}
 

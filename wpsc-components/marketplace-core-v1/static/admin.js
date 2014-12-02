@@ -10,8 +10,10 @@ jQuery(document).ready(function($) {
 		dg.startFlow(sputnikL10n.buy_href);
 	}
 	$('#menu-posts-wpsc-product div ul li a[href$="page=sputnik-account"]').parent('li').remove();
+
 	$('.grid-view').masonry({
-		selector: '.plugin'
+		selector: '.plugin',
+		gutter: 15
 	});
 
 	$('#rateme').mousemove(function (event) {
@@ -36,8 +38,8 @@ jQuery(document).ready(function($) {
 
 		var href = $(this).attr('href');
 		var dim = Sputnik.window_dimensions();
-		href += '&width=' + Math.min(Math.max(dim[0] - 50, 300), 700)
-			+ '&height=' + Math.min(Math.max(dim[1] - 100, 250), 550);
+		href += '&width=' + Math.min(Math.max(dim[0] - 50, 300), 800)
+			+ '&height=' + Math.min(Math.max(dim[1] - 100, 250), 600);
 		tb_show('', href);
 		this.blur();
 

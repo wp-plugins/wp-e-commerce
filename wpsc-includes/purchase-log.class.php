@@ -134,7 +134,7 @@ class WPSC_Purchase_Log {
 			array_map( array( 'WPSC_Product', 'get_instance' ), $args['ids'] )
 		);
 
-		// eliminate duplicates
+		// eliminate duplicates (Note: usage of this requires PHP 5.2.9)
 		$products = array_unique( $products, SORT_REGULAR );
 
 		if ( empty( $products ) ) {
@@ -161,10 +161,10 @@ class WPSC_Purchase_Log {
 					$needs_fetching[] = $product->post->ID;
 				} else {
 					// tally up the sales and earnings if this one has cache already
-                    			$prod_meta = get_post_meta( $product->post->ID, '_wpsc_stats', true );
-                			$stats['sales']    += $prod_meta['sales'];
-                    			$stats['earnings'] += $prod_meta['earnings'];
-                    			$needs_fetching[] = $product->post->ID;
+						$prod_meta          = get_post_meta( $product->post->ID, '_wpsc_stats', true );
+						$stats['sales']    += $prod_meta['sales'];
+						$stats['earnings'] += $prod_meta['earnings'];
+						$needs_fetching[]   = $product->post->ID;
 				}
 			}
 		}
@@ -397,22 +397,66 @@ class WPSC_Purchase_Log {
 	}
 
 	/**
-	 * Deletes a log from the database
+	 * Deletes a log from the database.
 	 *
-	 * @access public
-	 * @static
-	 * @since 3.8.9
+	 * @access  public
+	 * @since   3.8.9
 	 *
-	 * @param string $log_id ID of the log
-	 * @return void
+	 * @uses  $wpdb                              Global database instance.
+	 * @uses  wpsc_is_store_admin()              Check user has admin capabilities.
+	 * @uses  WPSC_Purchase_Log::delete_cache()  Delete purchaselog cache.
+	 * @uses  WPSC_Claimed_Stock                 Claimed Stock class.
+	 *
+	 * @param   string   $log_id   ID of the log.
+	 * @return  boolean            Deleted successfully.
 	 */
-	public static function delete( $log_id ) {
+	public function delete( $log_id = false ) {
+
 		global $wpdb;
-		do_action( 'wpsc_purchase_log_before_delete', $log_id );
-		self::delete_cache( $log_id );
-		$sql = $wpdb->prepare( "DELETE FROM " . WPSC_TABLE_PURCHASE_LOGS . " WHERE id = %d", $log_id );
-		$wpdb->query( $sql );
-		do_action( 'wpsc_purchase_log_delete', $log_id );
+
+		if ( ! ( isset( $this ) && get_class( $this ) == __CLASS__ ) ) {
+			_wpsc_doing_it_wrong( 'WPSC_Purchase_Log::delete', __( 'WPSC_Purchase_Log::delete() is no longer a static method and should not be called statically.', 'wpsc' ), '3.9.0' );
+		}
+
+		if ( false !== $log_id ) {
+			_wpsc_deprecated_argument( __FUNCTION__, '3.9.0', 'The $log_id param is not used. You must first create an instance of WPSC_Purchase_Log before calling this method.' );
+		}
+
+		if ( ! wpsc_is_store_admin() ) {
+			return false;
+		}
+
+		$log_id = $this->get( 'id' );
+
+		if ( $log_id > 0 ) {
+
+			do_action( 'wpsc_purchase_log_before_delete', $log_id );
+
+			self::delete_cache( $log_id );
+
+			// Delete claimed stock
+			$purchlog_status = $wpdb->get_var( $wpdb->prepare( "SELECT `processed` FROM `" . WPSC_TABLE_PURCHASE_LOGS . "` WHERE `id`= %d", $log_id ) );
+			if ( $purchlog_status == WPSC_Purchase_Log::CLOSED_ORDER || $purchlog_status == WPSC_Purchase_Log::INCOMPLETE_SALE ) {
+				$claimed_query = new WPSC_Claimed_Stock( array(
+					'cart_id'        => $log_id,
+					'cart_submitted' => 1
+				) );
+				$claimed_query->clear_claimed_stock( 0 );
+			}
+
+			// Delete cart content, submitted data, then purchase log
+			$wpdb->query( $wpdb->prepare( "DELETE FROM `" . WPSC_TABLE_CART_CONTENTS . "` WHERE `purchaseid` = %d", $log_id ) );
+			$wpdb->query( $wpdb->prepare( "DELETE FROM `" . WPSC_TABLE_SUBMITTED_FORM_DATA . "` WHERE `log_id` IN (%d)", $log_id ) );
+			$wpdb->query( $wpdb->prepare( "DELETE FROM `" . WPSC_TABLE_PURCHASE_LOGS . "` WHERE `id` = %d LIMIT 1", $log_id ) );
+
+			do_action( 'wpsc_purchase_log_delete', $log_id );
+
+			return true;
+
+		}
+
+		return false;
+
 	}
 
 	/**

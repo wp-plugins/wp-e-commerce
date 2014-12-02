@@ -1,6 +1,6 @@
 <?php
 /**
- * Control database upgrade to version 11
+ * Control database upgrade to version 13
 *
 * @access private
 * @since 3.8.14
@@ -12,7 +12,7 @@ function _wpsc_db_upgrade_13() {
 }
 
 /**
- * add the county region label to the uk
+ * Add the county region label to the uk
  *
  * @access private
  * @since 3.8.14.1

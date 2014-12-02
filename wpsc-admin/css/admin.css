@@ -230,6 +230,8 @@ th#status {
 	margin-top: -.2em;
 }
 
+/* Purchase Log Action Links */
+
 #wpsc_purchlogitems_links a {
 	text-decoration: none;
 	line-height: 14pt;
@@ -238,6 +240,57 @@ th#status {
 #wpsc_purchlogitems_links img {
 	padding-top: 2px;
 	float: left;
+}
+
+#wpsc_purchlogitems_links li .dashicons {
+	margin-right: 10px;
+}
+
+#wpsc_purchlogitems_links li a {
+	position: relative;
+}
+
+#wpsc_purchlogitems_links li a .spinner {
+	display: none;
+	float: none;
+	margin: 0px;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+}
+
+#wpsc_purchlogitems_links li a .dashicons {
+	color: #888;
+}
+
+#wpsc_purchlogitems_links li a .dashicons-yes {
+	color: #7ad03a;
+}
+
+#wpsc_purchlogitems_links li a.wpsc-purchlog-action-link-delete .dashicons,
+#wpsc_purchlogitems_links li a.wpsc-purchlog-action-link-back .dashicons {
+	color: #bbb;
+}
+
+#wpsc_purchlogitems_links li a.wpsc-purchlog-action-link-delete:hover .dashicons,
+#wpsc_purchlogitems_links li a .dashicons-no {
+	color: #c00;
+}
+
+#wpsc_purchlogitems_links li a.wpsc-purchlog-action-link-back:hover .dashicons {
+	color: #888;
+}
+
+#wpsc_purchlogitems_links li a.doing {
+	padding-left: 30px;
+}
+
+#wpsc_purchlogitems_links li a.doing .spinner {
+	display: block;
+}
+
+#wpsc_purchlogitems_links li a.doing .dashicons {
+	display: none;
 }
 
 #wpsc_shipping_details_box {
@@ -2137,11 +2190,11 @@ table.purchase-logs tr:hover .column-id .delete {
 
 .wpsc-button-round {
 	padding: 0 0 1px !important;
-	height: 24px !important;
+	height: 28px !important;
 	text-align: center;
-	width: 24px !important;
-	-webkit-border-radius: 12px !important;
-	border-radius:         12px !important;
+	width: 28px !important;
+	-webkit-border-radius: 14px !important;
+	border-radius:         14px !important;
 	outline: 0 !important;
 }
 
@@ -2257,8 +2310,8 @@ body.edit-tags-php img.wpsc_category_image {
 #wpsc_product_gallery li {
 	float: left;
 	margin-right: 10px;
+	cursor: move;
 }
-
 
 /**
  * Digital download table style
@@ -2364,7 +2417,7 @@ a.wpsc_remove_meta {
 	.wpsc-product-variation-iframe.wp-core-ui .button.button-large,
 	.wpsc-product-variation-iframe.wp-core-ui .button.button-small {
 		padding: 0px 10px 1px;
-		line-height: 1;
+		line-height: 2;
 		font-size: 13px;
 		vertical-align: top;
 		height: 28px;

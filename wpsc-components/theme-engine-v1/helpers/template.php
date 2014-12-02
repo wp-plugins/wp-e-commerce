@@ -112,53 +112,71 @@ function wpsc_select_theme_functions() {
  * @description:  Adds additional wpsc classes to the body tag.
  * @param:        $classes = Array of body classes
  * @return:       (Array) of classes
+ *
+ * @uses get_permalink()                Returns WP permalink given post_id
+ * @uses get_option()                   Returns option value given key
+ * @uses get_post_type()                Returns string for registered post_type name
+ * @uses wpsc_is_single_product()       Returns true if we are on a single product
+ * @uses wpsc_is_in_category()          Returns true if we are on a WPSC product cat
+ * @uses wpsc_is_in_tag()               Returns true if we are on a WPSC product tag
+ * @usse esc_attr()                     Keeping things safe just in case
  */
 function wpsc_body_class( $classes ) {
 	global $wp_query, $wpsc_query;
-	$post_id = 0;
-	if ( isset( $wp_query->post->ID ) )
-		$post_id = $wp_query->post->ID;
-	$page_url = get_permalink( $post_id );
 
-	// If on a product or category page...
-	if ( get_option( 'product_list_url' ) == $page_url ) {
+	$post_id = get_the_ID();
 
-		$classes[] = 'wpsc';
+	if ( $post_id ) {
 
-		if ( !is_array( $wpsc_query->query ) )
-			$classes[] = 'wpsc-home';
+		$page_url = get_permalink( $post_id );
+		
+		// If on a product or category page...
+		if ( get_option( 'product_list_url' ) == $page_url || get_post_type( $post_id ) === 'wpsc-product' ) {
 
-		if ( wpsc_is_single_product ( ) ) {
-			$classes[] = 'wpsc-single-product';
-			if ( absint( $wpsc_query->products[0]['id'] ) > 0 ) {
-				$classes[] = 'wpsc-single-product-' . $wpsc_query->products[0]['id'];
+			$classes[] = 'wpsc';
+
+			if ( ! is_array( $wpsc_query->query ) ) {
+				$classes[] = 'wpsc-home';
+			}
+
+			if ( wpsc_is_single_product() ) {
+				$object    = $wp_query->get_queried_object();
+				$classes[] = 'wpsc-single-product';
+				if ( absint( $object->ID ) > 0 ) {
+					$classes[] = 'wpsc-single-product-' . absint( $object->ID );
+				}
+			}
+
+			if ( wpsc_is_in_category() && ! wpsc_is_single_product() ) {
+				$classes[]  = 'wpsc-category';
+				$tax_object = $wp_query->get_queried_object();
+				$classes[]  = 'wpsc-category-' . esc_attr( $tax_object->slug );
+			}
+
+			if ( wpsc_is_in_tag() && ! wpsc_is_single_product() ) {
+				$classes[]  = 'wpsc-tag';
+				$tax_object = $wp_query->get_queried_object();
+				$classes[]  = 'wpsc-tag-' . esc_attr( $tax_object->slug );
 			}
 		}
 
-		if ( wpsc_is_in_category() && !wpsc_is_single_product() )
-			$classes[] = 'wpsc-category';
+		// If viewing the shopping cart...
+		if ( get_option( 'shopping_cart_url' ) == $page_url ) {
+			$classes[] = 'wpsc';
+			$classes[] = 'wpsc-shopping-cart';
+		}
 
-		if ( isset( $wpsc_query->query_vars['category_id'] ) && absint( $wpsc_query->query_vars['category_id'] ) > 0 )
-			$classes[] = 'wpsc-category-' . $wpsc_query->query_vars['category_id'];
+		// If viewing the transaction...
+		if ( get_option( 'transact_url' ) == $page_url ) {
+			$classes[] = 'wpsc';
+			$classes[] = 'wpsc-transaction-details';
+		}
 
-	}
-
-	// If viewing the shopping cart...
-	if ( get_option( 'shopping_cart_url' ) == $page_url ) {
-		$classes[] = 'wpsc';
-		$classes[] = 'wpsc-shopping-cart';
-	}
-
-	// If viewing the transaction...
-	if ( get_option( 'transact_url' ) == $page_url ) {
-		$classes[] = 'wpsc';
-		$classes[] = 'wpsc-transaction-details';
-	}
-
-	// If viewing your account...
-	if ( get_option( 'user_account_url' ) == $page_url ) {
-		$classes[] = 'wpsc';
-		$classes[] = 'wpsc-user-account';
+		// If viewing your account...
+		if ( get_option( 'user_account_url' ) == $page_url ) {
+			$classes[] = 'wpsc';
+			$classes[] = 'wpsc-user-account';
+		}
 	}
 
 	return $classes;

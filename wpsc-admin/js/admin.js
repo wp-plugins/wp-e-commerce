@@ -63,6 +63,10 @@
 		};
 
 		$(function(){
+			if ( 'undefined' === typeof WPSC_Term_List_Levels ) {
+				return;
+			}
+
 			var table = $('body.edit-tags-php .wp-list-table');
 			table.find('tbody tr').each(function(){
 				var t = $(this),
@@ -579,6 +583,7 @@ function wpsc_update_product_gallery_tab(obj){
 			output += '<li>';
 				output += '<img src="' + url + '">';
 				output += '<input type="hidden" name="wpsc-product-gallery-imgs[]" value="' + obj[i].id + '">';
+
 			output += '</li>';
 		}
 

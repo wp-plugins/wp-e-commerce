@@ -91,7 +91,7 @@ class WPSC_Settings_Tab_Gateway extends WPSC_Settings_Tab {
 			</tbody>
 		</table>
 		<?php submit_button( __( 'Save Changes' ) ); ?>
-		<h4><?php _e( 'WP e-Commerce Recommends', 'wpsc' ); ?></h4>
+		<h4><?php _e( 'WP eCommerce Recommends', 'wpsc' ); ?></h4>
 		<a style="border-bottom:none;" href="https://www.paypal.com/nz/mrb/pal=LENKCHY6CU2VY" target="_blank"><img src="<?php echo WPSC_CORE_IMAGES_URL; ?>/paypal-referal.gif" border="0" alt="<?php esc_attr_e( 'Sign up for PayPal and start accepting credit card payments instantly.', 'wpsc' ); ?>" /></a>
 	<?php
 	}
@@ -138,13 +138,30 @@ class WPSC_Settings_Tab_Gateway extends WPSC_Settings_Tab {
 	}
 
 	private function gateway_list() {
+
 		$gateways = apply_filters( 'wpsc_settings_get_gateways', array() );
+
+		usort( $gateways, apply_filters( 'wpsc_settings_get_gateways_sort_callback', array( $this, 'gateway_usort_callback' ), $gateways, $this ) );
 
 		$selected_gateway = (string) get_user_option( 'wpsc_settings_selected_payment_gateway', get_current_user_id() );
 
 		foreach ( $gateways as $gateway ) {
 			$this->gateway_list_item( $gateway, $selected_gateway === $gateway['id'] );
 		}
+	}
+
+	/**
+	 * Usort callback used to order gateways by their name.
+	 *
+	 * @param  array  $a  A gateway array.
+	 * @param  array  $b  A different gateway array.
+	 *
+	 * @since  3.9.0
+	 *
+	 * @return bool       True if $b should be ordered after $a based on its name.
+	 */
+	private function gateway_usort_callback( $a, $b ) {
+		return $a['name'] > $b['name'];
 	}
 
 	public function callback_submit_options() {

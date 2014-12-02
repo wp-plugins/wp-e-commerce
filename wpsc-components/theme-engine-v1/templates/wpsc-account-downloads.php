@@ -22,13 +22,13 @@
 		</thead>
 
 		<tbody>
-			<?php foreach( $items as $key => $item ): ?>
+			<?php foreach ( $items as $key => $item ) : ?>
 				<tr class="wpsc-user-log-file<?php echo ( $key %2 == 1 ) ? '' : ' alt'; ?>">
 					<td class="wpsc-user-log-file-name">
 						<?php echo $item->title; ?>
 					</td>
 					<td class="wpsc-user-log-downloads-left">
-						<?php echo esc_html( $item->downloads ); ?>
+						<?php echo esc_html( number_format_i18n( $item->downloads ) ); ?>
 					</td>
 					<td class="wpsc-user-log-file-date">
 						<?php echo esc_html( $item->datetime ); ?>

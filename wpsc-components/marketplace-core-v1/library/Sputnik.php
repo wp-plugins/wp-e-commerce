@@ -16,17 +16,17 @@ class Sputnik {
 	/**
 	 * Minimum version of WordPress that Sputnik requires
 	 */
-	const MINVERSION = '3.2';
+	const MINVERSION = '3.9';
 
 	/**
 	 * Base URI for store URLs
 	 */
-	const SITE_BASE = 'http://getshopped.org';
+	const SITE_BASE = 'https://wpecommerce.org';
 
 	/**
 	 * Base URI for API URLs
 	 */
-	const API_BASE = 'http://getshopped.org/wpec';
+	const API_BASE = 'https://wpecommerce.org/wpec';
 
 	/**
 	 * OAuth client key
@@ -339,7 +339,7 @@ class Sputnik {
 		$cart_contents = json_decode( stripslashes( $_POST['cart_contents'] ) );
 
 		//Unset purchase log ID, since we're inserting a new one.
-		$data = ( array ) $data;
+		$data = (array) $data;
 
 		unset( $data['id'] );
 

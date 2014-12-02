@@ -11,7 +11,7 @@ global $wpdb;
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml">
 	<head>
-		<title>WP e-Commerce</title>
+		<title>WP eCommerce</title>
 		<script language="javascript" type="text/javascript" src="<?php echo includes_url(); ?>js/jquery/jquery.js"></script>
 		<script language="javascript" type="text/javascript" src="<?php echo includes_url(); ?>js/tinymce/tiny_mce_popup.js"></script>
 		<script language="javascript" type="text/javascript" src="<?php echo includes_url(); ?>js/tinymce/utils/mctabs.js"></script>
@@ -126,11 +126,6 @@ global $wpdb;
 					</td>
 				</tr>
 
-		<?php }else{ ?>
-				<tr valign="top">
-					<td><?php _e('You don\'t have the product slider installed, for a cool way to display your shop check out the <a href="http://getshopped.org/extend/premium-upgrades/premium-upgrades/product-slider-2010/" target="_blank">Product Slider</a>','wpsc'); ?>
-					</td>
-				</tr>
 		<?php } ?>
 	</table>
 
@@ -145,7 +140,7 @@ global $wpdb;
 
 				<?php }else{ ?>
 
-				<p>	<?php _e(' You don\'t have the Members and Capabilities plugin installed, to start managing your users and creating subscription for you site visit: <a href="http://getshopped.org/extend/premium-upgrades/premium-upgrades/product-slider-2010/" target="_blank">Premium Upgrades</a>','wpsc');
+				<p>	<?php _e(' You don\'t have the Members and Capabilities plugin installed, to start managing your users and creating subscription for you site visit: <a href="https://wpecommerce.org/store/premium-plugins/membership-subscriptions/" target="_blank">Premium Upgrades</a>','wpsc');
 				}?> </p>
 		</div>
 
