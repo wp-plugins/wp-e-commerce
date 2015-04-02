@@ -119,6 +119,8 @@ class wpsc_cart {
 
 	public function update_location() {
 
+		$this->clear_cache();
+
 		$delivery_country = wpsc_get_customer_meta( 'shippingcountry' );
 		$billing_country  = wpsc_get_customer_meta( 'billingcountry'  );
 		$delivery_region  = wpsc_get_customer_meta( 'shippingregion'  );
@@ -142,7 +144,7 @@ class wpsc_cart {
 	public function wpsc_refresh_cart_items() {
 		global $wpsc_cart;
 
-		if ( is_object( $wpsc_cart ) && is_object( $wpsc_cart->cart_items ) ) {
+		if ( is_object( $wpsc_cart ) && is_array( $wpsc_cart->cart_items ) ) {
 			foreach ( $wpsc_cart->cart_items as $cart_item ) {
 				$cart_item->refresh_item();
 			}
@@ -429,16 +431,18 @@ class wpsc_cart {
 	function get_shipping_option() {
 		global $wpdb, $wpsc_shipping_modules;
 
-		if ( ( count( $this->shipping_quotes ) < 1 ) && is_callable( array( $wpsc_shipping_modules[$this->selected_shipping_method], 'getQuote'  ) ) ) {
+		if ( ( count( $this->shipping_quotes ) < 1 ) &&
+		     isset( $wpsc_shipping_modules[$this->selected_shipping_method] ) &&
+		     is_callable( array( $wpsc_shipping_modules[$this->selected_shipping_method], 'getQuote' ) ) ) {
 			$this->shipping_quotes = $wpsc_shipping_modules[$this->selected_shipping_method]->getQuote();
 		}
 
 		if ( ! isset( $wpsc_shipping_modules[$this->selected_shipping_method] ) ) {
-			$wpsc_shipping_modules[$this->selected_shipping_method] = '';
+			$this->selected_shipping_option = null;
 		}
 
 		if ( count( $this->shipping_quotes ) < 1 ) {
-			$this->selected_shipping_option = '';
+			$this->selected_shipping_option = null;
 		}
 
 		// if the current shipping option is not valid, go back to no shipping option
@@ -693,7 +697,8 @@ class wpsc_cart {
     *
     * @param integer a product ID key
     * @param array  variations on the product
-    * @return boolean true on sucess, false on failure
+    *
+    * @return int Number of product remaining.
     */
 	function get_remaining_quantity( $product_id, $variations = array(), $quantity = 1 ) {
 		return wpsc_get_remaining_quantity( $product_id, $variations, $quantity );
@@ -1188,7 +1193,7 @@ class wpsc_cart {
 	function rewind_shipping_methods() {
 		$this->current_shipping_method = - 1;
 		if ( $this->shipping_method_count > 0 ) {
-			$this->shipping_method = $this->shipping_methods [0];
+			$this->shipping_method = $this->shipping_methods[0];
 		}
 	}
 
@@ -1202,8 +1207,8 @@ class wpsc_cart {
 		if ( $this->shipping_method == null ) {
 			$this->get_shipping_method();
 		}
-		if ( isset( $wpsc_shipping_modules [$this->shipping_method] ) && is_callable( array( $wpsc_shipping_modules [$this->shipping_method], 'getQuote' ) ) ) {
-			$unprocessed_shipping_quotes = $wpsc_shipping_modules [$this->shipping_method]->getQuote();
+		if ( isset( $wpsc_shipping_modules[$this->shipping_method] ) && is_callable( array( $wpsc_shipping_modules [$this->shipping_method], 'getQuote' ) ) ) {
+			$unprocessed_shipping_quotes = $wpsc_shipping_modules[$this->shipping_method]->getQuote();
 		}
 		$num = 0;
 		if ( ! empty( $unprocessed_shipping_quotes ) ) {

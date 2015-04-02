@@ -425,10 +425,12 @@ function wpsc_update_product_price() {
 			}
 
 			if ( $change_price ) {
-				$old_price = wpsc_calculate_price( $product_id, $variations, false );
-				$you_save_amount = wpsc_you_save( array( 'product_id' => $product_id, 'type' => 'amount', 'variations' => $variations ) );
+				$old_price           = wpsc_calculate_price( $product_id, $variations, false );
+				$you_save_amount     = wpsc_you_save( array( 'product_id' => $product_id, 'type' => 'amount', 'variations' => $variations ) );
 				$you_save_percentage = wpsc_you_save( array( 'product_id' => $product_id, 'variations' => $variations ) );
+
 				$price = wpsc_calculate_price( $product_id, $variations, true );
+
 				$response += array(
 					'old_price'         => wpsc_currency_display( $old_price, array( 'display_as_html' => false ) ),
 					'numeric_old_price' => (float) $old_price,
@@ -597,35 +599,42 @@ function wpsc_submit_checkout( $collected_data = true ) {
 		$error_messages = array();
 	}
 
-	$wpsc_country = new WPSC_Country( wpsc_get_customer_meta( 'shippingcountry' ) );
-	$country_id   = $wpsc_country->get_id();
-	$country_name = $wpsc_country->get_name();
+	if ( wpsc_uses_shipping() ) {
+		$wpsc_country = new WPSC_Country( wpsc_get_customer_meta( 'shippingcountry' ) );
+		$country_id   = $wpsc_country->get_id();
+		$country_name = $wpsc_country->get_name();
 
-	foreach ( $wpsc_cart->cart_items as $cartitem ) {
-		if ( ! empty( $cartitem->meta[0]['no_shipping'] ) ) continue;
-		$categoriesIDs = $cartitem->category_id_list;
-		foreach ( (array)$categoriesIDs as $catid ) {
-			if ( is_array( $catid ) )
-				$countries = wpsc_get_meta( $catid[0], 'target_market', 'wpsc_category' );
-			else
-				$countries = wpsc_get_meta( $catid, 'target_market', 'wpsc_category' );
+		foreach ( $wpsc_cart->cart_items as $cartitem ) {
 
-			if ( ! empty($countries) && ! in_array( $country_id, (array)$countries ) ) {
-				$errormessage = sprintf( __( '%s cannot be shipped to %s. To continue with your transaction please remove this product from the list below.', 'wpsc' ), $cartitem->get_title(), $country_name );
-				wpsc_update_customer_meta( 'category_shipping_conflict', $errormessage );
-				$is_valid = false;
+			if ( ! empty( $cartitem->meta[0]['no_shipping'] ) ) {
+				continue;
+			}
+
+			$category_ids = $cartitem->category_id_list;
+
+			foreach ( (array) $category_ids as $catid ) {
+				if ( is_array( $catid ) ) {
+					$countries = wpsc_get_meta( $catid[0], 'target_market', 'wpsc_category' );
+				} else {
+					$countries = wpsc_get_meta( $catid, 'target_market', 'wpsc_category' );
+				}
+
+				if ( ! empty( $countries ) && ! in_array( $country_id, (array) $countries ) ) {
+					$errormessage = sprintf( __( '%s cannot be shipped to %s. To continue with your transaction please remove this product from the list below.', 'wpsc' ), $cartitem->get_title(), $country_name );
+					wpsc_update_customer_meta( 'category_shipping_conflict', $errormessage );
+					$is_valid = false;
+				}
+			}
+
+			//count number of items, and number of items using shipping
+			$num_items++;
+
+			if ( $cartitem->uses_shipping != 1 ) {
+				$disregard_shipping++;
+			} else {
+				$use_shipping++;
 			}
 		}
-
-		//count number of items, and number of items using shipping
-		$num_items++;
-
-		if ( $cartitem->uses_shipping != 1 ) {
-			$disregard_shipping++;
-		} else {
-			$use_shipping++;
-		}
-
 	}
 
 	// check to see if the current gateway is in the list of available gateways
@@ -678,7 +687,7 @@ function wpsc_submit_checkout( $collected_data = true ) {
 		$delivery_country = $wpsc_cart->delivery_country;
 		$delivery_region = $wpsc_cart->delivery_region;
 
-		if ( wpsc_uses_shipping( ) ) {
+		if ( wpsc_uses_shipping() ) {
 			$shipping_method = $wpsc_cart->selected_shipping_method;
 			$shipping_option = $wpsc_cart->selected_shipping_option;
 		} else {

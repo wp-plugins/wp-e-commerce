@@ -14,8 +14,6 @@ if ( is_ssl() ) {
 add_filter( 'wp_nav_menu_args', 'wpsc_switch_the_query', 99 );
 add_filter( 'request', 'wpsc_filter_query_request' );
 add_filter( 'pre_get_posts', 'wpsc_split_the_query', 8 );
- // Prevent later hooks from being skipped. See #1444.
-add_filter( 'pre_get_posts', '__return_null', 8 );
 add_filter( 'parse_query', 'wpsc_mark_product_query', 12 );
 add_filter( 'query_vars', 'wpsc_query_vars' );
 
@@ -585,14 +583,18 @@ function wpsc_filter_request( $q ) {
  * if the user is on a checkout page, force SSL if that option is so set
  */
 function wpsc_force_ssl() {
+
 	global $wp_query;
-	if ( '1' == get_option( 'wpsc_force_ssl' ) &&
+
+	if (
+		! is_admin() &&
+		'1' == get_option( 'wpsc_force_ssl' ) &&
 		! is_ssl() &&
 		! empty ( $wp_query->post->post_content ) &&
 		false !== strpos( $wp_query->post->post_content, '[shoppingcart]' ) ) {
-		$sslurl = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-		wp_redirect( $sslurl );
-		exit;
+			$sslurl = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+			wp_redirect( $sslurl );
+			exit;
 	}
 }
 

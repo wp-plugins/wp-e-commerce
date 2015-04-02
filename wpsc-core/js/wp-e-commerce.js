@@ -1,3 +1,4 @@
+/* globals jQuery */
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // This section is used to create the globals that were originally defined in the
 // dynamic-js file pre 3.8.14.  Note that variables also also exist in the "wpsc_ajax" structure.
@@ -23,13 +24,13 @@
  *
  */
 if ( typeof wpsc_vars !== 'undefined' ) {
-	var wpsc_ajax                = wpsc_vars['wpsc_ajax'];
-	var base_url                 = wpsc_vars['base_url'];
-	var WPSC_URL                 = wpsc_vars['WPSC_URL'];
-	var WPSC_IMAGE_URL           = wpsc_vars['WPSC_IMAGE_URL'];
-	var WPSC_IMAGE_URL           = wpsc_vars['WPSC_IMAGE_URL'];
-	var WPSC_CORE_IMAGES_URL     = wpsc_vars['WPSC_CORE_IMAGES_URL'];
-	var fileThickboxLoadingImage = wpsc_vars['fileThickboxLoadingImage'];
+	var wpsc_ajax                = wpsc_vars.wpsc_ajax;
+	var base_url                 = wpsc_vars.base_url;
+	var WPSC_URL                 = wpsc_vars.WPSC_URL;
+	var WPSC_IMAGE_URL           = wpsc_vars.WPSC_IMAGE_URL;
+	var WPSC_IMAGE_URL           = wpsc_vars.WPSC_IMAGE_URL;
+	var WPSC_CORE_IMAGES_URL     = wpsc_vars.WPSC_CORE_IMAGES_URL;
+	var fileThickboxLoadingImage = wpsc_vars.fileThickboxLoadingImage;
 }
 // end of variable definitions
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -134,8 +135,8 @@ function wpsc_var_set( name, value ) {
 // if you are going to user it always check to be sure it is not false
 var wpsc_visitor_id = false;
 
-if ( ! ( document.cookie.indexOf("wpsc_customer_cookie") >= 0 ) ) {
-	if ( ! ( document.cookie.indexOf("wpsc_attempted_validate") >= 0 ) ) {
+if ( document.cookie.indexOf("wpsc_customer_cookie") < 0 ) {
+	if ( document.cookie.indexOf("wpsc_attempted_validate") < 0 ) {
 		// create a cookie to signal that we have attempted validation.  If we find the cookie is set
 		// we don't re-attempt validation.  This means will only try to validate once and not slow down
 		// subsequent page views.
@@ -191,7 +192,9 @@ function wpsc_update_customer_data( meta_key, meta_value, response_callback ) {
 		var ajax_data = {action: 'wpsc_customer_updated_data', meta_key : meta_key, meta_value : meta_value };
 		wpsc_do_ajax_request( ajax_data, response_callback );
 	} catch ( err ) {
-		; // we could handle the error here, or use it as a convenient place to set a breakpoint when debugging/testing
+		if ( window.console && window.console.log ) {
+			console.log( err );
+		}
 	}
 
 }
@@ -210,7 +213,9 @@ function wpsc_get_customer_data( response_callback ) {
 		var ajax_data = {action: 'wpsc_get_customer_meta' };
 		wpsc_do_ajax_request( ajax_data, response_callback );
 	} catch ( err ) {
-		; // we could handle the error here, or use it as a convenient place to set a breakpoint when debugging/testing
+		if ( window.console && window.console.log ) {
+			console.log( err );
+		}
 	}
 }
 
@@ -251,7 +256,6 @@ function wpsc_update_customer_meta( response ) {
 						// the value of other meta, specifically the billing or shipping country.
 						// rather than enforce a field order in the response we will take care of it by doing
 						// a second pass through the updates looking for only the region drop downs
-						;
 					} else if ( jQuery(this).hasClass('wpsc-country-dropdown') ) {
 						var current_value = jQuery( this ).val();
 						if ( current_value != meta_value ) {
@@ -389,7 +393,7 @@ function wpsc_update_checkout_info( checkout_info ) {
  */
 function wpsc_meta_item_change_response( response ) {
 
-	jQuery( ".wpsc-visitor-meta").off( "change", wpsc_meta_item_change );
+	jQuery( ".wpsc-visitor-meta").off( 'change', wpsc_meta_item_change );
 
 	if ( response.hasOwnProperty('success') && response.success && response.hasOwnProperty('data') ) {
 
@@ -455,10 +459,10 @@ function wpsc_get_element_meta_key( element ) {
 
 	var meta_key = element.attr( "data-wpsc-meta-key" );
 
-	if ( meta_key == undefined ) {
+	if ( meta_key === undefined ) {
 		meta_key = element.attr( "title" );
 
-		if ( meta_key == undefined ) {
+		if ( meta_key === undefined ) {
 			meta_key = element.attr( "id" );
 		}
 	}
@@ -677,7 +681,7 @@ function wpsc_update_regions_list_to_match_country( country_select ) {
 }
 
 function wpsc_string_to_boolean( string ) {
-	return a.trim( string ) !== '';
+	return string.trim() !== '';
 }
 
 /*
@@ -918,7 +922,11 @@ function wpsc_get_value_from_wpsc_meta_element( meta ) {
 			meta_value = '';
 		}
 	} else if ( element.is('select') ) {
-		meta_value = element.find( 'option:selected' ).val();
+		meta_value = element.val();
+		if ( ! meta_value && 'none' == element.css('display') ) {
+			meta_value = element.find( 'option[selected]' ).val();
+		}
+
 	} else 	{
 		meta_value = element.val();
 	}
