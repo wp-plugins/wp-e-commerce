@@ -243,13 +243,13 @@ class Sputnik_View_Browser_Grid extends WP_List_Table {
 			switch ( $status['status'] ) {
 				case 'purchase':
 					if ( $status['url'] ) {
-						$purchase_link = '<a id="' . $plugin->slug .'" class="button-primary buy status" href="' . $status['url'] . '" title="'
+						$purchase_link = '<a id="' . $plugin->slug .'" class="button-primary buy status" href="' . esc_url( $status['url'] ) . '" title="'
 							. esc_attr(sprintf(__( 'Buy %s', 'sputnik'), $name)) . '">' . __('Buy Now', 'sputnik') . '</a>';
 					}
 					break;
 				case 'install':
 					if ( $status['url'] ) {
-						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 700, 'height' => 550), $status['url']);
+						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 700, 'height' => 550), esc_url( $status['url']) );
 						$purchase_link = '<a class="button install status" href="' . $status['url'] . '" title="'
 							. esc_attr(sprintf(__( 'Install %s', 'sputnik'), $name)) . '">' . __('Install', 'sputnik') . '</a>';
 					}
@@ -261,7 +261,7 @@ class Sputnik_View_Browser_Grid extends WP_List_Table {
 				case 'update_available':
 					if ( $status['url'] ) {
 						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 700, 'height' => 550), $status['url']);
-						$purchase_link = '<a class="button install" href="' . $status['url'] . '" title="'
+						$purchase_link = '<a class="button install" href="' . esc_url( $status['url'] ) . '" title="'
 							. esc_attr(sprintf(__( 'Update to version %s', 'sputnik'), $status['version'])) . '">' . __('Update', 'sputnik') . '</a>';
 					}
 					else {

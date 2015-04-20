@@ -1511,7 +1511,7 @@ function _wpsc_admin_notices_3dot8dot9() {
 	$message = sprintf(
 		$message,
 		'http://getshopped.org/wp-e-commerce-3-8-9-compatibility-issues/',
-		add_query_arg( 'dismiss_389_upgrade_notice', 1 )
+		esc_url( add_query_arg( 'dismiss_389_upgrade_notice', 1 ) )
 	);
 
 	echo '<div id="wpsc-3.8.9-notice" class="error">' . $message . '</div>';
@@ -1539,7 +1539,7 @@ function _wpsc_admin_notices_3dot8dot11() {
 		WPSC_VERSION,
 		'https://github.com/wp-e-commerce/WP-e-Commerce/issues/359',
 		'http://docs.getshopped.org/documentation/3-8-11-user-logs',
-		add_query_arg( 'dismiss_3811_upgrade_notice', 1 )
+		esc_url( add_query_arg( 'dismiss_3811_upgrade_notice', 1 ) )
 	);
 
 	echo '<div id="wpsc-3.8.11-notice" class="error">' . $message . '</div>';

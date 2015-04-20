@@ -12,14 +12,15 @@ function _wpsc_get_exchange_rate( $from, $to ) {
 		return (float) $rate;
 	}
 
-	$url = add_query_arg(
+	$url = esc_url_raw( add_query_arg(
 				array(
 					'a'    => '1',
 					'from' => $from,
 					'to'   => $to
 				),
 				'http://www.google.com/finance/converter'
-				);
+				)
+			);
 
 	$response = wp_remote_retrieve_body( wp_remote_get( $url, array( 'timeout' => 10 ) ) );
 

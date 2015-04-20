@@ -190,7 +190,7 @@ class Sputnik_API {
 	/* Helper Methods */
 	public static function request($url, $params = null, $args = array()) {
 		if ( ! empty( $params ) )
-			$url = add_query_arg( $params, $url );
+			$url = esc_url_raw( add_query_arg( $params, $url ) );
 
 		$defaults = array('method' => 'GET');
 		$args = wp_parse_args($args, $defaults);

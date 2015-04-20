@@ -302,7 +302,7 @@ class Sputnik_List_Install extends WP_List_Table {
 				case 'install':
 					if ( $status['url'] ) {
 						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 700, 'height' => 550), $status['url']);
-						$purchase_link = '<a class="button install" href="' . $status['url'] . '" title="'
+						$purchase_link = '<a class="button install" href="' . esc_url( $status['url'] ) . '" title="'
 							. esc_attr(sprintf(__( 'Install %s', 'wpsc' ), $name)) . '">' . __('Install', 'wpsc' ) . '</a>';
 					}
 					else {
@@ -313,7 +313,7 @@ class Sputnik_List_Install extends WP_List_Table {
 				case 'update_available':
 					if ( $status['url'] ) {
 						$status['url'] = add_query_arg(array('TB_iframe' => true, 'width' => 700, 'height' => 550), $status['url']);
-						$purchase_link = '<a class="button install" href="' . $status['url'] . '" title="'
+						$purchase_link = '<a class="button install" href="' . esc_url( $status['url'] ) . '" title="'
 							. esc_attr(sprintf(__( 'Update to version %s', 'wpsc' ), $status['version'])) . '">' . __('Update', 'wpsc' ) . '</a>';
 					}
 					else {

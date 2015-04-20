@@ -35,7 +35,7 @@ class Sputnik_Admin {
 				$redirect_url = '';
 				if ( ! empty( $_REQUEST['oauth_buy'] ) ) {
 					$redirect_url = self::build_url( array( 'oauth' => 'callback' ) );
-					$redirect_url = add_query_arg( 'oauth_buy', $_REQUEST['oauth_buy'], $redirect_url );
+					$redirect_url = esc_url_raw( add_query_arg( 'oauth_buy', $_REQUEST['oauth_buy'], $redirect_url ) );
 				}
 				Sputnik_API::auth_request( $redirect_url );
 			}
@@ -217,7 +217,7 @@ class Sputnik_Admin {
 		if (!empty($args)) {
 			$url = add_query_arg( $args, $url );
 		}
-		return $url;
+		return esc_url_raw( $url );
 	}
 
 	public static function build_account_url($args = array()) {
@@ -225,7 +225,7 @@ class Sputnik_Admin {
 		if (!empty($args)) {
 			$url = add_query_arg( $args, $url );
 		}
-		return $url;
+		return esc_url_raw( $url );
 	}
 
 	public static function page_styles() {
@@ -972,7 +972,7 @@ class Sputnik_Admin {
 
 		$url = self::build_url(array('upgrade' => $file));
 		// wp_nonce_url also does a esc_html, so do it ourselves
-		$url = add_query_arg('_wpnonce', wp_create_nonce('sputnik_upgrade-plugin_' . $file), $url);
+		$url = esc_url_raw( add_query_arg('_wpnonce', wp_create_nonce('sputnik_upgrade-plugin_' . $file), $url) );
 		wp_redirect($url);
 
 		die();

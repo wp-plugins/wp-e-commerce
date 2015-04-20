@@ -108,7 +108,7 @@ function wpsc_select_product_file( $product_id = null ) {
 		$output .= '<td>' . $file_size .'</td>';
 		$output .= '<td>.' . wpsc_get_extension( $file->post_title ) . '</td>';
 		$output .= "<td><a data-file-name='" . esc_attr( $file->post_title ) . "' data-product-id='" . esc_attr( $product_id ) . "' data-nonce='" . esc_attr( $delete_nonce ) . "' class='file_delete_button' href='{$deletion_url}' >" . _x( 'Delete', 'Digital download row UI', 'wpsc' ) . "</a></td>";
-		$output .= '<td><a href=' .$file_url .'>' . _x( 'Download', 'Digital download row UI', 'wpsc' ) . '</a></td>';
+		$output .= '<td><a href=' . esc_url( $file_url ) .'>' . _x( 'Download', 'Digital download row UI', 'wpsc' ) . '</a></td>';
 
 		$output .= '</tr>';
 

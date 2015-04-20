@@ -394,7 +394,7 @@ function form_google(){
 		" . __( 'Select Shipping Countries', 'wpsc' ) . "
 		</td>
 		<td>
-			<a href='" . add_query_arg( array( "googlecheckoutshipping" =>  1, "page" => "wpsc-settings" ) ) . "' alt='" . __( 'Set Shipping Options', 'wpsc' ) . "'>" . __( 'Set Shipping Countries', 'wpsc' ) . "</a>
+			<a href='" . esc_url( add_query_arg( array( "googlecheckoutshipping" =>  1, "page" => "wpsc-settings" ) ) ) . "' alt='" . __( 'Set Shipping Options', 'wpsc' ) . "'>" . __( 'Set Shipping Countries', 'wpsc' ) . "</a>
 		</td>
 	</tr>
 

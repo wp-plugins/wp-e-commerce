@@ -135,9 +135,9 @@ function wpsc_display_coupons_page() {
 		$coupons_table = new WPSC_Coupons_List_Table();
 		$coupons_table->prepare_items(); ?>
 		<div class="wrap">
-			<h2><?php _e( 'Coupons', 'wpsc' ); ?><a href="<?php echo add_query_arg( 'wpsc-action', 'add_coupon' ); ?>" class="add-new-h2"><?php _e( 'Add Coupon', 'wpsc' ); ?></a></h2>
+			<h2><?php _e( 'Coupons', 'wpsc' ); ?><a href="<?php echo esc_url( add_query_arg( 'wpsc-action', 'add_coupon' ) ); ?>" class="add-new-h2"><?php _e( 'Add Coupon', 'wpsc' ); ?></a></h2>
 			<?php do_action( 'wpsc_coupons_page_top' ); ?>
-			<form id="wpsc-coupons-filter" method="get" action="<?php echo admin_url( 'edit.php?post_type=wpsc-product&page=wpsc-edit-coupons' ); ?>">
+			<form id="wpsc-coupons-filter" method="get" action="<?php echo esc_url( admin_url( 'edit.php?post_type=wpsc-product&page=wpsc-edit-coupons' ) ); ?>">
 
 				<input type="hidden" name="post_type" value="wpsc-product" />
 				<input type="hidden" name="page" value="wpsc-edit-coupons" />
