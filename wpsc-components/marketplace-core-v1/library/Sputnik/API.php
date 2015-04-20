@@ -195,7 +195,7 @@ class Sputnik_API {
 	public static function request($url, $params = null, $args = array()) {
 
 		if ( ! empty( $params ) ) {
-			$url = add_query_arg( $params, $url );
+			$url = esc_url_raw( add_query_arg( $params, $url ) );
 		}
 
 		$defaults = array( 'method' => 'GET' );
@@ -203,7 +203,7 @@ class Sputnik_API {
 		$args = wp_parse_args( $args, $defaults );
 
 		if ( strpos( $url, 'http' ) !== 0 ) {
-			$url = Sputnik::API_BASE . $url;
+			$url = esc_url_raw( Sputnik::API_BASE . $url );
 		}
 
 		$args['timeout']                = 25;

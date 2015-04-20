@@ -502,7 +502,7 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table {
 	}
 
 	public function column_amount( $item ) {
-		echo '<a href="' . esc_attr( $this->item_url( $item ) ) . '" title="' . esc_attr__( 'View order details', 'wpsc' ) . '">';
+		echo '<a href="' . esc_url( $this->item_url( $item ) ) . '" title="' . esc_attr__( 'View order details', 'wpsc' ) . '">';
 		echo wpsc_currency_display( $item->amount ) . "<br />";
 		echo '<small>' . sprintf( _n( '1 item', '%s items', $item->item_count, 'wpsc' ), number_format_i18n( $item->item_count ) ) . '</small>';
 		echo '</a>';

@@ -61,7 +61,7 @@ class WPSC_Settings_Tab_Shipping extends WPSC_Settings_Tab {
 			update_option( 'do_not_use_shipping', '1' );
 			return array( 'shipping_disabled' => 1 );
 		} else {
-			$_SERVER['REQUEST_URI'] = remove_query_arg( 'shipping_disabled' );
+			$_SERVER['REQUEST_URI'] = esc_url( remove_query_arg( 'shipping_disabled' ) );
 		}
 	}
 
@@ -106,8 +106,10 @@ class WPSC_Settings_Tab_Shipping extends WPSC_Settings_Tab {
 			'page'               => 'wpsc-settings',
 			'shipping_module_id' => $shipping->getInternalName(),
 		), $location );
+
 		$location .= '#wpsc-shipping-module-options';
-		return $location;
+
+		return esc_url( $location );
 	}
 
 	public function display() {

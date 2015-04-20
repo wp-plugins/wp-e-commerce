@@ -45,12 +45,12 @@ class WPSC_Cart_Item_Table_Form extends WPSC_Cart_Item_Table {
 
 	protected function tfoot_append() {
 		$prev = isset( $_REQUEST['prev'] ) ? esc_attr( $_REQUEST['prev'] ) : '';
-		$clear_cart_url = add_query_arg( array(
+		$clear_cart_url = esc_url( add_query_arg( array(
 				'prev'      => $prev,
 				'_wp_nonce' => wp_create_nonce( 'wpsc-clear-cart' ),
 			),
 		 	wpsc_get_cart_url( 'clear' )
-		);
+		) );
 		?>
 		<tr class="wpsc-cart-item-table-actions">
 			<td></td>
