@@ -37,7 +37,7 @@ function wpsc_update_purchase_logs_3dot8() {
 	?>
 		<div class="wrap">
 			<h2><?php echo esc_html( __('Sales', 'wpsc') ); ?> </h2>
-			<p><?php printf( __( 'Your purchase logs have been updated! <a href="%s">Click here</a> to return.'), remove_query_arg( 'subpage' ) ); ?></p>
+			<p><?php printf( __( 'Your purchase logs have been updated! <a href="%s">Click here</a> to return.'), esc_url( remove_query_arg( 'subpage' ) ) ); ?></p>
 		</div>
 	<?php
 }
@@ -164,7 +164,7 @@ function _wpsc_purchlogs_need_update() {
 
 
          <?php
-      $page_back = remove_query_arg( array('locked', 'skipped', 'updated', 'deleted','purchaselog_id'), $_SERVER['REQUEST_URI'] );
+      $page_back = esc_url( remove_query_arg( array('locked', 'skipped', 'updated', 'deleted','purchaselog_id'), $_SERVER['REQUEST_URI'] ) );
 
       $columns = array(
       'title' => __('Name','wpsc'),
@@ -295,9 +295,9 @@ function _wpsc_purchlogs_need_update() {
             <?php if(wpsc_purchlogs_have_downloads_locked() != false): ?>
 <img src='<?php echo WPSC_CORE_IMAGES_URL; ?>/lock_open.png' alt='clear lock icon' />&ensp;<a href='<?php echo $_SERVER['REQUEST_URI'].'&amp;wpsc_admin_action=clear_locks'; ?>'><?php echo wpsc_purchlogs_have_downloads_locked(); ?></a><br /><br class='small' />
             <?php endif; ?>
-<img src='<?php echo WPSC_CORE_IMAGES_URL; ?>/printer.png' alt='printer icon' />&ensp;<a href='<?php echo add_query_arg('wpsc_admin_action','wpsc_display_invoice'); ?>'><?php _e('View Packing Slip', 'wpsc'); ?></a>
+<img src='<?php echo WPSC_CORE_IMAGES_URL; ?>/printer.png' alt='printer icon' />&ensp;<a href='<?php echo esc_url( add_query_arg('wpsc_admin_action','wpsc_display_invoice') ); ?>'><?php _e('View Packing Slip', 'wpsc'); ?></a>
 
-<br /><br class='small' /><img src='<?php echo WPSC_CORE_IMAGES_URL; ?>/email_go.png' alt='email icon' />&ensp;<a href='<?php echo add_query_arg('email_buyer_id',absint( $_GET['purchaselog_id'] ) ); ?>'><?php _e('Resend Receipt to Buyer', 'wpsc'); ?></a>
+<br /><br class='small' /><img src='<?php echo WPSC_CORE_IMAGES_URL; ?>/email_go.png' alt='email icon' />&ensp;<a href='<?php echo esc_url( add_query_arg('email_buyer_id',absint( $_GET['purchaselog_id'] ) ) ); ?>'><?php _e('Resend Receipt to Buyer', 'wpsc'); ?></a>
 
 <br /><br class='small' /><a class='submitdelete' title='<?php echo esc_attr(__( 'Delete this log', 'wpsc' )); ?>' href='<?php echo wp_nonce_url("admin.php?wpsc_admin_action=delete_purchlog&amp;purchlog_id=".absint( $_GET['purchaselog_id'] ), 'delete_purchlog_' . absint( $_GET['purchaselog_id'] ) ); ?>' onclick="if ( confirm(' <?php echo esc_js(sprintf( __("You are about to delete this log '%s'\n 'Cancel' to stop, 'OK' to delete.",'wpsc'),  wpsc_purchaselog_details_date() )) ?>') ) { return true;}return false;"><img src='<?php echo WPSC_CORE_IMAGES_URL . "/cross.png"; ?>' alt='delete icon' />               &nbsp;<?php _e('Remove this record', 'wpsc') ?></a>
 
@@ -406,7 +406,7 @@ function _wpsc_purchlogs_need_update() {
          $piggy_url = 'http://www.bravenewcode.com/store/plugins/piggy/?utm_source=affiliate-6331&utm_medium=affiliates&utm_campaign=wpec#1';
       ?>
       <br />
-      <p><a class='admin_download' href='<?php echo htmlentities(add_query_arg($arr_params), ENT_QUOTES, 'UTF-8') ; ?>' ><img class='wpsc_pushdown_img' src='<?php echo WPSC_CORE_IMAGES_URL; ?>/download.gif' alt='' title='' /> <span> <?php _e('Download CSV', 'wpsc'); ?></span></a>
+      <p><a class='admin_download' href='<?php echo esc_url(add_query_arg($arr_params) ) ; ?>' ><img class='wpsc_pushdown_img' src='<?php echo WPSC_CORE_IMAGES_URL; ?>/download.gif' alt='' title='' /> <span> <?php _e('Download CSV', 'wpsc'); ?></span></a>
        <a target="_blank" class='admin_download' href='<?php echo htmlentities( $piggy_url, ENT_QUOTES, 'UTF-8') ; ?>'><img class='wpsc_pushdown_img' src='<?php echo WPSC_CORE_IMAGES_URL; ?>/mobile.png' alt='' title='' /> <span> <?php _e('Mobile Sales App', 'wpsc'); ?></span></a></p>
    </form>
    <br />
@@ -439,7 +439,7 @@ function _wpsc_purchlogs_need_update() {
       <td><?php echo wpsc_the_purch_item_date(); ?></td> <!--Date -->
       <td><?php echo wpsc_the_purch_item_name(); ?></td> <!--Name/email -->
       <td><?php echo wpsc_currency_display( wpsc_the_purch_item_price() ); ?></td><!-- Amount -->
-      <td><a href='<?php echo htmlentities(add_query_arg('purchaselog_id', wpsc_the_purch_item_id()), ENT_QUOTES, 'UTF-8') ; ?>'><?php
+      <td><a href='<?php echo esc_url( add_query_arg( 'purchaselog_id', wpsc_the_purch_item_id() ) ) ; ?>'><?php
       $number_of_items = wpsc_the_purch_item_details();
       printf( _n( '%s Item', '%s Items', $number_of_items, 'wpsc' ), $number_of_items );
       ?></a></td><!-- Details -->

@@ -174,7 +174,7 @@ function wpsc_options_shipping() {
 								</td>
 							</tr>
 							<?php do_action('wpsc_shipping_settings_page'); ?>
-							
+
 						</table>
 								</div>
 									</div>
@@ -197,14 +197,14 @@ function wpsc_options_shipping() {
 										foreach ( $internal_shipping_modules as $shipping ) {
 
 											$shipping->checked = '';
-											if ( is_object( $shipping ) && in_array( $shipping->getInternalName(), (array)$selected_shippings ) ) 
+											if ( is_object( $shipping ) && in_array( $shipping->getInternalName(), (array)$selected_shippings ) )
 												$shipping->checked = ' checked = "checked" ';
 									?>
 
 												<div class='wpsc_shipping_options'>
 													<div class='wpsc-shipping-actions'>
 												| <span class="edit">
-															<a class='edit-shipping-module' rel="<?php echo $shipping->internal_name; ?>" title="Edit this Shipping Module" href='<?php echo htmlspecialchars( add_query_arg('tab', 'shipping' , add_query_arg('page', 'wpsc-settings'  , add_query_arg( 'shipping_module', $shipping->internal_name ) ) ) ); ?>#gateway_options' style="cursor:pointer;">Edit</a>
+															<a class='edit-shipping-module' rel="<?php echo $shipping->internal_name; ?>" title="Edit this Shipping Module" href='<?php echo esc_url( add_query_arg('tab', 'shipping' , add_query_arg('page', 'wpsc-settings'  , add_query_arg( 'shipping_module', $shipping->internal_name ) ) ) ); ?>#gateway_options' style="cursor:pointer;">Edit</a>
 												</span> |
 											</div>
 
@@ -233,7 +233,7 @@ function wpsc_options_shipping() {
 										<div class='wpsc_shipping_options'>
 											<div class="wpsc-shipping-actions">
 										| <span class="edit">
-													<a class='edit-shippping-module' rel="<?php echo $shipping->internal_name; ?>"  title="Edit this Shipping Module" href='<?php echo htmlspecialchars( add_query_arg('tab', 'shipping' , add_query_arg('page', 'wpsc-settings'  , add_query_arg( 'shipping_module', $shipping->internal_name ) ) ) ); ?>#gateway_options' style="cursor:pointer;"><?php _e( 'Edit' , 'wpsc' ); ?></a>
+													<a class='edit-shippping-module' rel="<?php echo $shipping->internal_name; ?>"  title="Edit this Shipping Module" href='<?php echo esc_url( add_query_arg('tab', 'shipping' , add_query_arg('page', 'wpsc-settings'  , add_query_arg( 'shipping_module', $shipping->internal_name ) ) ) ); ?>#gateway_options' style="cursor:pointer;"><?php _e( 'Edit' , 'wpsc' ); ?></a>
 														</span> |
 													</div>
 													<p><input <?php echo $disabled; ?> name='custom_shipping_options[]' <?php echo $shipping->checked; ?> type='checkbox' value='<?php echo $shipping->internal_name; ?>' id='<?php echo $shipping->internal_name; ?>_id' /><label for='<?php echo $shipping->internal_name; ?>_id'><?php esc_attr_e( $shipping->name ); ?></label></p>

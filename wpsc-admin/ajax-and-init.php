@@ -118,7 +118,7 @@ if ( isset( $_REQUEST['wpsc_admin_action'] ) && ($_REQUEST['wpsc_admin_action'] 
 }
 
 /**
-  Function and action for publishing or unpublishing single products
+ * Function and action for publishing or unpublishing single products
  */
 function wpsc_ajax_toggle_published() {
 	$product_id = absint( $_GET['product'] );
@@ -694,7 +694,7 @@ function wpsc_delete_purchlog( $purchlog_id='' ) {
 
 	if ( is_numeric( $_GET['purchlog_id'] ) ) {
 		$sendback = wp_get_referer();
-		$sendback = remove_query_arg( 'purchaselog_id', $sendback );
+		$sendback = esc_url( remove_query_arg( 'purchaselog_id', $sendback ) );
 		if ( isset( $deleted ) ) {
 			$sendback = add_query_arg( 'deleted', $deleted, $sendback );
 		}
@@ -891,7 +891,7 @@ function wpsc_submit_options( $selected='' ) {
 	}
 
 	$sendback = add_query_arg( 'page', 'wpsc-settings', $sendback );
-	$sendback = apply_filters( 'wpsc_settings_redirect_url', $sendback );
+	$sendback = esc_url( apply_filters( 'wpsc_settings_redirect_url', $sendback ) );
 	wp_redirect( $sendback );
 	exit();
 }
@@ -1395,7 +1395,7 @@ function wpsc_google_shipping_settings() {
 		}
 		update_option( 'google_shipping_country', $google_shipping_country );
 		$sendback = wp_get_referer();
-		$sendback = remove_query_arg( 'googlecheckoutshipping', $sendback );
+		$sendback = esc_url( remove_query_arg( 'googlecheckoutshipping', $sendback ) );
 
 		if ( isset( $updated ) ) {
 			$sendback = add_query_arg( 'updated', $updated, $sendback );
@@ -1524,10 +1524,10 @@ function wpsc_delete_variation_set() {
 	if ( isset( $deleted ) ) {
 		$sendback = add_query_arg( 'deleted', $deleted, $sendback );
 	}
-	$sendback = remove_query_arg( array(
+	$sendback = esc_url( remove_query_arg( array(
 				'deleteid',
 				'variation_id'
-					), $sendback );
+					), $sendback ) );
 
 	wp_redirect( $sendback );
 	exit();
@@ -1575,7 +1575,7 @@ function wpsc_delete_coupon(){
 		$sendback = add_query_arg( 'deleted', $deleted, $sendback );
 
 	$sendback = remove_query_arg( array('deleteid',), $sendback );
-	wp_redirect( $sendback );
+	wp_redirect( esc_url( $sendback ) );
 	exit();
 }
 

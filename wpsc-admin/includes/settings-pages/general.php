@@ -58,7 +58,7 @@ function wpsc_options_general() {
 							echo "<em>" . __( "The Target Markets feature has been disabled because you have the Suhosin PHP extension installed on this server. If you need to use the Target Markets feature then disable the suhosin extension, if you can not do this, you will need to contact your hosting provider.", 'wpsc' ) . "</em>";
 						} else {
 					?>
-							<span><?php printf(__('Select: <a href="%1$s"  class="wpsc_select_all" title="All">All</a> <a href="%1$s" class="wpsc_select_none" title="None">None</a>' , 'wpsc') , add_query_arg( array( 'selected_all' => 'all' ) ), add_query_arg( array( 'selected_all' => 'none' ) )  ); ?></span><br />
+							<span><?php printf(__('Select: <a href="%1$s"  class="wpsc_select_all" title="All">All</a> <a href="%1$s" class="wpsc_select_none" title="None">None</a>' , 'wpsc'), esc_url( add_query_arg( array( 'selected_all' => 'all' ) ) ), esc_url( add_query_arg( array( 'selected_all' => 'none' ) ) ) ); ?></span><br />
 							<div id='resizeable' class='ui-widget-content multiple-select'>
 						<?php
 							foreach ( (array)$countrylist as $country ) {
@@ -72,12 +72,12 @@ function wpsc_options_general() {
 <?php }
 							} ?>
 							</div><br />
-							<?php _e( 'Select the markets you are selling products to.' , 'wpsc'); 
+							<?php _e( 'Select the markets you are selling products to.' , 'wpsc');
 						}
 ?>
 					</td>
 				</tr>
-				<?php 
+				<?php
 					$stock_keeping_time = get_option( 'wpsc_stock_keeping_time', 1 );
 					$stock_keeping_interval = get_option( 'wpsc_stock_keeping_interval', 'day' );
 				?>
@@ -104,7 +104,7 @@ function wpsc_options_general() {
 						<label><input type="radio" <?php checked( $hierarchical_category, 1 ); ?> name="wpsc_options[product_category_hierarchical_url]" value="1" /> <?php _e( 'Yes', 'wpsc' ); ?></label>&nbsp;&nbsp;
 						<label><input type="radio" <?php checked( $hierarchical_category, 0 ); ?>name="wpsc_options[product_category_hierarchical_url]" value="0" /> <?php _e( 'No', 'wpsc' ); ?></label><br />
 						<?php _e( 'When Hierarchical Product Category URL is enabled, parent product categories are also included in the product URL.<br />For example: example.com/products-page/parent-cat/sub-cat/product-name', 'wpsc' ); ?>
-					</td>	
+					</td>
 				</tr>
 			</table>
 

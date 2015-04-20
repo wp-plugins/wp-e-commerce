@@ -6,7 +6,7 @@ function wpsc_options_gateway() {
 	$curgateway = get_option( 'payment_gateway' );
 
 	$payment_gateway_names = get_option( 'payment_gateway_names' );
-	
+
 	if ( empty( $nzshpcrt_gateways ) )
 		$nzshpcrt_gateways     = nzshpcrt_get_gateways();
 
@@ -81,7 +81,7 @@ function wpsc_options_gateway() {
 										<div class="wpsc_shipping_options">
 											<div class='wpsc-shipping-actions wpsc-payment-actions'>
 											| <span class="edit">
-													<a class='edit-payment-module' rel="<?php echo $gateway['internalname']; ?>" onclick="event.preventDefault();" title="Edit this Payment Module" href='<?php echo htmlspecialchars( add_query_arg( 'payment_module', $gateway['internalname'] ) ); ?>' style="cursor:pointer;">Edit</a>
+													<a class='edit-payment-module' rel="<?php echo $gateway['internalname']; ?>" onclick="event.preventDefault();" title="Edit this Payment Module" href='<?php echo esc_url( add_query_arg( 'payment_module', $gateway['internalname'] ) ); ?>' style="cursor:pointer;">Edit</a>
 										</span> |
 									</div>
 									<p><input name='wpsc_options[custom_gateway_options][]' checked='checked' type='checkbox' value='<?php esc_attr_e( $gateway['internalname'] ); ?>' id='<?php esc_attr_e( $gateway['internalname'] ); ?>_id' />
@@ -91,7 +91,7 @@ function wpsc_options_gateway() {
 										<div class="wpsc_shipping_options">
 											<div class='wpsc-shipping-actions wpsc-payment-actions'>
 											| <span class="edit">
-													<a class='edit-payment-module' rel="<?php echo $gateway['internalname']; ?>" onclick="event.preventDefault();" title="Edit this Payment Module" href='<?php echo htmlspecialchars( add_query_arg( 'payment_module', $gateway['internalname'] ) ); ?>' style="cursor:pointer;"><?php _e( 'Edit' , 'wpsc' ); ?></a>
+													<a class='edit-payment-module' rel="<?php echo $gateway['internalname']; ?>" onclick="event.preventDefault();" title="Edit this Payment Module" href='<?php echo esc_url( add_query_arg( 'payment_module', $gateway['internalname'] ) ); ?>' style="cursor:pointer;"><?php _e( 'Edit' , 'wpsc' ); ?></a>
 										</span> |
 									</div>
 									<p><input name='wpsc_options[custom_gateway_options][]' type='checkbox' value='<?php echo $gateway['internalname']; ?>' id='<?php echo $gateway['internalname']; ?>_id' />
@@ -116,7 +116,7 @@ function wpsc_options_gateway() {
 							<td class='gateway_settings' rowspan='2'>
 								<div class='postbox'>
 							<?php
-							
+
 								if ( !isset( $_SESSION['previous_payment_name'] ) )
 									$_SESSION['previous_payment_name'] = "";
 								if ( !isset( $selected_gateway_data ) )
@@ -129,7 +129,7 @@ function wpsc_options_gateway() {
 									<?php echo $payment_data['form_fields']; ?>
 								</table>
 								<?php
-								if ( $payment_data['has_submit_button'] == 0 ) 
+								if ( $payment_data['has_submit_button'] == 0 )
 									$update_button_css = 'style= "display: none;"';
 								else
 									$update_button_css = '';

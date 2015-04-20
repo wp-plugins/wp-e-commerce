@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 //Remove presentation tab on wpsc option menu
 function woo_wpsc_remove_presentation_tab($default_tabs){
@@ -11,8 +11,8 @@ function woo_wpsc_filter_redirect_url($query){
 	if ($_GET['page']=='woothemes'){
 		$query = remove_query_arg('tab', $query);
 		$query = add_query_arg( 'page' , 'woothemes' , $query);
-	}	
-	return $query;
+	}
+	return esc_url( $query );
 }
 
 //Print presentation menu subpage
@@ -22,12 +22,12 @@ function woo_wpsc_filter_option($return){
                         	WPSC Presentation
                         </a>
                     </li>';
-					
+
 	$return[0] .= '	<div class="group" id="wpsc-option-presentation">
                 		<iframe id="wpsc-presentation" src="'.get_bloginfo('wpurl').'/wp-admin/admin-ajax.php?action=print_wpsc_presentation">
-                    	</iframe> 
+                    	</iframe>
                 	</div>';
-					
+
 	return $return;
 }
 
