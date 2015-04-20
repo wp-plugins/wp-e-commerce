@@ -378,10 +378,10 @@ final class WPSC_Settings_Page {
 
 		if ( isset( $_REQUEST['wpsc_admin_action'] ) && ( $_REQUEST['wpsc_admin_action'] == 'submit_options' ) ) {
 			check_admin_referer( 'update-options', 'wpsc-update-options' );
-			
+
 			$this->save_options();
 			do_action( 'wpsc_save_' . $this->current_tab_id . '_settings', $this->current_tab );
-		
+
 			$query_args = array();
 			if ( is_callable( array( $this->current_tab, 'callback_submit_options' ) ) ) {
 				$additional_query_args = $this->current_tab->callback_submit_options();
@@ -394,7 +394,7 @@ final class WPSC_Settings_Page {
 				set_transient( 'settings_errors', get_settings_errors(), 30 );
 				$query_args['settings-updated'] = true;
 			}
-			wp_redirect( add_query_arg( $query_args ) );
+			wp_redirect( esc_url( add_query_arg( $query_args ) ) );
 			exit;
 		}
 	}
@@ -445,7 +445,7 @@ final class WPSC_Settings_Page {
 	 */
 	private function submit_url() {
 		$location = add_query_arg( 'tab', $this->current_tab_id );
-		return $location;
+		return esc_url( $location );
 	}
 
 	/**

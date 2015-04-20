@@ -148,14 +148,14 @@ $output ='
 		<input type="submit" value="'.esc_attr__("Update Coupon", "wpsc").'" class="button-primary" name="edit_coupon['.$id.'][submit_coupon]" />';
 
  		$nonced_url = admin_url( 'admin.php' );
- 		$nonced_url = add_query_arg(
+ 		$nonced_url = esc_url( add_query_arg(
  			array(
 				'wpsc_admin_action' => 'wpsc-delete-coupon',
 				'delete_id'         => $id,
 				'_wp_http_referer'  => urlencode( admin_url( 'edit.php?post_type=wpsc-product&page=wpsc-edit-coupons' ) ),
  			),
  			$nonced_url
- 		);
+ 		) );
  		$nonced_url = wp_nonce_url( $nonced_url, 'delete-coupon' );
 
 		$output.= "<a class='delete_button' style='text-decoration:none;' href=" .$nonced_url.">" . esc_html__( 'Delete', 'wpsc' ) . "</a>";

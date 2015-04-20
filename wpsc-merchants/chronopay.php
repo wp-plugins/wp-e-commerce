@@ -24,7 +24,7 @@ function gateway_chronopay($separator, $sessionid)
 	$data['product_name'] = get_option('chronopay_product_name');
 	$data['product_price_currency'] = get_option('chronopay_curcode');
 	$data['language'] = get_option('chronopay_language');
-	$data['cb_url'] = add_query_arg( 'chronopay_callback', 'true', home_url( '/' ) );
+	$data['cb_url'] = esc_url( add_query_arg( 'chronopay_callback', 'true', home_url( '/' ) ) );
 	$data['cb_type'] = 'P';
 	$data['decline_url'] = home_url( '/?chronopay_callback=true' );
 	$data['cs1'] = $sessionid;
@@ -49,7 +49,7 @@ function gateway_chronopay($separator, $sessionid)
     {
     	$data['city'] = $_POST['collected_data'][get_option('chronopay_form_city')];
     }
-    
+
     	$data['country'] = (string) wpsc_get_customer_meta( 'billing_country' );
 
   	// Change suggested by waxfeet@gmail.com, if email to be sent is not there, dont send an email address

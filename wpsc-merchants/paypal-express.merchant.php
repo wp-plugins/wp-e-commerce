@@ -679,7 +679,7 @@ function paypal_processingfunctions(){
 		if ( get_option( 'paypal_ipn' ) == 1 ) {
 			$notify_url = add_query_arg( 'wpsc_action', 'gateway_notification', ( get_option( 'siteurl' ) . "/index.php" ) );
 			$notify_url = add_query_arg( 'gateway', 'wpsc_merchant_paypal_express', $notify_url );
-			$notify_url = apply_filters( 'wpsc_paypal_express_notify_url', $notify_url );
+			$notify_url = esc_url( apply_filters( 'wpsc_paypal_express_notify_url', $notify_url ) );
 			$nvpstr .= '&PAYMENTREQUEST_0_NOTIFYURL=' . urlencode( $notify_url );
 		}
 
@@ -765,7 +765,7 @@ function paypal_processingfunctions(){
 					);
 					break;
 			}
-			$location = add_query_arg( 'sessionid', $sessionid, get_option( 'transact_url' ) );
+			$location = esc_url( add_query_arg( 'sessionid', $sessionid, get_option( 'transact_url' ) ) );
 
 			wpsc_delete_customer_meta( 'paypal_express_message' );
 			wp_redirect( $location );

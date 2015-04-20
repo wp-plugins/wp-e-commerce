@@ -119,7 +119,7 @@ class WPSC_Product_Variations_Page {
 		foreach ( $tabs as $tab => $title ) {
 			$class = ( $tab == $this->current_tab ) ? ' class="active"' : '';
 			$item = '<li' . $class . '>';
-			$item .= '<a href="' . add_query_arg( 'tab', $tab ) . '">' . esc_html( $title ) . '</a></li>';
+			$item .= '<a href="' . esc_url( add_query_arg( 'tab', $tab ) ) . '">' . esc_html( $title ) . '</a></li>';
 			echo $item;
 		}
 		echo '</ul>';
@@ -151,7 +151,7 @@ class WPSC_Product_Variations_Page {
 			'_wp_http_referer',
 			'updated',
 		) );
-		wp_redirect( add_query_arg( 'tab', 'manage', $sendback ) );
+		wp_redirect( esc_url( add_query_arg( 'tab', 'manage', $sendback ) ) );
 		exit;
 	}
 
@@ -179,7 +179,7 @@ class WPSC_Product_Variations_Page {
 
 			$trashed++;
 		}
-		return add_query_arg( array( 'trashed' => $trashed, 'ids' => join( ',', $post_ids ) ) );
+		return esc_url( add_query_arg( array( 'trashed' => $trashed, 'ids' => join( ',', $post_ids ) ) ) );
 	}
 
 	public function process_bulk_action_untrash( $post_ids ) {
@@ -194,7 +194,7 @@ class WPSC_Product_Variations_Page {
 
 			$untrashed++;
 		}
-		return add_query_arg( 'untrashed', $untrashed );
+		return esc_url( add_query_arg( 'untrashed', $untrashed ) );
 	}
 
 	public function process_bulk_action_delete( $post_ids ) {
@@ -215,7 +215,7 @@ class WPSC_Product_Variations_Page {
 			}
 			$deleted++;
 		}
-		return add_query_arg( 'deleted', $deleted );
+		return esc_url( add_query_arg( 'deleted', $deleted ) );
 	}
 
 	public function process_bulk_action_hide( $post_ids ) {
@@ -227,7 +227,7 @@ class WPSC_Product_Variations_Page {
 			) );
 			$updated ++;
 		}
-		return add_query_arg( 'updated', $updated );
+		return esc_url( add_query_arg( 'updated', $updated ) );
 	}
 
 	public function process_bulk_action_show( $post_ids ) {
@@ -239,7 +239,7 @@ class WPSC_Product_Variations_Page {
 			) );
 			$updated ++;
 		}
-		return add_query_arg( 'updated', $updated );
+		return esc_url( add_query_arg( 'updated', $updated ) );
 	}
 
 	private function save_bulk_edited_items() {
@@ -301,7 +301,7 @@ class WPSC_Product_Variations_Page {
 			'last_paged'
 		), $sendback );
 		$sendback = add_query_arg( 'updated', count( $ids ), $sendback );
-		wp_redirect( $sendback );
+		wp_redirect( esc_url( $sendback ) );
 		exit;
 	}
 
@@ -345,7 +345,7 @@ class WPSC_Product_Variations_Page {
 		_wpsc_refresh_parent_product_terms( $this->parent_id );
 		_wpsc_add_refresh_variation_parent_term_hooks();
 		if ( $current_action != 'edit' ) {
-			wp_redirect( $sendback );
+			wp_redirect( esc_url( $sendback ) );
 			exit;
 		}
 	}

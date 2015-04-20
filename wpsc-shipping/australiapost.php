@@ -35,7 +35,7 @@ class australiapost {
 		$this->debug = false; // change to true to log (to the PHP error log) the API URLs and responses for each active service
 
 		// Initialise the list of available postage services
-		
+
 		// DOMESTIC (Australia only)
 		$this->services['STANDARD'] = __('Standard Parcel Post', 'wpsc');
 		$this->services['EXPRESS']  = __('Express Post', 'wpsc');
@@ -288,7 +288,7 @@ class australiapost {
 		foreach ($this->services as $code => $service) {
 			if (!$this->settings['services'][$code]) continue;
 
-			$fullURL = add_query_arg('Service_Type', $code, $url);
+			$fullURL = esc_url_raw( add_query_arg( 'Service_Type', $code, $url ) );
 
 			// This cache key should be unique for a cart with these contents and destination
 			// Needs to be less than 45 characters (as per http://core.trac.wordpress.org/ticket/15058)

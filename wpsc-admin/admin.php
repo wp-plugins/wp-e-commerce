@@ -399,7 +399,7 @@ function wpsc_display_purchase_logs_page() {
  * @uses admin_url()      Retrieves URL to the WordPress admin
  */
 function wpsc_product_log_rss_feed() {
-	echo "<link type='application/rss+xml' href='" . add_query_arg( array( 'rss' => 'true', 'rss_key' => 'key', 'action' => 'purchase_log', 'type' => 'rss' ), admin_url( 'index.php' ) ) . "' title='" . esc_attr( 'WP e-Commerce Purchase Log RSS', 'wpsc' ) . "' rel='alternate' />";
+	echo "<link type='application/rss+xml' href='" . esc_url( add_query_arg( array( 'rss' => 'true', 'rss_key' => 'key', 'action' => 'purchase_log', 'type' => 'rss' ), admin_url( 'index.php' ) ) ) . "' title='" . esc_attr( 'WP e-Commerce Purchase Log RSS', 'wpsc' ) . "' rel='alternate' />";
 }
 
 /**
@@ -1485,7 +1485,7 @@ function _wpsc_admin_notices_3dot8dot9() {
 	$message = sprintf(
 		$message,
 		'http://getshopped.org/wp-e-commerce-3-8-9-compatibility-issues/',
-		add_query_arg( 'dismiss_389_upgrade_notice', 1 )
+		esc_url( add_query_arg( 'dismiss_389_upgrade_notice', 1 ) )
 	);
 
 	echo '<div id="wpsc-3.8.9-notice" class="error">' . $message . '</div>';
@@ -1512,7 +1512,7 @@ function _wpsc_admin_notices_3dot8dot11() {
 		$message,
 		'https://github.com/wp-e-commerce/WP-e-Commerce/issues/359',
 		'http://docs.getshopped.org/documentation/3-8-11-user-logs',
-		add_query_arg( 'dismiss_3811_upgrade_notice', 1 )
+		esc_url( add_query_arg( 'dismiss_3811_upgrade_notice', 1 ) )
 	);
 
 	echo '<div id="wpsc-3.8.11-notice" class="error">' . $message . '</div>';

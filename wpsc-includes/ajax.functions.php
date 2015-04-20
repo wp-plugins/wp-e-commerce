@@ -230,7 +230,7 @@ function _wpsc_get_alternate_html() {
 	// If there is a better way to get that output without dying, I'm all ears.  A nice slow HTTP request for now.
 	$javascript = wp_remote_retrieve_body(
 					wp_remote_post(
-						add_query_arg(
+						esc_url_raw( add_query_arg(
 							array( 'ajax' => 'true', 'wpsc_action' => 'wpsc_get_alternate_html', 'ajax' => 'true', 'wpsc_ajax_action' => 'add_to_cart' ), home_url() ),
 							array( 'body' =>
 								array(
@@ -238,7 +238,8 @@ function _wpsc_get_alternate_html() {
 								)
 							)
 						)
-					);
+					)
+				);
 	return $javascript;
 }
 

@@ -52,7 +52,7 @@ function wpsc_ajax_toggle_published() {
 
 	$status = (wpsc_toggle_publish_status( $product_id )) ? ('true') : ('false');
 	$sendback = add_query_arg( 'flipped', "1", wp_get_referer() );
-	wp_redirect( $sendback );
+	wp_redirect( esc_url( $sendback ) );
 	exit();
 }
 
@@ -78,7 +78,7 @@ function wpsc_duplicate_product() {
 		$sendback = wp_get_referer();
 		$sendback = add_query_arg( 'duplicated', (int)$duplicated, $sendback );
 
-		wp_redirect( $sendback );
+		wp_redirect( esc_url( $sendback ) );
 		exit();
 	} else {
 		wp_die( __( 'Sorry, for some reason, we couldn\'t duplicate this product because it could not be found in the database, check there for this ID: ', 'wpsc' ) . $id );
@@ -285,7 +285,7 @@ function wpsc_purchlog_resend_email() {
 	if ( isset( $sent ) )
 	    $sendback = add_query_arg( 'sent', $sent, $sendback );
 
-	wp_redirect( $sendback );
+	wp_redirect( esc_url( $sendback ) );
 	exit();
 }
 
@@ -307,11 +307,11 @@ function wpsc_purchlog_clear_download_items() {
 		$email_address = $wpdb->get_var( "SELECT `value` FROM `" . WPSC_TABLE_SUBMITTED_FORM_DATA . "` WHERE `log_id`='{$purchase_id}' AND `form_id` = '{$email_form_field}' LIMIT 1" );
 
 		foreach ( (array)$downloadable_items as $downloadable_item ) {
-			$download_links .= add_query_arg(
+			$download_links .= esc_url( add_query_arg(
 				'downloadid',
 				$downloadable_item['uniqueid'],
 				home_url()
-			)  . "\n";
+			) ) . "\n";
 		}
 
 
@@ -323,7 +323,7 @@ function wpsc_purchlog_clear_download_items() {
 		if ( isset( $cleared ) ) {
 			$sendback = add_query_arg( 'cleared', $cleared, $sendback );
 		}
-		wp_redirect( $sendback );
+		wp_redirect( esc_url( $sendback ) );
 		exit();
 	}
 }
@@ -361,7 +361,7 @@ function wpsc_purchlog_bulk_modify() {
 	if ( isset( $_POST['view_purchlogs_by_status'] ) ) {
 		$sendback = add_query_arg( 'view_purchlogs_by_status', $_POST['view_purchlogs_by_status'], $sendback );
 	}
-	wp_redirect( $sendback );
+	wp_redirect( esc_url( $sendback ) );
 	exit();
 }
 
@@ -426,7 +426,7 @@ function wpsc_delete_purchlog( $purchlog_id='' ) {
 		if ( isset( $deleted ) ) {
 			$sendback = add_query_arg( 'deleted', $deleted, $sendback );
 		}
-		wp_redirect( $sendback );
+		wp_redirect( esc_url( $sendback ) );
 		exit();
 	}
 }
@@ -510,7 +510,7 @@ function wpsc_update_page_urls( $auto = false ) {
 		if ( isset( $_SESSION['wpsc_settings_curr_page'] ) )
 			$sendback = add_query_arg( 'tab', $_SESSION['wpsc_settings_curr_page'], $sendback );
 
-		wp_redirect( $sendback );
+		wp_redirect( esc_url( $sendback ) );
 		exit();
 	}
 }
@@ -614,7 +614,7 @@ function wpsc_google_shipping_settings() {
 			$sendback = add_query_arg( 'updated', $updated, $sendback );
 		}
 
-		wp_redirect( $sendback );
+		wp_redirect( esc_url( $sendback ) );
 		exit();
 	}
 }
@@ -673,7 +673,7 @@ function wpsc_delete_variation_set() {
 				'variation_id'
 					), $sendback );
 
-	wp_redirect( $sendback );
+	wp_redirect( esc_url( $sendback ) );
 	exit();
 }
 
@@ -721,7 +721,7 @@ function wpsc_delete_coupon(){
 		$sendback = add_query_arg( 'deleted', $deleted, $sendback );
 
 	$sendback = remove_query_arg( array( 'deleteid', 'wpsc_admin_action' ), $sendback );
-	wp_redirect( $sendback );
+	wp_redirect( esc_url( $sendback ) );
 	exit();
 }
 
