@@ -116,7 +116,7 @@ class WPSC_Purchase_Log_Page
          <div class="wrap">
             <h2><?php echo esc_html( __('Sales', 'wpsc') ); ?> </h2>
             <div class="updated">
-               <p><?php printf( __( 'Your purchase logs have been updated! <a href="%s">Click here</a> to return.' , 'wpsc' ), remove_query_arg( 'c' ) ); ?></p>
+               <p><?php printf( __( 'Your purchase logs have been updated! <a href="%s">Click here</a> to return.' , 'wpsc' ), esc_url( remove_query_arg( 'c' ) ) ); ?></p>
             </div>
          </div>
       <?php
@@ -304,7 +304,7 @@ class WPSC_Purchase_Log_Page
 
       if ( ! $current_action || ( 'download_csv' != $current_action && empty( $_REQUEST['post'] ) ) ) {
          if ( ! empty( $_REQUEST['_wp_http_referer'] ) ) {
-            wp_redirect( remove_query_arg( array( '_wp_http_referer', '_wpnonce', 'action', 'action2' ), stripslashes( $_SERVER['REQUEST_URI'] ) ) );
+            wp_redirect( esc_url( remove_query_arg( array( '_wp_http_referer', '_wpnonce', 'action', 'action2' ), stripslashes( $_SERVER['REQUEST_URI'] ) ) ) );
             exit;
          }
 
@@ -369,7 +369,7 @@ class WPSC_Purchase_Log_Page
          ), $sendback );
       }
 
-      wp_redirect( $sendback );
+      wp_redirect( esc_url( $sendback ) );
       exit;
    }
 

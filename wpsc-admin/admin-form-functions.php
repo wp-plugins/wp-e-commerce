@@ -138,7 +138,6 @@ $output ='
 				<input type="text" name="rules[value][]"/>
 			</span>
 
-
 		</div>
 	</div>
 	</td>
@@ -158,7 +157,7 @@ $output ='
  		);
  		$nonced_url = wp_nonce_url( $nonced_url, 'delete-coupon' );
 
-		$output.= "<a class='delete_button' style='text-decoration:none;' href=" .$nonced_url.">" . esc_html__( 'Delete', 'wpsc' ) . "</a>";
+		$output.= "<a class='delete_button' style='text-decoration:none;' href=" .esc_url( $nonced_url ).">" . esc_html__( 'Delete', 'wpsc' ) . "</a>";
 
  	$output.='
  	</td>

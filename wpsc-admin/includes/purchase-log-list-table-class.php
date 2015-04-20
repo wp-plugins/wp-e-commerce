@@ -391,7 +391,7 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table
 			'c'  => 'item_details',
 			'id' => $item->id,
 		), $location );
-		return $location;
+		return esc_url( $location );
 	}
 
 	public function column_customer( $item ) {
@@ -415,7 +415,7 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table
 			'updated',
 			'deleted',
 		), $location );
-		return $location;
+		return esc_url( $location );
 	}
 
 	public function column_id( $item ) {

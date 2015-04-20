@@ -79,7 +79,7 @@ class WPSC_Settings_Tab_Gateway extends WPSC_Settings_Tab
 			'page'               => 'wpsc-settings',
 			'payment_gateway_id' => $gateway,
 		), $location );
-		return $location;
+		return esc_url( $location );
 	}
 
 	public function display_payment_gateway_settings_form() {
