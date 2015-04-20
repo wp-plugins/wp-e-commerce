@@ -242,7 +242,7 @@ class Sputnik_Admin {
 		if (!empty($args)) {
 			$url = add_query_arg( $args, $url );
 		}
-		return $url;
+		return esc_url_raw( $url );
 	}
 
 	public static function build_account_url($args = array()) {
@@ -250,7 +250,7 @@ class Sputnik_Admin {
 		if (!empty($args)) {
 			$url = add_query_arg( $args, $url );
 		}
-		return $url;
+		return esc_url_raw( $url );
 	}
 
 	public static function page_styles() {

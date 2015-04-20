@@ -107,7 +107,7 @@ class WPSC_Payment_Gateway_Paypal_Express_Checkout extends WPSC_Payment_Gateway 
         // Build the URL
         $url = add_query_arg( $data, $url );
 
-        return $url;
+        return esc_url( $url );
     }
 
     /**
@@ -318,7 +318,7 @@ class WPSC_Payment_Gateway_Paypal_Express_Checkout extends WPSC_Payment_Gateway 
             $location = add_query_arg( array( 'payment_gateway_callback' => 'display_generic_error' ) );
         }
 
-        wp_redirect( $location );
+        wp_redirect( esc_url_raw( $location ) );
         exit;
     }
 
@@ -428,7 +428,7 @@ class WPSC_Payment_Gateway_Paypal_Express_Checkout extends WPSC_Payment_Gateway 
             $location = add_query_arg( array( 'payment_gateway_callback' => 'display_generic_error' ) );
         }
 
-        wp_redirect( $location );
+        wp_redirect( esc_url_raw( $location ) );
         exit;
     }
 
