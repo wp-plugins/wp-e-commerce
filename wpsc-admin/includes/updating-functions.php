@@ -113,7 +113,7 @@ class WPSC_Update_Progress
 			$location = add_query_arg( 'eta', $this->eta, $location );
 		else
 			$location = remove_query_arg( 'eta', $location );
-		return $location;
+		return esc_url( $location );
 	}
 
 	private function print_eta() {

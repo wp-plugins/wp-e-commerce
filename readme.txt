@@ -4,7 +4,7 @@ Donate link: http://getshopped.org
 Tags: e-commerce, wp-e-commerce, shop, cart, paypal, authorize, stock control, ecommerce, shipping, tax
 Requires at least: 3.1
 Tested up to: 3.4.1
-Stable tag: 3.8.8.5
+Stable tag: 3.8.8.6
 
 WP e-Commerce is a free WordPress Shopping Cart Plugin that lets customers buy your products, services and digital downloads online.
 
@@ -156,6 +156,11 @@ After upgrading from earlier versions look for link "Update Store". This will up
 
 
 == Changelog ==
+
+= 3.8.8.6 =
+
+* Fix: Fix potential reflexive XSS issue with add_query_arg() and remove_query_arg() usage.  Update is _highly_ recommended.
+
 = 3.8.8.5 =
 * Fix: Order Closed status does not count in the sales log totals on dashboard widget.
 * Fix: PHP preg_replace warning.

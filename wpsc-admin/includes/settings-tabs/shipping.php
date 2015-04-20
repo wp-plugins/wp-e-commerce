@@ -50,7 +50,7 @@ class WPSC_Settings_Tab_Shipping extends WPSC_Settings_Tab
 			'shipping_module_id' => $shipping->internal_name,
 		), $location );
 		$location .= '#wpsc-shipping-module-options';
-		return $location;
+		return esc_url( $location );
 	}
 
 	public function display() {

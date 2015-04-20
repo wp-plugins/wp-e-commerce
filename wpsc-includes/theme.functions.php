@@ -237,7 +237,7 @@ function wpsc_turn_on_wp_register() {?>
 
 if ( isset( $_REQUEST['wpsc_notices'] ) && $_REQUEST['wpsc_notices'] == 'theme_ignore' ) {
 	update_option( 'wpsc_ignore_theme', true );
-	wp_redirect( remove_query_arg( 'wpsc_notices' ) );
+	wp_redirect( esc_url( remove_query_arg( 'wpsc_notices' ) ) );
 }
 
 /**

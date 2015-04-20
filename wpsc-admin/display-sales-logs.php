@@ -347,10 +347,10 @@ class WPSC_Purchase_Log_Page
             $wpdb->query( "DELETE FROM " . WPSC_TABLE_CART_CONTENTS . " WHERE purchaseid IN ($in)" );
             $wpdb->query( "DELETE FROM " . WPSC_TABLE_SUBMITED_FORM_DATA . " WHERE log_id IN ($in)" );
 
-            $sendback = add_query_arg( array(
+            $sendback = esc_url( add_query_arg( array(
                'paged'   => $_REQUEST['last_paged'],
                'deleted' => count( $_REQUEST['post'] ),
-            ), $sendback );
+            ), $sendback ) );
 
          }
       }
@@ -361,9 +361,9 @@ class WPSC_Purchase_Log_Page
          foreach ( $_REQUEST['post'] as $id )
             wpsc_purchlog_edit_status( $id, $current_action );
 
-         $sendback = add_query_arg( array(
+         $sendback = esc_url( add_query_arg( array(
             'updated' => count( $_REQUEST['post'] ),
-         ), $sendback );
+         ), $sendback ) );
       }
 
       wp_redirect( $sendback );

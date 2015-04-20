@@ -445,7 +445,7 @@ final class WPSC_Settings_Page
 	 */
 	private function submit_url() {
 		$location = add_query_arg( 'tab', $this->current_tab_id );
-		return $location;
+		return esc_url( $location );
 	}
 
 	/**
@@ -662,7 +662,7 @@ final class WPSC_Settings_Page
 
 		if ( !isset( $_POST['custom_shipping_options'] ) )
 			$_POST['custom_shipping_options'] = null;
-		
+
 		if ( $_POST['update_gateways'] == 'true' ) {
 
 			update_option( 'custom_shipping_options', $_POST['custom_shipping_options'] );

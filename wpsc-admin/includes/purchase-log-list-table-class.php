@@ -250,7 +250,7 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table
 		$views = array(
 			'all' => sprintf(
 				'<a href="%s" %s>%s</a>',
-				$all_href,
+				esc_url( $all_href ),
 				$all_class,
 				$all_text
 			),
@@ -274,7 +274,7 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table
 			$class = ( ! empty( $_REQUEST['status'] ) && $_REQUEST['status'] == $status ) ? 'class="current"' : '';
 			$views[$status] = sprintf(
 				'<a href="%s" %s>%s</a>',
-				$href,
+				esc_url( $href ),
 				$class,
 				$text
 			);
@@ -349,7 +349,7 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table
 			'c'  => 'item_details',
 			'id' => $item->id,
 		), $location );
-		return $location;
+		return esc_url( $location );
 	}
 
 	public function column_customer( $item ) {
@@ -373,7 +373,7 @@ class WPSC_Purchase_Log_List_Table extends WP_List_Table
 			'updated',
 			'deleted',
 		), $location );
-		return $location;
+		return esc_url( $location );
 	}
 
 	public function column_id( $item ) {
