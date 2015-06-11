@@ -91,10 +91,10 @@ class Sputnik_API {
 
 		//Modifying to add marketplace and user email to query string.
 		if ( $redirect ) {
-			wp_redirect( add_query_arg( array( 'domain' => self::domain(), 'user' => rawurlencode( wp_get_current_user()->user_email ) ), $auth_url ) );
+			wp_redirect( esc_url( add_query_arg( array( 'domain' => self::domain(), 'user' => rawurlencode( wp_get_current_user()->user_email ) ), $auth_url ) ) );
 			exit;
 		} else {
-			return $auth_url;
+			return esc_url( $auth_url );
 		}
 	}
 
@@ -195,7 +195,7 @@ class Sputnik_API {
 	public static function request($url, $params = null, $args = array()) {
 
 		if ( ! empty( $params ) ) {
-			$url = esc_url_raw( add_query_arg( $params, $url ) );
+			$url = add_query_arg( $params, $url );
 		}
 
 		$defaults = array( 'method' => 'GET' );
@@ -203,14 +203,14 @@ class Sputnik_API {
 		$args = wp_parse_args( $args, $defaults );
 
 		if ( strpos( $url, 'http' ) !== 0 ) {
-			$url = esc_url_raw( Sputnik::API_BASE . $url );
+			$url = Sputnik::API_BASE . $url;
 		}
 
 		$args['timeout']                = 25;
 		$args['headers']['user-agent']  = 'WP eCommerce Marketplace: ' . WPSC_VERSION;
 		$args['headers']['X-WP-Domain'] = self::domain();
 
-		$request = wp_remote_request( $url, $args );
+		$request = wp_remote_request( esc_url_raw( $url ), $args );
 
 		if ( is_wp_error( $request ) ) {
 			throw new Exception( $request->get_error_message() );

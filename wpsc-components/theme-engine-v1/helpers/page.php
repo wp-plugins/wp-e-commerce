@@ -1416,6 +1416,7 @@ function wpsc_this_page_url() {
 	} else {
 		$output = get_permalink( get_the_ID() );
 	}
+
 	return esc_url( $output );
 }
 

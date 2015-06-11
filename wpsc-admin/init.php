@@ -335,8 +335,8 @@ function wpsc_purchase_log_action_downloads_lock( $log_id ) {
 
 	// Redirect back to purchase logs list
 	$sendback = wp_get_referer();
-	$sendback = add_query_arg( 'cleared', 1, $sendback );
-	wp_redirect( esc_url_raw( $sendback ) );
+	$sendback = esc_url_raw( add_query_arg( 'cleared', 1, $sendback ) );
+	wp_redirect( $sendback );
 	exit();
 
 }
@@ -360,8 +360,8 @@ function wpsc_purchase_log_action_delete( $log_id ) {
 	// Redirect back to purchase logs list
 	$sendback = wp_get_referer();
 	$sendback = remove_query_arg( array( 'c', 'id' ), $sendback );
-	$sendback = add_query_arg( 'deleted', absint( $deleted ), $sendback );
-	wp_redirect( esc_url_raw( $sendback ) );
+	$sendback = esc_url_raw( add_query_arg( 'deleted', absint( $deleted ), $sendback ) );
+	wp_redirect( $sendback );
 	exit();
 
 }
@@ -383,8 +383,8 @@ function wpsc_purchase_log_action_email_receipt( $log_id ) {
 
 	// Redirect back to purchase logs list
 	$sendback = wp_get_referer();
-	$sendback = add_query_arg( 'sent', absint( $sent ), $sendback );
-	wp_redirect( esc_url_raw( $sendback ) );
+	$sendback = esc_url_raw( add_query_arg( 'sent', absint( $sent ), $sendback ) );
+	wp_redirect( $sendback );
 	exit();
 
 }
@@ -409,8 +409,8 @@ function wpsc_purchlog_resend_email( $log_id = '' ) {
 		_wpsc_doing_it_wrong( 'wpsc_purchlog_resend_email', __( '$log_id parameter requires a numeric purchase log ID.', 'wpsc' ), '3.9.0' );
 
 		// Support redirect for legacy purposes for the moment
-		$sendback = add_query_arg( 'sent', 0, wp_get_referer() );
-		wp_redirect( esc_url_raw( $sendback ) );
+		$sendback = esc_url_raw( add_query_arg( 'sent', 0, wp_get_referer() ) );
+		wp_redirect( $sendback );
 		exit();
 
 	}
